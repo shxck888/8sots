@@ -320,9 +320,9 @@
   footer{background:#020c16;padding:44px 0 30px;text-align:center;border-top:1px solid rgba(217,177,100,.2)}
   footer .brand{justify-content:center;margin-bottom:14px}
   footer p{color:var(--muted);font-size:.88rem;margin-top:6px}
-  .totop{position:fixed;right:22px;bottom:22px;width:48px;height:48px;border-radius:50%;background:var(--gold);color:var(--deep);display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 8px 22px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:90;cursor:pointer}
-  .totop.show{opacity:1;pointer-events:auto}
-  .totop:hover{transform:translateY(-4px)}
+  .line-fab{position:fixed;right:22px;bottom:22px;width:58px;height:58px;border-radius:50%;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.45);transition:transform .25s,box-shadow .25s;z-index:90;display:block}
+  .line-fab img{width:100%;height:100%;object-fit:cover;display:block}
+  .line-fab:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(6,199,85,.5)}
 
   /* ---------- LIGHTBOX ---------- */
   .lb{position:fixed;inset:0;background:rgba(2,8,14,.95);z-index:200;display:none;align-items:center;justify-content:center;padding:30px;cursor:zoom-out}
@@ -611,7 +611,7 @@
   </div>
 </footer>
 
-<div class="totop" id="totop">↑</div>
+<a class="line-fab" href="https://line.me/R/ti/p/@8sots" target="_blank" rel="noopener" aria-label="加入官方 LINE"><img src="img/icon-line.png" alt="加入官方 LINE"></a>
 <div class="lb" id="lb"><span class="close">×</span><img id="lbimg" src="" alt="放大檢視"></div>
 
 <script>
@@ -626,14 +626,11 @@
     if(r)r.classList.add('today');
   })();
 
-  // nav scroll style + back to top
-  const nav=document.getElementById('nav'),totop=document.getElementById('totop');
+  // nav scroll style
+  const nav=document.getElementById('nav');
   addEventListener('scroll',()=>{
-    const y=scrollY;
-    nav.classList.toggle('scrolled',y>40);
-    totop.classList.toggle('show',y>500);
+    nav.classList.toggle('scrolled',scrollY>40);
   });
-  totop.onclick=()=>scrollTo({top:0,behavior:'smooth'});
 
   // burger menu
   const burger=document.getElementById('burger'),links=document.getElementById('navlinks');
