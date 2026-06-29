@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-C5L5LM54PV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-C5L5LM54PV');
+</script>
 <title>海之星海鮮 百元熱炒 | 基隆海鮮餐廳</title>
 <meta name="description" content="海之星海鮮 百元熱炒位於基隆碧砂漁港旁，19年匠心經營，每日港邊現撈直送。提供平價海鮮熱炒、當令鮮魚、活蟹、桌菜預訂與旅行團桌菜，可線上 LINE 訂位。地址：基隆市中正區環港街72號，電話 02-2469-5772。">
 <meta name="keywords" content="海之星,海之星海鮮,百元熱炒,基隆熱炒,碧砂漁港,基隆海鮮,基隆海產,平價熱炒,桌菜,旅行團桌菜,基隆餐廳,中正區海鮮">
@@ -662,6 +670,27 @@
   // reveal on scroll
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+<!-- GA4 點擊事件追蹤：電話、LINE -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('a[href^="tel:"]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        gtag('event', 'phone_call_click', {
+          link_url: el.getAttribute('href'),
+          link_text: (el.textContent || '').trim()
+        });
+      });
+    });
+    document.querySelectorAll('a[href*="line.me"]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        gtag('event', 'line_click', {
+          link_url: el.getAttribute('href'),
+          link_text: (el.textContent || '').trim()
+        });
+      });
+    });
+  });
 </script>
 </body>
 </html>
