@@ -261,6 +261,15 @@
   .bq-ic{font-size:2.6rem;margin-bottom:14px}
   .bq-card h3{font-size:1.25rem;color:var(--gold-light);font-weight:700;margin-bottom:10px;letter-spacing:1px}
   .bq-card p{font-size:.94rem;color:var(--muted);line-height:1.75}
+  .reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .rv-card{background:rgba(255,255,255,.04);border:1px solid rgba(217,177,100,.25);border-radius:16px;padding:26px 24px;text-align:left;display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s,border-color .3s}
+  .rv-card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,.45);border-color:rgba(217,177,100,.6)}
+  .rv-stars{color:var(--gold);letter-spacing:2px;font-size:1rem;margin-bottom:12px}
+  .rv-text{font-size:.95rem;color:var(--ink);line-height:1.85;margin-bottom:18px;flex:1}
+  .rv-name{font-size:.95rem;color:var(--gold-light);font-weight:700;letter-spacing:.5px}
+  .rv-meta{font-size:.8rem;color:var(--muted);margin-top:3px}
+  .reviews-cta{text-align:center;margin-top:42px}
+  .reviews-note{text-align:center;color:var(--muted);font-size:.82rem;margin-top:20px}
   .banquet-cta{text-align:center;margin-top:46px;color:#d4e4ec}
   .banquet-cta .hero-btns{margin-top:18px}
 
@@ -349,6 +358,7 @@
     .about-grid,.contact-grid{grid-template-columns:1fr;gap:34px}
     .grid{grid-template-columns:repeat(2,1fr)}
     .banquet-grid{grid-template-columns:repeat(2,1fr)}
+    .reviews-grid{grid-template-columns:1fr}
     .step-arrow{display:none}
     .step{max-width:none}
     .hero{background-attachment:scroll;background-position:82% center}
@@ -368,6 +378,7 @@
       <a href="#banquet">桌菜預訂</a>
       <a href="#booking">線上訂位</a>
       <a href="#gallery">海鮮相片</a>
+      <a href="#reviews">顧客好評</a>
       <a href="#contact">聯絡我們</a>
       <a href="https://line.me/R/ti/p/@8sots" target="_blank" rel="noopener" class="line-btn"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" alt="加入好友" height="36" border="0"></a>
     </nav>
@@ -521,6 +532,77 @@
       <div class="line"></div>
     </div>
     <div class="grid reveal" id="grid"></div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section id="reviews">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Reviews</div>
+      <h2>顧客好評</h2>
+      <div class="line"></div>
+    </div>
+    <div class="reviews-grid">
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">一走進去就感覺熱鬧又有人情味，海鮮蠻新鮮，湯很甜好喝停不下來！重點是價格不會很貴，CP 值高，難怪用餐時間整間店坐滿滿。</p>
+        <div class="rv-name">地方媽媽安啾 xEagle Garage</div>
+        <div class="rv-meta">Google 評論 · 2025/05</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">便宜好吃，種類多。很多靠近漁港的餐廳都是 250 起跳，這家才 100 出頭，菜色還算多。鹹酥蝦酥香拌飯很好吃，特製嗆蟹才 380 元配熱白飯簡直完美。</p>
+        <div class="rv-name">Iris Wu</div>
+        <div class="rv-meta">Google 評論 · 內用晚餐 · 2024/08</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">上菜速度非常快，也會主動引導客人停車，很方便用餐。熱炒菜色十分豐富，海鮮非常新鮮，最喜歡清蒸魚和魚湯。白飯自取吃到飽，選擇相當多元。</p>
+        <div class="rv-name">Carolyn Huang</div>
+        <div class="rv-meta">Google 評論 · 內用午餐 · 2024/01</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">附近停車很方便，白飯不用錢，金莎中捲真的有驚艷到，炒海瓜子有古早的味道，很道地。出菜神速，點完餐大約 3 分鐘就出菜，全部菜約 5 分鐘就出完。</p>
+        <div class="rv-name">GARY PAN</div>
+        <div class="rv-meta">Google 評論 · 內用晚餐 · 2024/11</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">騎車環島的最後一餐，剛好騎到八斗子漁港附近。點了四道菜，每道味道都很不錯，白飯免費自取。這樣一桌總共 NT$700 而已，性價比極高，真的很推～</p>
+        <div class="rv-name">Da-Xiong LinBei</div>
+        <div class="rv-meta">Google 評論</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">預約訂位用餐，停車場免費停車，上餐迅速，好吃不油膩，服務好，還會幫忙注意桌上正在煮的熱食、預防焦黑，也會分享當天點的菜色。</p>
+        <div class="rv-name">游惠如</div>
+        <div class="rv-meta">Google 評論 · 內用午餐 · 2024/01</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">一萬元一桌的尾牙宴，真的讓我驚嘆的菜色！每個朋友都驚嘆，海鮮口味也都很棒很好吃。很愛吃海鮮的朋友真的值得來嘗試看看。</p>
+        <div class="rv-name">Yu Mickey</div>
+        <div class="rv-meta">Google 評論 · 2020/01</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">輪椅進出很方便，店門入口處有斜坡，有店家配合的停車場。海產很新鮮，食物也很好吃，價錢也可以討論。</p>
+        <div class="rv-name">Lu Lu</div>
+        <div class="rv-meta">Google 評論 · 在地嚮導</div>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-stars" aria-label="五顆星">★★★★★</div>
+        <p class="rv-text">八斗子漁港引道旁、經營 10 餘年的老店，生意一直都很好。團體辦桌或小至 2 人皆有接單，出菜也很快，海鮮料理很道地，活海鮮種類多元。</p>
+        <div class="rv-name">燈木</div>
+        <div class="rv-meta">Google 評論 · 在地嚮導</div>
+      </div>
+    </div>
+    <div class="reviews-cta reveal">
+      <a href="https://www.google.com/maps/search/?api=1&query=%E6%B5%B7%E4%B9%8B%E6%98%9F%E6%B5%B7%E9%AE%AE%E7%86%B1%E7%82%92" target="_blank" rel="noopener" class="btn btn-ghost">看更多 Google 評論</a>
+    </div>
+    <p class="reviews-note">以上為顧客於 Google 地圖留下的真實評論摘錄。</p>
   </div>
 </section>
 
