@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海之星海鮮 百元熱炒 | 19年匠心海鮮 · 基隆</title>
+<meta name="description" content="海之星海鮮 百元熱炒，19年匠心海鮮，堅守生鮮品質，源自大海的最佳品質。基隆市中正區環港街72號。">
+<meta property="og:title" content="海之星海鮮 百元熱炒">
+<meta property="og:description" content="19年匠心海鮮，堅守生鮮品質，熱誠服務。專注平價最高品質海鮮熱炒。">
+<meta property="og:image" content="img/bg.jpg">
+<link rel="icon" href="img/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#03111f;
+    --navy:#072438;
+    --navy2:#0b3553;
+    --teal:#0f5e7a;
+    --foam:#7fd1e0;
+    --gold:#d9b164;
+    --gold-light:#f0d79a;
+    --paper:#f4f1ea;
+    --ink:#eaf3f7;
+    --muted:#9fb8c6;
+    --maxw:1180px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth;scrollbar-gutter:stable both-edges;overflow-x:hidden}
+  body{
+    font-family:"Noto Sans TC",system-ui,sans-serif;
+    background:var(--deep);
+    color:var(--ink);
+    line-height:1.8;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.serif{font-family:"Noto Serif TC",serif}
+  img{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .gold{color:var(--gold)}
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    transition:background .4s, padding .4s, box-shadow .4s;
+    padding:18px 0;
+  }
+  header.nav.scrolled{
+    background:rgba(3,17,31,.92);
+    backdrop-filter:blur(10px);
+    box-shadow:0 6px 24px rgba(0,0,0,.45);
+    padding:10px 0;
+  }
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:12px;font-family:"Noto Serif TC";font-weight:700;font-size:1.15rem;letter-spacing:1px}
+  .brand img{width:42px;height:42px;border-radius:50%;background:#fff;object-fit:contain;padding:3px;box-shadow:0 0 0 2px var(--gold)}
+  .brand-bw img{width:auto;height:46px;border-radius:0;background:none;padding:0;box-shadow:none;transition:height .4s}
+  header.nav.scrolled .brand-bw img{height:38px}
+  .navlinks{display:flex;gap:30px;align-items:center}
+  .navlinks a{font-size:.95rem;color:var(--ink);position:relative;padding:4px 0;transition:color .25s}
+  .navlinks a::after{content:"";position:absolute;left:0;bottom:-2px;height:2px;width:0;background:var(--gold);transition:width .3s}
+  .navlinks a:hover{color:var(--gold-light)}
+  .navlinks a:hover::after{width:100%}
+  .nav-cta{background:var(--gold);color:var(--deep)!important;padding:9px 20px;border-radius:30px;font-weight:700;transition:transform .25s,box-shadow .25s}
+  .nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(217,177,100,.4)}
+  .nav-cta::after{display:none}
+  .line-btn{display:inline-flex;align-items:center;transition:transform .25s,filter .25s;line-height:0}
+  .line-btn img{border-radius:6px;display:block}
+  .line-btn:hover{transform:translateY(-2px);filter:drop-shadow(0 6px 14px rgba(6,199,85,.45))}
+  .line-btn::after{display:none}
+  .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:0;padding:6px}
+  .burger span{width:26px;height:2px;background:var(--ink);transition:.3s}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;
+    background:linear-gradient(rgba(3,17,31,.55),rgba(3,17,31,.8)),var(--navy) url("img/bg.jpg") center/cover no-repeat fixed;
+  }
+  .hero-inner{position:relative;z-index:2;padding:120px 24px 80px;max-width:900px;width:100%;margin-inline:auto;animation:rise 1.2s ease both}
+  .hero-logo{width:120px;height:120px;margin:0 auto 26px;border-radius:50%;background:#fff;object-fit:contain;padding:8px;box-shadow:0 0 0 3px var(--gold),0 12px 40px rgba(0,0,0,.5)}
+  .eyebrow{letter-spacing:.5em;text-indent:.5em;font-size:.8rem;color:var(--gold-light);text-transform:uppercase;margin-bottom:18px}
+  .hero h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:900;letter-spacing:3px;text-indent:3px;line-height:1.2;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+  .hero .sub{font-family:"Noto Serif TC";font-size:clamp(1.05rem,2.4vw,1.5rem);color:var(--foam);margin-top:18px;font-weight:600}
+  .hero .desc{color:#cfe2ec;margin-top:14px;font-size:1rem}
+  .hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:36px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 30px;border-radius:34px;font-weight:700;font-size:1rem;transition:transform .25s,box-shadow .25s,background .25s}
+  .btn-gold{background:var(--gold);color:var(--deep)}
+  .btn-gold:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(217,177,100,.45)}
+  .btn-menu{background:linear-gradient(135deg,#15a3c4,#0f5e7a);color:#fff;box-shadow:0 8px 22px rgba(15,94,122,.45)}
+  .btn-menu:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(21,163,196,.55);filter:brightness(1.08)}
+  .btn-ghost{border:1.5px solid rgba(255,255,255,.6);color:#fff}
+  .btn-ghost:hover{background:rgba(255,255,255,.12);transform:translateY(-3px)}
+  .scroll-ind{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;color:var(--foam);font-size:1.6rem;animation:bob 2s infinite}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,10px)}}
+  @keyframes rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+
+  /* ---------- SECTION SHELL ---------- */
+  section{padding:96px 0;position:relative}
+  .sec-head{text-align:center;margin-bottom:54px}
+  .sec-head .kicker{color:var(--gold);letter-spacing:.4em;font-size:.78rem;text-transform:uppercase}
+  .sec-head h2{font-size:clamp(1.9rem,4vw,2.8rem);font-weight:900;margin-top:10px;letter-spacing:2px}
+  .sec-head .line{width:64px;height:3px;background:var(--gold);margin:18px auto 0;border-radius:3px}
+  .reveal{opacity:0;transform:translateY(40px);transition:opacity .8s,transform .8s}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- ABOUT ---------- */
+  #about{background:linear-gradient(180deg,var(--deep),var(--navy))}
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:54px;align-items:center}
+  .about-text p{margin-bottom:16px;color:#d4e4ec}
+  .about-text .lead{font-family:"Noto Serif TC";font-size:1.35rem;color:var(--gold-light);font-weight:600;line-height:1.7}
+  .stats{display:flex;gap:18px;margin-top:30px;flex-wrap:wrap}
+  .stat{flex:1;min-width:120px;background:rgba(255,255,255,.04);border:1px solid rgba(217,177,100,.25);border-radius:14px;padding:20px;text-align:center}
+  .stat b{display:block;font-family:"Noto Serif TC";font-size:2rem;color:var(--gold);font-weight:900}
+  .stat span{font-size:.85rem;color:var(--muted)}
+  .about-img{position:relative;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5);aspect-ratio:1/1}
+  .about-img img{width:100%;height:100%;object-fit:cover}
+  .about-img .frame{position:absolute;inset:14px;border:1px solid rgba(255,255,255,.4);border-radius:12px;pointer-events:none}
+
+  /* ---------- MENU ---------- */
+  #menu{background:var(--navy)}
+  .menu-card{max-width:760px;margin:0 auto;background:rgba(255,255,255,.04);border:1px solid rgba(217,177,100,.3);border-radius:18px;padding:18px;cursor:zoom-in;transition:transform .3s,box-shadow .3s}
+  .menu-card:hover{transform:translateY(-4px);box-shadow:0 18px 44px rgba(0,0,0,.5)}
+  .menu-card img{width:100%;border-radius:10px}
+  .menu-note{text-align:center;color:var(--muted);margin-top:18px;font-size:.92rem}
+  .price-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:36px}
+  .price-tag{background:rgba(217,177,100,.12);border:1px solid rgba(217,177,100,.4);color:var(--gold-light);padding:8px 20px;border-radius:30px;font-size:.92rem;font-weight:500}
+
+  /* ---------- BANQUET ---------- */
+  #banquet{background:linear-gradient(180deg,var(--navy),var(--navy2))}
+  .banquet-lead{text-align:center;max-width:760px;margin:0 auto 48px;color:#d4e4ec;font-size:1.08rem}
+  .banquet-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .bq-card{background:rgba(255,255,255,.04);border:1px solid rgba(217,177,100,.25);border-radius:16px;padding:30px 24px;text-align:center;transition:transform .3s,box-shadow .3s,border-color .3s}
+  .bq-card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,.45);border-color:rgba(217,177,100,.6)}
+  .bq-ic{font-size:2.6rem;margin-bottom:14px}
+  .bq-card h3{font-size:1.25rem;color:var(--gold-light);font-weight:700;margin-bottom:10px;letter-spacing:1px}
+  .bq-card p{font-size:.94rem;color:var(--muted);line-height:1.75}
+  .banquet-cta{text-align:center;margin-top:46px;color:#d4e4ec}
+  .banquet-cta .hero-btns{margin-top:18px}
+
+  /* ---------- BOOKING ---------- */
+  #booking{background:linear-gradient(180deg,var(--navy2),var(--deep))}
+  .booking-lead{text-align:center;max-width:720px;margin:0 auto 50px;color:#d4e4ec;font-size:1.08rem}
+  .steps{display:flex;align-items:stretch;justify-content:center;gap:14px;flex-wrap:wrap}
+  .step{flex:1;min-width:220px;max-width:300px;background:rgba(255,255,255,.04);border:1px solid rgba(127,209,224,.25);border-radius:16px;padding:34px 24px 28px;text-align:center;position:relative;transition:transform .3s,box-shadow .3s}
+  .step:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+  .step-no{width:52px;height:52px;margin:0 auto 16px;border-radius:50%;background:linear-gradient(135deg,#15a3c4,#0f5e7a);color:#fff;font-family:"Noto Serif TC";font-size:1.5rem;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(15,94,122,.5)}
+  .step h3{font-size:1.2rem;color:var(--foam);font-weight:700;margin-bottom:10px;letter-spacing:1px}
+  .step p{font-size:.94rem;color:var(--muted);line-height:1.75}
+  .step-arrow{display:flex;align-items:center;color:var(--gold);font-size:1.8rem;font-weight:700}
+  .booking-cta{text-align:center;margin-top:46px}
+  .line-btn-lg{display:inline-flex;align-items:center;gap:14px;background:#06c755;color:#fff;padding:15px 36px;border-radius:40px;font-weight:700;font-size:1.05rem;box-shadow:0 10px 26px rgba(6,199,85,.4);transition:transform .25s,box-shadow .25s}
+  .line-btn-lg img{border-radius:8px;display:block}
+  .line-btn-lg:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(6,199,85,.55)}
+  .booking-note{margin-top:18px;color:var(--muted);font-size:.88rem}
+
+  /* ---------- GALLERY ---------- */
+  #gallery{background:linear-gradient(180deg,var(--navy),var(--deep))}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .gitem{position:relative;overflow:hidden;border-radius:12px;aspect-ratio:1;cursor:pointer;background:var(--navy2)}
+  .gitem img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+  .gitem::after{content:"🔍";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,17,31,.55);color:var(--gold-light);font-size:1.4rem;opacity:0;transition:opacity .3s;pointer-events:none}
+  .gitem:hover img{transform:scale(1.12)}
+  .gitem:hover::after{opacity:1}
+
+  /* ---------- CONTACT ---------- */
+  #contact{background:var(--deep)}
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .info-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:30px}
+  .info-row{display:flex;gap:16px;align-items:flex-start;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+  .info-row:last-child{border-bottom:0}
+  .info-row .ic{font-size:1.3rem;width:42px;height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:center;background:rgba(217,177,100,.14);border-radius:50%;color:var(--gold)}
+  .info-row b{display:block;font-size:.78rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+  .info-row a,.info-row span{color:var(--ink);font-size:1.02rem}
+  .hours{width:100%;border-collapse:collapse;margin-top:6px;font-size:.96rem}
+  .hours td{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#d4e4ec}
+  .hours tr:last-child td{border-bottom:0}
+  .hours td:first-child{width:74px;color:var(--muted);white-space:nowrap}
+  .hours td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  .hours tr.today td{color:var(--gold-light);font-weight:700}
+  .hours tr.today td:first-child{color:var(--gold)}
+  .info-row a:hover{color:var(--gold-light)}
+  .socials{display:flex;gap:14px;margin-top:22px}
+  .socials a{flex:1;text-align:center;padding:13px;border-radius:12px;font-weight:700;transition:transform .25s,opacity .25s}
+  .socials a:hover{transform:translateY(-3px);opacity:.92}
+  .fb{background:#1877f2;color:#fff}
+  .ig{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
+  .map-wrap{border-radius:16px;overflow:hidden;min-height:340px;border:1px solid rgba(255,255,255,.08)}
+  .map-wrap iframe{width:100%;height:100%;min-height:340px;border:0;filter:grayscale(.2) contrast(1.05)}
+
+  /* ---------- FOOTER ---------- */
+  footer{background:#020c16;padding:44px 0 30px;text-align:center;border-top:1px solid rgba(217,177,100,.2)}
+  footer .brand{justify-content:center;margin-bottom:14px}
+  footer p{color:var(--muted);font-size:.88rem;margin-top:6px}
+  .totop{position:fixed;right:22px;bottom:22px;width:48px;height:48px;border-radius:50%;background:var(--gold);color:var(--deep);display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 8px 22px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:90;cursor:pointer}
+  .totop.show{opacity:1;pointer-events:auto}
+  .totop:hover{transform:translateY(-4px)}
+
+  /* ---------- LIGHTBOX ---------- */
+  .lb{position:fixed;inset:0;background:rgba(2,8,14,.95);z-index:200;display:none;align-items:center;justify-content:center;padding:30px;cursor:zoom-out}
+  .lb.open{display:flex;animation:fade .3s}
+  .lb img{max-width:92vw;max-height:90vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .lb .close{position:absolute;top:20px;right:28px;font-size:2.4rem;color:#fff;cursor:pointer;line-height:1}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media(max-width:880px){
+    .navlinks{position:fixed;inset:0 0 0 auto;width:260px;background:rgba(3,17,31,.98);flex-direction:column;justify-content:center;gap:26px;transform:translateX(100%);transition:transform .35s;backdrop-filter:blur(8px)}
+    .navlinks.open{transform:none}
+    .burger{display:flex;z-index:101}
+    .about-grid,.contact-grid{grid-template-columns:1fr;gap:34px}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .banquet-grid{grid-template-columns:repeat(2,1fr)}
+    .step-arrow{transform:rotate(90deg);font-size:1.4rem}
+    .step{max-width:none}
+    .hero{background-attachment:scroll}
+    section{padding:72px 0}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a href="#top" class="brand brand-bw"><img src="img/bw.png" alt="海之星海鮮"></a>
+    <nav class="navlinks" id="navlinks">
+      <a href="#about">關於我們</a>
+      <a href="#menu">菜單</a>
+      <a href="#banquet">桌菜預訂</a>
+      <a href="#booking">線上訂位</a>
+      <a href="#gallery">海鮮相片</a>
+      <a href="#contact">聯絡我們</a>
+      <a href="https://line.me/R/ti/p/@8sots" target="_blank" rel="noopener" class="line-btn"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" alt="加入好友" height="36" border="0"></a>
+    </nav>
+    <button class="burger" id="burger" aria-label="menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-inner">
+    <div class="eyebrow">SEA OF STARS · KEELUNG</div>
+    <h1>海之星海鮮<br>百元熱炒</h1>
+    <p class="sub">19 年匠心海鮮 · 堅守生鮮品質 · 熱誠服務</p>
+    <p class="desc">競業中不忘初心，專注平價最高品質海鮮熱炒</p>
+    <div class="hero-btns">
+      <a href="#menu" class="btn btn-menu">查看菜單</a>
+      <a href="tel:+886224695772" class="btn btn-ghost">電話訂位</a>
+    </div>
+  </div>
+  <a href="#about" class="scroll-ind" aria-label="向下">⌄</a>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">About Us</div>
+      <h2>源自大海的恩賜</h2>
+      <div class="line"></div>
+    </div>
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <p class="lead">我們以新鮮海產為基石，堅持源自大海的最佳品質。</p>
+        <p>每一道菜品都經過嚴格挑選，確保鮮味十足。讓我們的海鮮佳餚，帶您感受大海的恩賜和新鮮的美味。</p>
+        <p>位於基隆碧砂漁港旁，海之星每日嚴選當令鮮魚、活蝦、鮮蚵與螃蟹，以平實的價格，呈現最高品質的台式熱炒。19 年來，我們競業中不忘初心，只為端出一桌讓您安心又滿足的好味道。</p>
+        <div class="stats">
+          <div class="stat"><b>19</b><span>年匠心經營</span></div>
+          <div class="stat"><b>百元起</b><span>平價銅板熱炒</span></div>
+          <div class="stat"><b>每日</b><span>港邊現撈直送</span></div>
+        </div>
+      </div>
+      <div class="about-img reveal">
+        <img src="img/013.jpg" alt="海之星海鮮料理" onerror="this.style.display='none'">
+        <div class="frame"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MENU -->
+<section id="menu">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Our Menu</div>
+      <h2>招牌菜單</h2>
+      <div class="line"></div>
+    </div>
+    <div class="price-row reveal">
+      <span class="price-tag">🦐 平價熱炒</span>
+      <span class="price-tag">🐟 當令鮮魚</span>
+      <span class="price-tag">🦀 活蟹現煮</span>
+      <span class="price-tag">🍺 暢飲聚餐</span>
+    </div>
+    <div class="menu-card reveal" onclick="openLB(this.querySelector('img').src)">
+      <img src="img/菜單.jpg" alt="海之星海鮮菜單" onerror="this.parentElement.innerHTML='<p style=&quot;padding:60px;text-align:center;color:var(--muted)&quot;>菜單圖片即將上線</p>'">
+    </div>
+    <p class="menu-note">點擊菜單可放大檢視 · 價格與品項以店內現場為準，海鮮時價請洽現場 · 本店只收現金</p>
+  </div>
+</section>
+
+<!-- BANQUET -->
+<section id="banquet">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Banquet Booking</div>
+      <h2>桌菜預訂</h2>
+      <div class="line"></div>
+    </div>
+    <p class="banquet-lead reveal">從旅行團桌菜到客製桌菜，海之星皆可承接。<br>無論團體出遊、公司聚餐或家庭喜慶，我們以最新鮮的海產，為您備妥一桌豐盛好菜。</p>
+    <div class="banquet-grid">
+      <div class="bq-card reveal">
+        <div class="bq-ic">🚌</div>
+        <h3>旅行團桌菜</h3>
+        <p>專為遊覽車團體規劃，份量足、上菜快，價格實惠，讓旅程吃得盡興。</p>
+      </div>
+      <div class="bq-card reveal">
+        <div class="bq-ic">🏢</div>
+        <h3>公司行號聚餐</h3>
+        <p>尾牙春酒、團隊聚餐，可依預算與人數彈性配菜，輕鬆宴客。</p>
+      </div>
+      <div class="bq-card reveal">
+        <div class="bq-ic">🎉</div>
+        <h3>家庭喜慶宴客</h3>
+        <p>謝師宴、生日、家族聚會，海鮮為主的暖心桌菜，賓主盡歡。</p>
+      </div>
+      <div class="bq-card reveal">
+        <div class="bq-ic">⭐</div>
+        <h3>客製桌菜</h3>
+        <p>依您的喜好與預算量身規劃菜色，海鮮時價，歡迎來電洽詢。</p>
+      </div>
+    </div>
+    <div class="banquet-cta reveal">
+      <p>桌菜均需事先預訂 · 海鮮時價 · 歡迎洽詢</p>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING -->
+<section id="booking">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Online Booking</div>
+      <h2>線上訂位</h2>
+      <div class="line"></div>
+    </div>
+    <p class="booking-lead reveal">不愛打電話？用官方 LINE 線上填表訂位就好。<br>填完表單後，由闆娘親自確認桌次，回覆即完成，方便又安心。</p>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-no">1</div>
+        <h3>加入官方 LINE</h3>
+        <p>點選下方按鈕加入好友，於選單點「我要訂位」開啟表單。</p>
+      </div>
+      <div class="step-arrow reveal">→</div>
+      <div class="step reveal">
+        <div class="step-no">2</div>
+        <h3>填寫訂位資料</h3>
+        <p>輸入姓名、電話、日期時段、人數與桌數，送出表單。</p>
+      </div>
+      <div class="step-arrow reveal">→</div>
+      <div class="step reveal">
+        <div class="step-no">3</div>
+        <h3>闆娘親審確認</h3>
+        <p>由闆娘親自確認桌次後回覆，收到確認即完成訂位。</p>
+      </div>
+    </div>
+    <div class="booking-cta reveal">
+      <a href="https://line.me/R/ti/p/@8sots" target="_blank" rel="noopener" class="line-btn-lg">
+        <span>加入官方 LINE · 點「我要訂位」</span>
+      </a>
+      <p class="booking-note">＊線上訂位需經店家確認，假日及尖峰時段建議提早預訂</p>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Gallery</div>
+      <h2>鮮味相片牆</h2>
+      <div class="line"></div>
+    </div>
+    <div class="grid reveal" id="grid"></div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="kicker">Visit Us</div>
+      <h2>聯絡與地址</h2>
+      <div class="line"></div>
+    </div>
+    <div class="contact-grid">
+      <div class="info-card reveal">
+        <div class="info-row">
+          <div class="ic">📍</div>
+          <div><b>地址</b><a href="https://www.google.com/maps/search/?api=1&query=基隆市中正區環港街72號" target="_blank" rel="noopener">202 基隆市中正區碧砂里環港街 72 號</a></div>
+        </div>
+        <div class="info-row">
+          <div class="ic">☎</div>
+          <div><b>訂位專線</b><a href="tel:+886224695772">+886 2 2469 5772</a></div>
+        </div>
+        <div class="info-row">
+          <div class="ic">🕒</div>
+          <div style="flex:1">
+            <b>營業時間</b>
+            <table class="hours">
+              <tr><td>星期一</td><td>10:00–14:00 · 16:00–21:00</td></tr>
+              <tr><td>星期二</td><td>10:00–14:00 · 16:00–21:00</td></tr>
+              <tr><td>星期三</td><td>10:00–14:00 · 16:00–21:00</td></tr>
+              <tr><td>星期四</td><td>10:00–14:00 · 16:00–21:00</td></tr>
+              <tr><td>星期五</td><td>10:00–14:00 · 16:00–21:00</td></tr>
+              <tr><td>星期六</td><td>10:00–21:00</td></tr>
+              <tr><td>星期日</td><td>10:00–21:00</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="ic">💵</div>
+          <div><b>付款方式</b><span>本店只收現金</span></div>
+        </div>
+        <div class="socials">
+          <a class="fb" href="https://www.facebook.com/8sots/?locale=zh_TW" target="_blank" rel="noopener">f　Facebook</a>
+          <a class="ig" href="https://www.instagram.com/8.sots/" target="_blank" rel="noopener">◎　Instagram</a>
+        </div>
+      </div>
+      <div class="map-wrap reveal">
+        <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          src="https://www.google.com/maps?q=基隆市中正區環港街72號&output=embed"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <a href="#top" class="brand"><img src="img/logo.png" alt="logo" onerror="this.onerror=null;this.src='img/logo.jpg'">海之星海鮮 百元熱炒</a>
+    <p>19 年匠心海鮮 · 堅守生鮮品質 · 熱誠服務</p>
+    <p>202 基隆市中正區碧砂里環港街 72 號　|　☎ +886 2 2469 5772</p>
+    <p style="margin-top:14px;font-size:.8rem;opacity:.6">© <span id="yr"></span> 海之星海鮮 百元熱炒. All rights reserved.</p>
+  </div>
+</footer>
+
+<div class="totop" id="totop">↑</div>
+<div class="lb" id="lb"><span class="close">×</span><img id="lbimg" src="" alt="放大檢視"></div>
+
+<script>
+  // year
+  document.getElementById('yr').textContent=new Date().getFullYear();
+
+  // highlight today's opening hours (0=Sun -> row index 6)
+  (function(){
+    const rows=document.querySelectorAll('.hours tr');
+    const map=[6,0,1,2,3,4,5]; // JS getDay() -> row order (Mon first)
+    const r=rows[map[new Date().getDay()]];
+    if(r)r.classList.add('today');
+  })();
+
+  // nav scroll style + back to top
+  const nav=document.getElementById('nav'),totop=document.getElementById('totop');
+  addEventListener('scroll',()=>{
+    const y=scrollY;
+    nav.classList.toggle('scrolled',y>40);
+    totop.classList.toggle('show',y>500);
+  });
+  totop.onclick=()=>scrollTo({top:0,behavior:'smooth'});
+
+  // burger menu
+  const burger=document.getElementById('burger'),links=document.getElementById('navlinks');
+  burger.onclick=()=>links.classList.toggle('open');
+  links.querySelectorAll('a').forEach(a=>a.onclick=()=>links.classList.remove('open'));
+
+  // gallery build (001-014)
+  const grid=document.getElementById('grid');
+  for(let i=1;i<=14;i++){
+    const n=String(i).padStart(3,'0');
+    const d=document.createElement('div');
+    d.className='gitem';
+    const img=document.createElement('img');
+    img.src='img/'+n+'.jpg';img.alt='海鮮料理 '+n;img.loading='lazy';
+    img.onerror=()=>d.remove();
+    d.onclick=()=>openLB(img.src);
+    d.appendChild(img);grid.appendChild(d);
+  }
+
+  // lightbox
+  const lb=document.getElementById('lb'),lbimg=document.getElementById('lbimg');
+  function openLB(src){lbimg.src=src;lb.classList.add('open');document.body.style.overflow='hidden'}
+  function closeLB(){lb.classList.remove('open');document.body.style.overflow=''}
+  lb.onclick=closeLB;
+  addEventListener('keydown',e=>{if(e.key==='Escape')closeLB()});
+
+  // reveal on scroll
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
