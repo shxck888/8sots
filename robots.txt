@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
+# AI-readable site summary (see https://llmstxt.org)
+# https://8sots.com.tw/llms.txt
+
 Sitemap: https://8sots.com.tw/sitemap.xml

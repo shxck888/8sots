@@ -1,0 +1,12 @@
+/* TEAM */
+Business: 海之星海鮮 百元熱炒
+Site: https://8sots.com.tw/
+Location: 基隆市中正區, 台灣 (Keelung, Taiwan)
+Contact: 02-2469-5772
+
+/* SITE */
+Last update: 2026-07-02
+Language: Traditional Chinese (zh-Hant)
+Standards: HTML5, CSS3, JSON-LD (schema.org), WCAG-aware semantic markup
+Components: Google Fonts (Noto Serif TC / Noto Sans TC), Google Analytics (GA4), Google Maps embed, LINE Official Account booking
+Software: 純手工撰寫 HTML/CSS/JavaScript，未使用前端框架
