@@ -24,9 +24,21 @@ document.addEventListener('DOMContentLoaded', function () {
   // burger menu
   var burger = document.getElementById('burger'), links = document.getElementById('navlinks');
   if (burger && links) {
-    burger.onclick = function () { links.classList.toggle('open'); };
+    var closeMenu = function () { links.classList.remove('open'); };
+    burger.onclick = function (e) { e.stopPropagation(); links.classList.toggle('open'); };
+    // 點導覽連結後收合
     links.querySelectorAll('a').forEach(function (a) {
-      a.onclick = function () { links.classList.remove('open'); };
+      a.onclick = closeMenu;
+    });
+    // 捲動頁面時收合
+    addEventListener('scroll', function () {
+      if (links.classList.contains('open')) closeMenu();
+    }, { passive: true });
+    // 點選單面板以外的地方（主畫面）時收合
+    document.addEventListener('click', function (e) {
+      if (!links.classList.contains('open')) return;
+      if (links.contains(e.target) || burger.contains(e.target)) return;
+      closeMenu();
     });
   }
 
