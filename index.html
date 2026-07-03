@@ -267,6 +267,15 @@
 }
 </script>
 <link rel="stylesheet" href="styles.css?v=3">
+<style>
+/* 手機營業時間：下午時段獨立換行、靠右對齊（內嵌以避免外部 CSS 快取延遲） */
+.hours .slot{white-space:nowrap}
+.hours .hsep{color:var(--muted)}
+@media(max-width:600px){
+  .hours .slot{display:block}
+  .hours .hsep{display:none}
+}
+</style>
 </head>
 <body>
 
