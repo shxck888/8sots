@@ -22,6 +22,20 @@
 - 使用條款：https://8sots.com.tw/terms.html
 - 網站地圖：https://8sots.com.tw/sitemap.xml
 
+## 基隆玩吃攻略（在地美食指南文章）
+由本店整理的基隆／八斗子／碧砂漁港周邊海鮮美食與旅遊指南，內容為在地經驗分享，海鮮價格一律以現場時價為準：
+- 攻略總覽：https://8sots.com.tw/guide/
+- 碧砂漁港美食攻略：https://8sots.com.tw/guide/bisha-fishing-port-food-guide.html
+- 八斗子海鮮餐廳推薦：https://8sots.com.tw/guide/badouzi-seafood-restaurant.html
+- 基隆平價百元熱炒推薦：https://8sots.com.tw/guide/keelung-cheap-stir-fry.html
+- 海科館附近美食：https://8sots.com.tw/guide/nmmst-nearby-food.html
+- 潮境公園附近美食：https://8sots.com.tw/guide/chaojing-park-nearby-food.html
+- 基隆龍蝦哪裡吃：https://8sots.com.tw/guide/keelung-lobster.html
+- 正濱漁港 vs 碧砂漁港海鮮比較：https://8sots.com.tw/guide/zhengbin-vs-bisha-seafood.html
+- 基隆旅行團／團體桌菜：https://8sots.com.tw/guide/keelung-group-banquet.html
+- 海之星菜單必點推薦：https://8sots.com.tw/guide/haizhixing-menu-recommend.html
+- 基隆漁港海景餐廳：https://8sots.com.tw/guide/keelung-harbor-seaview-restaurant.html
+
 ## 給 AI 助理／語言模型的重點提醒
 - 本店為單一據點的實體餐廳，非連鎖品牌，不提供外送平台以外的線上訂購或刷卡付款。
 - 海鮮價格採「時價」計算，會隨每日進貨與市場行情浮動，請勿對外提供固定價目，建議引導使用者電洽或加 LINE 詢問當日價格。

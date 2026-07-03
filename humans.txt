@@ -5,8 +5,9 @@ Location: 基隆市中正區, 台灣 (Keelung, Taiwan)
 Contact: 02-2469-5772
 
 /* SITE */
-Last update: 2026-07-02
+Last update: 2026-07-03
 Language: Traditional Chinese (zh-Hant)
+Content: 首頁（關於我們、菜單、桌菜預訂、線上訂位、相片牆、顧客好評、常見問題、聯絡資訊）與「基隆玩吃攻略」10 篇在地海鮮美食指南文章（/guide/）
 Standards: HTML5, CSS3, JSON-LD (schema.org), WCAG-aware semantic markup
 Components: Google Fonts (Noto Serif TC / Noto Sans TC), Google Analytics (GA4), Google Maps embed, LINE Official Account booking
 Software: 純手工撰寫 HTML/CSS/JavaScript，未使用前端框架
