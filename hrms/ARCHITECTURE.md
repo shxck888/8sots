@@ -59,7 +59,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 
 ## Authentication and Authorization
 
-認證採 Supabase Auth。使用者輸入 3–32 位英數／底線自訂帳號，server 將正規化後的帳號映射成 `{username}@auth.8sots.com.tw` 作為 Supabase 內部 email identifier。員工帳號由 Auth Admin API 建立／更新，並透過 `employees.auth_user_id`、`employee_auth_accounts` 與 active `tenant_memberships` 連結；建立帳號不自動授予管理角色。授權採 RBAC + scope；管理後台在 layout、每個 Server Action 及 database RPC 三層驗證 `employee.manage`，`platform.admin` 可覆蓋該權限。停用／恢復採 Auth ban 與 DB 狀態同步，跨系統失敗使用補償動作；application 與 database 皆防止操作者停用自己。第二 tenant 的負向 RLS integration test 尚未完成。
+認證採 Supabase Auth。使用者輸入 3–32 位英數／底線自訂帳號，server 將正規化後的帳號映射成 `{username}@auth.8sots.com.tw` 作為 Supabase 內部 email identifier。員工帳號由 Auth Admin API 建立／更新，並透過 `employees.auth_user_id`、`employee_auth_accounts` 與 active `tenant_memberships` 連結；建立帳號不自動授予管理角色。授權採 RBAC + scope；管理後台在 layout、每個 Server Action 及 database RPC 三層驗證 `employee.manage`，`platform.admin` 可覆蓋該權限。停用／恢復採 Auth ban 與 DB 狀態同步，跨系統失敗使用補償動作；application 與 database 皆防止操作者停用自己。第二 tenant 的負向 RLS integration test 已在 production 以 rollback-only fixture 通過。
 
 ## Data Conventions
 
@@ -77,7 +77,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - **Selected**：Supabase Storage 私人 bucket 保存員工照片，3 MB，僅 JPEG/PNG/WebP；由短效 signed URL 顯示。
 - **Selected**：Vercel Sensitive `SUPABASE_SERVICE_ROLE_KEY` 僅供 server-only Auth Admin client 使用，不得使用 `NEXT_PUBLIC_` 前綴或傳入 client bundle。
 - **Not yet selected**：queue、cache、observability、preview/production environment topology。
-- GitHub source 位於 `shxck888/8sots/hrms`；Vercel project、custom domain、Supabase production project 與 migrations 已建立。備份／還原驗證、獨立 CI workflow 與 production Auth/RLS integration test 尚未完成。
+- GitHub source 位於 `shxck888/8sots/hrms`；Vercel project、custom domain、Supabase production project 與 migrations 已建立。`supabase/tests/cross_tenant_rls.sql` 已驗證 production RLS/grant/RPC/composite-FK 隔離並 rollback fixture；備份／還原驗證與獨立 CI workflow 尚未完成。
 
 ## Current API Surface
 
@@ -93,4 +93,4 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 
 ## Security Baseline
 
-必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前身分證以 server-only AES-256-GCM 加密、HMAC-SHA256 hash 做唯一查找、UI 僅顯示末四碼；照片為私人 bucket。密碼只交由 Supabase Auth 處理，不保存於業務資料或 audit。另有 tenant composite keys、RLS read isolation、無 client table writes、audited permission checks、自我停用防護及 Auth/DB 跨系統補償；其餘控制仍待實作與 integration test。
+必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前身分證以 server-only AES-256-GCM 加密、HMAC-SHA256 hash 做唯一查找、UI 僅顯示末四碼；照片為私人 bucket。密碼只交由 Supabase Auth 處理，不保存於業務資料或 audit。另有 tenant composite keys、RLS read isolation、無 client table writes、audited permission checks、自我停用防護及 Auth/DB 跨系統補償；跨租戶核心隔離已完成 production 負向測試，rate limiting、CSP 與備份還原等控制仍待實作或驗證。

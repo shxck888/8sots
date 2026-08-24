@@ -47,6 +47,11 @@ const preventSelfSuspensionMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const crossTenantRlsTest = readFileSync(
+  join(process.cwd(), "supabase/tests/cross_tenant_rls.sql"),
+  "utf8",
+).toLowerCase();
+
 const tenantTables = [
   "tenants",
   "tenant_memberships",
@@ -179,5 +184,21 @@ describe("foundation migration contract", () => {
   it("prevents administrators from changing their own login status", () => {
     expect(preventSelfSuspensionMigration).toContain("v_account.auth_user_id = (select auth.uid())");
     expect(preventSelfSuspensionMigration).toContain("cannot change own account status");
+  });
+
+  it("keeps the cross-tenant RLS integration fixture transaction-scoped", () => {
+    expect(crossTenantRlsTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(crossTenantRlsTest.trim()).toMatch(/rollback;$/);
+    expect(crossTenantRlsTest).not.toContain("commit;");
+  });
+
+  it("asserts same-tenant reads and cross-tenant isolation boundaries", () => {
+    expect(crossTenantRlsTest).toContain("same-tenant read failed");
+    expect(crossTenantRlsTest).toContain("cross-tenant tenant read leaked");
+    expect(crossTenantRlsTest).toContain("cross-tenant employee read leaked");
+    expect(crossTenantRlsTest).toContain("authenticated client write unexpectedly succeeded");
+    expect(crossTenantRlsTest).toContain("anonymous read unexpectedly succeeded");
+    expect(crossTenantRlsTest).toContain("cross-tenant rpc unexpectedly succeeded");
+    expect(crossTenantRlsTest).toContain("cross-tenant foreign key unexpectedly succeeded");
   });
 });

@@ -4,18 +4,18 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、管理員、完整 Employee Master 與員工帳號生命週期已通過 production 驗證；尚缺第二 tenant 跨租戶 RLS integration test。
+**Build 1 — Auth, tenant and employee foundation DONE**。自訂帳號登入、管理員、完整 Employee Master、員工帳號生命週期與第二 tenant 跨租戶隔離皆已通過 production 驗證。
 
 ## Next Recommended Task (P0)
 
-完成可重複執行的跨租戶安全驗證：
+完成 Schema/application contract 收斂，為下一個 domain module 建立型別安全基線：
 
-1. 建立第二 tenant、管理員與員工 fixture。
-2. 驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫，以及跨租戶 foreign key/RPC 負向案例。
-3. 測試後自動 rollback 或清除 fixture，並把流程納入 integration test runbook。
-4. 依 production schema 產生並提交 database TypeScript types。
+1. 依 production schema 產生並提交 Supabase Database TypeScript types。
+2. 將 server、admin 與 Employee data access 改用產生的 Database generic。
+3. 加入 types drift 檢查，避免 migration 與 application contract 分歧。
+4. 完成後開始 Shift/Shift Segment 與 Schedule version/publish schema。
 
-上述 integration tests 與文件同步完成後，Auth/Organization/Employee foundation 才能標 DONE。
+跨租戶測試已收錄於 `supabase/tests/cross_tenant_rls.sql`，六項 production assertion 通過並確認 fixture 殘留為 0。
 
 ## Pending Priorities
 
@@ -53,7 +53,7 @@ Last Updated: 2026-08-25
 
 ## Known Issues / Risks
 
-- 目前只有 production 管理員與單一正式 tenant；仍缺可重複執行的第二 tenant 安全 fixture。
+- Production 維持單一正式 tenant；第二 tenant 僅在 rollback-only integration test transaction 中建立，不是常駐測試資料。
 - Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端環境執行。
 - 工作台班表、統計與打卡仍是代表性假資料，尚無業務行為。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。

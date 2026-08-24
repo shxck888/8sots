@@ -22,6 +22,7 @@
 - 新增 ADR-015，記錄 Employee Master 正規化、PII 加密、私人照片與 tenant timezone 生效日。
 - 新增員工登入帳號管理：建立自訂帳號、重設密碼、停用及恢復登入。
 - 新增 ADR-016，記錄 server-only Auth Admin boundary、Employee/Auth link、跨系統補償與自我停用防護。
+- 新增 `supabase/tests/cross_tenant_rls.sql` 與執行 runbook，提供 rollback-only 第二 tenant 安全 fixture。
 
 ### Changed
 
@@ -64,6 +65,9 @@
 - 完整 Employee Master production transaction 新增／修改／查詢／rollback 通過；測試後 `MASTER_TMP` 為 0 筆，私人照片 bucket 設定正確，正式新增頁全欄位 render 且 browser console 無錯誤。
 - Employee Account production E2E 通過：建立帳號、重設密碼、停用、恢復及 UI 狀態皆成功，browser console 無錯誤；測試 Auth User、Employee、Account、Department、Position 與相關 audit 已清除，五項殘留計數皆為 0。
 - Database transaction 驗證 Auth link、membership、password-reset audit 與 database-level self-suspension rejection，測試 transaction 已 rollback。
+- Supabase production 跨租戶 integration test 六項斷言全數通過：同租戶可讀、跨租戶 Tenant/Employee 不可讀、authenticated client 不可寫、anon 不可讀、跨租戶 RPC 與 composite foreign key 均被阻擋。
+- 跨租戶測試使用 transaction-scoped fixture 並執行 `ROLLBACK`；獨立清理查詢確認 Tenant、Company、Employee 殘留皆為 0。
+- ESLint、TypeScript 與 53 個 Vitest tests 通過；本次只有測試與文件變更，不含 Database Migration、公開 API 或 Breaking Change。
 
 ## 2026-08-24
 
