@@ -9,11 +9,13 @@ import {
   MapPin,
   QrCode,
   ReceiptText,
+  Settings,
   LogOut,
   Sparkles,
   UsersRound,
 } from "lucide-react";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getUserDisplayName } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logout } from "@/app/login/actions";
@@ -25,13 +27,14 @@ const schedule = [
 ];
 
 const nav = [
-  { label: "工作台", icon: LayoutDashboard, active: true },
-  { label: "我的班表", icon: CalendarDays },
-  { label: "出勤紀錄", icon: Clock3 },
-  { label: "申請中心", icon: ReceiptText },
+  { label: "工作台", icon: LayoutDashboard, active: true, href: "/" },
+  { label: "我的班表", icon: CalendarDays, href: "#" },
+  { label: "出勤紀錄", icon: Clock3, href: "#" },
+  { label: "申請中心", icon: ReceiptText, href: "#" },
 ];
 
 type MembershipWithTenant = {
+  tenant_id: string;
   tenants: { name: string } | { name: string }[] | null;
 };
 
@@ -52,7 +55,7 @@ export default async function Home() {
 
   const { data: membershipRows } = await supabase
     .from("tenant_memberships")
-    .select("tenants(name)")
+    .select("tenant_id, tenants(name)")
     .eq("user_id", authData.user.id)
     .eq("status", "active")
     .limit(1);
@@ -60,6 +63,12 @@ export default async function Home() {
   const membership = (membershipRows?.[0] ?? null) as MembershipWithTenant | null;
   const tenant = Array.isArray(membership?.tenants) ? membership?.tenants[0] : membership?.tenants;
   const tenantName = tenant?.name ?? "尚未加入組織";
+  const { data: canManageEmployees } = membership?.tenant_id
+    ? await supabase.rpc("current_user_has_permission", {
+        p_tenant_id: membership.tenant_id,
+        p_permission_code: "employee.manage",
+      })
+    : { data: false };
   const displayName = getUserDisplayName(authData.user);
   const avatarText = displayName.slice(0, 1).toUpperCase();
   const todayLabel = new Intl.DateTimeFormat("zh-TW", {
@@ -78,12 +87,13 @@ export default async function Home() {
         </div>
 
         <nav className="side-nav">
-          {nav.map(({ label, icon: Icon, active }) => (
-            <a className={active ? "nav-item active" : "nav-item"} href="#" key={label}>
+          {nav.map(({ label, icon: Icon, active, href }) => (
+            <a className={active ? "nav-item active" : "nav-item"} href={href} key={label}>
               <Icon size={19} />
               <span>{label}</span>
             </a>
           ))}
+          {canManageEmployees ? <Link className="nav-item" href="/admin/employees"><Settings size={19} /><span>管理後台</span></Link> : null}
         </nav>
 
         <div className="store-card">
@@ -164,7 +174,7 @@ export default async function Home() {
         </div>
 
         <nav className="mobile-nav" aria-label="行動版導覽">
-          {nav.slice(0, 4).map(({ label, icon: Icon, active }) => <a className={active ? "active" : ""} href="#" key={label}><Icon size={21} /><span>{label}</span></a>)}
+          {nav.slice(0, 4).map(({ label, icon: Icon, active, href }) => <a className={active ? "active" : ""} href={href} key={label}><Icon size={21} /><span>{label}</span></a>)}
         </nav>
       </section>
     </main>

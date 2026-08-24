@@ -17,6 +17,11 @@ const platformAdminMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const employeeMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250004_employee_management.sql"),
+  "utf8",
+).toLowerCase();
+
 const tenantTables = [
   "tenants",
   "tenant_memberships",
@@ -72,5 +77,27 @@ describe("foundation migration contract", () => {
     expect(platformAdminMigration).toContain("'platform.admin'");
     expect(platformAdminMigration).toContain("on conflict (code) do update");
     expect(platformAdminMigration).not.toContain("auth.users");
+  });
+
+  it("creates a tenant-scoped employee table with RLS", () => {
+    expect(employeeMigration).toContain("create table public.employees");
+    expect(employeeMigration).toContain("tenant_id uuid not null");
+    expect(employeeMigration).toContain("unique (tenant_id, employee_no)");
+    expect(employeeMigration).toContain("alter table public.employees enable row level security");
+    expect(employeeMigration).toContain("employees_select_same_tenant");
+  });
+
+  it("keeps employee table writes behind permission-checked RPCs", () => {
+    expect(employeeMigration).toContain("current_user_has_permission");
+    expect(employeeMigration).toContain("'employee.manage'");
+    expect(employeeMigration).toContain("create or replace function public.create_employee");
+    expect(employeeMigration).toContain("create or replace function public.update_employee");
+    expect(employeeMigration).not.toMatch(/grant\s+(insert|update|delete|all)[\s\S]*?public\.employees[\s\S]*?to authenticated/);
+  });
+
+  it("writes employee create and update audit evidence", () => {
+    expect(employeeMigration).toContain("'employee.created'");
+    expect(employeeMigration).toContain("'employee.updated'");
+    expect(employeeMigration).toContain("insert into public.audit_logs");
   });
 });
