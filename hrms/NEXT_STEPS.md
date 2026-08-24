@@ -4,15 +4,15 @@ Last Updated: 2026-08-24
 
 ## Current Phase
 
-**Build 1 — Auth and tenant foundation IN PROGRESS**。應用骨架與靜態工作台已可 build；Supabase production project 已建立於 Tokyo，但 migrations 尚未套用，尚未完成真實登入、tenant/RLS integration test 或 Vercel deployment。
+**Build 1 — Auth and tenant foundation IN PROGRESS**。應用骨架與靜態工作台已可 build；Supabase production project（Tokyo）與 GitHub integration 已完成，兩筆 foundation migrations 已套用。Vercel checks 已成功，但尚未確認 production credentials/domain，也尚未完成真實登入與 tenant/RLS integration test。
 
 ## Next Recommended Task (P0)
 
 完成可登入且可驗證 tenant isolation 的第一個 end-to-end slice：
 
-1. 在 Supabase Dashboard 啟用 GitHub integration：repository `shxck888/8sots`、working directory `hrms`、production branch `main`。
-2. 開啟 Deploy to production，確認 `202608240001` 與 `202608240002` 依序成功，並產生／提交 database TypeScript types。
-3. 將 Supabase URL 與 publishable key 設定至 Vercel environment，絕不使用 secret/service-role key 作為 public variable。
+1. 將 Supabase URL 與 publishable key 設定至 Vercel `8sots-hrms` 的 Preview/Production environments，絕不使用 secret/service-role key 作為 public variable。
+2. 驗證 Vercel Root Directory 為 `hrms`，並將 `hrms.8sots.com.tw` 綁定至正確 project。
+3. 依 production schema 產生並提交 database TypeScript types。
 4. 實作登入、登出、callback/session refresh，以及無 session 的 route protection。
 5. 建立兩個 tenant 與測試使用者的安全 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
 
@@ -22,7 +22,7 @@ Last Updated: 2026-08-24
 
 ### P0 — Deployment and security baseline
 
-- 將 Vercel project 的 Root Directory 設為 `hrms`，建立 preview/production 專案與 build checks。
+- 核對 Vercel `8sots-hrms` 的 Root Directory、Preview/Production environment variables、deployment URL 與 custom domain；目前 commit checks 已成功。
 - 決定 Vercel function region、local/preview/production 分層與 secret rotation；Supabase 已選 Tokyo。
 - 完成 tenant threat model、service-role 使用規則、CSP/security headers、rate limit 與 audit writer。
 - 建立 migration ownership、forward-fix、seed、備份及還原驗證流程。
@@ -53,8 +53,8 @@ Last Updated: 2026-08-24
 
 ## Known Issues / Risks
 
-- 原始碼已位於 `shxck888/8sots/hrms`；Vercel project 與自動部署尚未建立。
-- Supabase project 已建立但 credentials 尚未放入本機/Vercel；migrations 只有靜態 contract tests，尚未由真實 PostgreSQL 執行。
+- 原始碼已位於 `shxck888/8sots/hrms`，Supabase migrations 與 Vercel build checks 已成功；custom domain 與 runtime credentials 尚待驗證。
+- Supabase production 已執行兩筆 migrations；credentials 尚未確認放入本機/Vercel，真實 Auth/RLS integration tests 尚未完成。
 - Docker/Supabase local stack 不可用，因此本輪無法執行 database integration tests。
 - 工作台是代表性假資料；打卡按鈕及班表尚無業務行為。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。
