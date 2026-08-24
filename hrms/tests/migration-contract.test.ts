@@ -27,6 +27,16 @@ const employeeAuthLinkFixMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const employeeMasterMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250006_employee_master_details.sql"),
+  "utf8",
+).toLowerCase();
+
+const employmentTimezoneFixMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250007_employment_effective_date_timezone_fix.sql"),
+  "utf8",
+).toLowerCase();
+
 const tenantTables = [
   "tenants",
   "tenant_memberships",
@@ -114,5 +124,35 @@ describe("foundation migration contract", () => {
       "on public.employees (tenant_id, auth_user_id)",
     );
     expect(employeeAuthLinkFixMigration).toContain("where auth_user_id is not null");
+  });
+
+  it("models employee personal, contact, organization and employment data separately", () => {
+    for (const table of ["departments", "positions", "employee_profiles", "employee_contacts", "employment_records"]) {
+      expect(employeeMasterMigration).toContain(`create table public.${table}`);
+      expect(employeeMasterMigration).toContain(`alter table public.${table} enable row level security`);
+    }
+    expect(employeeMasterMigration).toContain("create type public.employment_type");
+    expect(employeeMasterMigration).toContain("supervisor_employee_id uuid");
+    expect(employeeMasterMigration).toContain("probation_end_date date");
+    expect(employeeMasterMigration).toContain("termination_date date");
+  });
+
+  it("keeps employee photos private and caps accepted files", () => {
+    expect(employeeMasterMigration).toContain("'employee-photos', 'employee-photos', false, 3145728");
+    expect(employeeMasterMigration).toContain("employee_photos_admin_select");
+    expect(employeeMasterMigration).toContain("employee_photos_admin_insert");
+  });
+
+  it("versions audited Employee Master mutations", () => {
+    expect(employeeMasterMigration).toContain("create_employee_master");
+    expect(employeeMasterMigration).toContain("update_employee_master");
+    expect(employeeMasterMigration).toContain("public.employee_master_current");
+    expect(employeeMasterMigration).toContain("insert into public.audit_logs");
+  });
+
+  it("uses the tenant timezone for employment effective dates", () => {
+    expect(employmentTimezoneFixMigration).toContain("at time zone t.timezone");
+    expect(employmentTimezoneFixMigration).toContain("effective_from >= v_effective_date");
+    expect(employmentTimezoneFixMigration).toContain("effective_to = v_effective_date - 1");
   });
 });

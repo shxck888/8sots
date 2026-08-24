@@ -18,6 +18,8 @@
 - 新增管理後台與員工列表、搜尋、新增及編輯頁面。
 - 新增員工資料 Zod validation、狀態標籤與 11 項相關 unit/contract tests。
 - 新增 ADR-014，記錄 permission-checked audited employee RPC 架構。
+- 新增完整 Employee Master：身分證、生日、性別、地址、照片、緊急聯絡人、部門、職位、主管、任職類型、離職日期與試用期。
+- 新增 ADR-015，記錄 Employee Master 正規化、PII 加密、私人照片與 tenant timezone 生效日。
 
 ### Changed
 
@@ -33,11 +35,14 @@
 - 新增並套用 `202608250004_employee_management.sql`：Employee table、`employee_status`、`employee.manage` permission、permission evaluator、audited create/update RPC 與 tenant RLS。
 - Employee table 僅授予 authenticated SELECT；新增／修改只能執行明確 grant 的 permission-checked RPC，無 delete 或直接 client write。
 - 新增並套用 forward-fix `202608250005_employee_auth_link_unique_fix.sql`，允許多位尚未連結 Auth User 的員工，同時維持非空 `auth_user_id` 的 tenant 內唯一性。
+- 新增 `202608250006_employee_master_details.sql`：Department、Position、Employee Profile/Contact、effective-dated Employment Record、完整 Employee Master RPC、RLS、audit 與私人 `employee-photos` bucket。
+- 新增 forward-fix `202608250007_employment_effective_date_timezone_fix.sql`，任職異動依 tenant timezone 產生生效日，避免 UTC 日期邊界建立無效區間。
 
 ### API
 
 - 新增 `GET /auth/callback`；既有 JSON API contract 無 breaking change。
 - 新增員工管理 Server Actions 與 database RPC；既有 JSON API 無變更。
+- Employee Server Action/RPC contract 擴充為完整 Employee Master；舊的內部簡版表單 contract 被取代，公開 JSON API 無 breaking change。
 
 ### Breaking Changes
 
@@ -48,7 +53,7 @@
 
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
 - Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。
-- ESLint、TypeScript、35 個 Vitest tests 與 Next.js production build 通過。
+- ESLint、TypeScript、42 個 Vitest tests 與 Next.js production build 通過。
 - Production 管理後台列表／表單 render、console、migration history 與 transaction-scoped create/update/rollback 驗證通過；沒有留下測試員工資料。
 
 ## 2026-08-24

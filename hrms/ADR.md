@@ -143,3 +143,13 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 同時提供 application 與 database defense in depth、原子 audit evidence，且避免 service-role key 或廣泛 client write policy。
 - **Alternatives:** authenticated client 直接 insert/update；Vercel 使用 service-role 執行所有 mutation；只在 Server Action 寫入且不由 database 重新授權。
 - **Consequences:** 每個 mutation RPC 必須版本化、最小化 grant、驗證 tenant/permission 並有負向測試；複雜 RPC 需避免繞過 RLS 後造成越權。員工登入帳號建立、停用與連結仍需獨立受控流程。
+
+## ADR-015: Normalize Employee Master and protect high-risk PII
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 員工主檔同時包含可變任職資料、一般聯絡資料、身分證與照片；單表覆寫無法可靠保存任職歷史，敏感資料也需要更嚴格控制。
+- **Decision:** Employee identity、Profile、Contact 與 effective-dated Employment Record 分表；Department、Position 與 supervisor 使用 tenant-scoped 關聯。身分證只在 server 以 AES-256-GCM 加密，另存 HMAC-SHA256 hash 與末四碼；照片存於 3 MB 私人 Supabase Storage bucket並以 signed URL 顯示。任職異動生效日使用 tenant timezone。
+- **Reason:** 降低敏感資料暴露面、維持租戶隔離與可追溯任職歷史，並正確處理台灣與 UTC 日期邊界。
+- **Alternatives:** 將所有欄位放在 Employee 單表；明文保存身分證；公開照片 bucket；使用資料庫 UTC 日期作生效日。
+- **Consequences:** Vercel 必須安全管理 `PII_ENCRYPTION_KEY` 並規劃輪替；加密欄位不能直接模糊搜尋；照片顯示需要短效簽名；任職異動需透過 audited RPC，禁止直接覆寫歷史。

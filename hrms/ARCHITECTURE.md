@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。五筆 migrations 已套用至 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Employee Master schema 已版本化至 migration `007`；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -22,7 +22,7 @@ Supabase Auth + PostgreSQL with RLS
 
 - **Auth**：身分驗證、session/token 生命週期；不決定業務資料 scope。
 - **Organization**：Tenant、Company、Location、Department、Position 與組織範圍。
-- **Employee**：目前已實作 tenant-scoped 員工主檔、任職狀態與管理後台；登入帳號連結及 effective-dated employment record 尚未實作。
+- **Employee**：tenant-scoped 員工主檔拆分為 Employee、Profile、Contact 與 effective-dated Employment Record；另有 Department、Position、主管關係、私人照片與管理後台。登入帳號連結尚未實作。
 - **Schedule**：Shift、Shift Segment、排班及發布版本；不產生原始打卡。
 - **Attendance**：Punch、工作日歸屬、考勤計算與異常；不自動核准加班。
 - **Leave / Overtime**：申請、額度／認列及業務狀態。
@@ -42,7 +42,7 @@ Supabase Auth + PostgreSQL with RLS
 ## Key Entity Groups
 
 - Organization：Tenant → Company → Location / Department → Position
-- Identity & people：User、Employee、Role、Permission、Scope 已有 foundation；Employment Record 尚未實作
+- Identity & people：User、Employee、Employee Profile/Contact、Employment Record、Department、Position、Role、Permission、Scope
 - Scheduling：Shift、Shift Segment、Schedule、Schedule Change
 - Attendance：Punch Record、Punch Correction、Attendance Day/Detail/Exception
 - Absence：Leave Type/Grant/Balance/Request/Usage、Overtime、Comp Time
@@ -51,7 +51,7 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`202608250004` 新增 Employee、`employee.manage`、permission evaluator 及 audited create/update RPC；`202608250005` 以 partial unique index 確保只有非空 `auth_user_id` 連結唯一。Authenticated client 只可依 RLS 讀取同 tenant Employee，沒有直接 table write privilege；其他實體仍是 logical plan。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004/005` 建立 Employee 與安全的 Auth link；`006` 新增 Profile、Contact、Department、Position、effective-dated Employment Record、完整 audited RPC 與私人 `employee-photos` bucket；`007` 以 tenant timezone 計算任職異動生效日。Authenticated client 只可依 RLS 讀取同 tenant 資料，沒有直接 table write privilege。
 
 ## Multi-Tenant Strategy
 
@@ -63,7 +63,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 
 ## Data Conventions
 
-- 後端時間基準為 UTC，DB 使用具時區語意的 timestamp；UI 預設 `Asia/Taipei`。
+- 後端時間基準為 UTC，DB 使用具時區語意的 timestamp；任職 effective date 依 tenant timezone 計算，UI 預設 `Asia/Taipei`。
 - 排班與考勤另保存 local work date/timezone，支援跨午夜。
 - 工時／休息時間使用整數分鐘。
 - 金額採精確型別（PostgreSQL `numeric` 或整數最小單位），選擇待 Schema ADR。
@@ -74,7 +74,8 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 
 - **Implemented locally**：Next.js 16、React 19、TypeScript、Supabase JS/SSR、Zod、ESLint、Vitest、PWA manifest、environment template。
 - **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL；Supabase primary region 為 Tokyo (`ap-northeast-1`)。
-- **Not yet selected**：object storage、queue、cache、observability、preview/production environment topology。
+- **Selected**：Supabase Storage 私人 bucket 保存員工照片，3 MB，僅 JPEG/PNG/WebP；由短效 signed URL 顯示。
+- **Not yet selected**：queue、cache、observability、preview/production environment topology。
 - GitHub source 位於 `shxck888/8sots/hrms`；Vercel project、custom domain、Supabase production project 與 migrations 已建立。備份／還原驗證、獨立 CI workflow 與 production Auth/RLS integration test 尚未完成。
 
 ## Current API Surface
@@ -84,10 +85,10 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - `GET /login`：登入頁；已登入者 server-side redirect 至 `/`。
 - Login/logout Server Actions：驗證自訂帳號與密碼、將帳號映射為內部 Supabase identifier、建立或清除 session cookie；不直接暴露 Supabase 原始錯誤。
 - `/admin/employees`、`/new`、`/[id]`：permission-protected 員工列表、搜尋、新增與編輯 UI。
-- Employee Server Actions：Zod validation 後呼叫 `create_employee` / `update_employee` RPC；兩個 RPC 在 database 重新驗證權限並寫入 audit evidence。
+- Employee Server Actions：Zod validation 後呼叫 `create_employee_master` / `update_employee_master` / `set_employee_photo`；RPC 在 database 重新驗證權限並寫入 audit evidence。照片寫入私人 Storage bucket。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。
 
 ## Security Baseline
 
-必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前已有 tenant composite keys、RLS read isolation、無 client table writes、員工 mutation permission checks/audit，以及 public environment validation；其餘控制仍待實作與 integration test。
+必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前身分證以 server-only AES-256-GCM 加密、HMAC-SHA256 hash 做唯一查找、UI 僅顯示末四碼；照片為私人 bucket。另有 tenant composite keys、RLS read isolation、無 client table writes與 audited permission checks；其餘控制仍待實作與 integration test。

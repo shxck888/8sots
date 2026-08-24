@@ -4,11 +4,11 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、production 管理員、RBAC bootstrap、管理後台與員工主檔已驗證；尚未完成員工登入帳號 provisioning 與第二 tenant 的跨租戶 RLS integration test。
+**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、管理員與簡版員工管理已驗證；完整 Employee Master 正在 production 驗證。完成後尚有員工帳號 provisioning 與第二 tenant 跨租戶 RLS integration test。
 
 ## Next Recommended Task (P0)
 
-完成 Employee/Auth 的下一個安全切片：
+完整 Employee Master production 驗證完成後，進行 Employee/Auth 的下一個安全切片：
 
 1. 建立員工登入帳號 provisioning／停用流程，將 Supabase Auth User 安全連結至 `employees.auth_user_id`。
 2. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
@@ -30,7 +30,7 @@ Last Updated: 2026-08-25
 ### P1 — Phase 1 domain foundation
 
 - Organization CRUD 與其他模組的 permission-checked server mutation。
-- Employee 登入帳號連結與 effective-dated employment record。
+- Employee 登入帳號連結與停用流程（effective-dated employment record 已建構）。
 - Shift/Shift Segment、Schedule version/publish 與跨日測試。
 - GPS Punch（同意、精度、geofence、反作弊）與 immutable punch evidence。
 - Attendance 計算、異常與可重現版本關聯。
@@ -47,7 +47,7 @@ Last Updated: 2026-08-25
 - Vercel function region 及 preview/production 環境拓撲。
 - Auth MFA、非 Email 帳號的 password recovery、invitation 與帳號綁定政策。
 - PostgreSQL 金額表示（`numeric` 或 integer minor unit）。
-- Background job/queue、cache、object storage 與 observability。
+- Background job/queue、cache 與 observability（員工照片已採 Supabase Storage）。
 - REST API versioning、idempotency key 與 pagination conventions。
 
 ## Known Issues / Risks
