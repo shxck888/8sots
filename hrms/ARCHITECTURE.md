@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。兩筆 foundation migrations 已套用至 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。四筆 migrations 已套用至 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -22,7 +22,7 @@ Supabase Auth + PostgreSQL with RLS
 
 - **Auth**：身分驗證、session/token 生命週期；不決定業務資料 scope。
 - **Organization**：Tenant、Company、Location、Department、Position 與組織範圍。
-- **Employee**：人員主檔、任職及有效日期異動；不計算薪資。
+- **Employee**：目前已實作 tenant-scoped 員工主檔、任職狀態與管理後台；登入帳號連結及 effective-dated employment record 尚未實作。
 - **Schedule**：Shift、Shift Segment、排班及發布版本；不產生原始打卡。
 - **Attendance**：Punch、工作日歸屬、考勤計算與異常；不自動核准加班。
 - **Leave / Overtime**：申請、額度／認列及業務狀態。
@@ -39,10 +39,10 @@ Supabase Auth + PostgreSQL with RLS
 3. Repository/data-access 層在交易內寫入 PostgreSQL；關鍵操作同時建立 audit evidence。
 4. 通知、報表或長時間批次工作未來由事件／job 觸發；具體 queue 尚未選定。
 
-## Key Entity Groups (Logical, Not Implemented)
+## Key Entity Groups
 
 - Organization：Tenant → Company → Location / Department → Position
-- Identity & people：User、Employee、Employment Record、Role、Permission、Scope
+- Identity & people：User、Employee、Role、Permission、Scope 已有 foundation；Employment Record 尚未實作
 - Scheduling：Shift、Shift Segment、Schedule、Schedule Change
 - Attendance：Punch Record、Punch Correction、Attendance Day/Detail/Exception
 - Absence：Leave Type/Grant/Balance/Request/Usage、Overtime、Comp Time
@@ -51,15 +51,15 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-第一個 migration 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log；第二個 migration 只授予 authenticated tenant/RBAC 查詢表的 SELECT，anon 無表權限且 Audit Log 保持 server-only。兩者已套用 production。其他實體仍是 logical plan。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`202608250004` 新增 Employee、`employee.manage`、permission evaluator 及 audited create/update RPC。Authenticated client 只可依 RLS 讀取同 tenant Employee，沒有直接 table write privilege；其他實體仍是 logical plan。
 
 ## Multi-Tenant Strategy
 
-Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。第一個 migration 已啟用 RLS，authenticated client 目前只有同 tenant read policies，沒有 client write policies。未來 mutation 只能透過 permission-checked server operation；service-role 限制仍待 production threat model 驗證。
+Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 只有同 tenant read policies，沒有業務表直接 write privilege。員工 mutation 已採 Server Action → permission-checked security-definer RPC → Employee/Audit Log 同步寫入；其他模組仍須沿用相同原則。service-role 限制仍待 production threat model 驗證。
 
 ## Authentication and Authorization
 
-認證採 Supabase Auth。使用者輸入 3–32 位英數／底線自訂帳號，server 將正規化後的帳號映射成 `{username}@auth.8sots.com.tw` 作為 Supabase 內部 email identifier；使用者不需知道內部 email。密碼限 6–64 位英數且必須同時包含英文字母與數字。`/login` 的 Server Action 呼叫 `signInWithPassword`，`/auth/callback` 交換 PKCE code，Next.js 16 Proxy 刷新 cookie session；首頁在 server 端取得 user，無 session 導向 `/login`，登出使用 Server Action。授權採 RBAC + scope；migration 已建立 role/permission/scope 結構，但 mutation enforcement 與真實 tenant/RLS integration test 尚未完成。
+認證採 Supabase Auth。使用者輸入 3–32 位英數／底線自訂帳號，server 將正規化後的帳號映射成 `{username}@auth.8sots.com.tw` 作為 Supabase 內部 email identifier。授權採 RBAC + scope；管理後台在 layout、每個 Server Action 及 database RPC 三層驗證 `employee.manage`，`platform.admin` 可覆蓋該權限。第二 tenant 的負向 RLS integration test 尚未完成。
 
 ## Data Conventions
 
@@ -83,9 +83,11 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - `GET /api/v1/me`：以 Supabase Auth 取得使用者並回傳 active tenant memberships；未登入為 `401`，環境未設定為 `503`。
 - `GET /login`：登入頁；已登入者 server-side redirect 至 `/`。
 - Login/logout Server Actions：驗證自訂帳號與密碼、將帳號映射為內部 Supabase identifier、建立或清除 session cookie；不直接暴露 Supabase 原始錯誤。
+- `/admin/employees`、`/new`、`/[id]`：permission-protected 員工列表、搜尋、新增與編輯 UI。
+- Employee Server Actions：Zod validation 後呼叫 `create_employee` / `update_employee` RPC；兩個 RPC 在 database 重新驗證權限並寫入 audit evidence。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。
 
 ## Security Baseline
 
-必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前只有 migration 中的 tenant composite keys、RLS read isolation、無 client write policy，以及 public environment validation 已落地；其餘控制仍待實作與 integration test。
+必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前已有 tenant composite keys、RLS read isolation、無 client table writes、員工 mutation permission checks/audit，以及 public environment validation；其餘控制仍待實作與 integration test。

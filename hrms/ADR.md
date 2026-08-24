@@ -133,3 +133,13 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 保留 Supabase 的密碼雜湊、token 與 session 管理，同時提供門市適用的自訂帳號體驗，避免自建 authentication stack。
 - **Alternatives:** 要求每位員工使用真實 Email；自建 username/password 儲存與 session；以手機號碼登入。
 - **Consequences:** 帳號大小寫不敏感且由 Supabase email uniqueness 保證唯一；帳號建立與改名必須使用同一映射規則；內部 email 不可用於寄信，password recovery 需由管理流程重設或未來另綁 recovery email；identifier domain 與正規化規則不得任意更改。
+
+## ADR-014: Employee mutations use permission-checked audited database RPCs
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 員工主檔包含個資，Server Actions 需要跨多筆寫入 Employee 與 Audit Log，且 authenticated client 不應取得一般 table write privilege。
+- **Decision:** 員工查詢使用 tenant RLS；新增與修改由 Server Action 完成 authentication、tenant context、Zod validation 與 `employee.manage` authorization，再呼叫 security-definer database RPC。RPC 重新驗證 permission，於同一 transaction 寫入 Employee 與 Audit Log。Employee 與 Supabase Auth User 保持分離，以 nullable `auth_user_id` 在後續 provisioning 流程連結。
+- **Reason:** 同時提供 application 與 database defense in depth、原子 audit evidence，且避免 service-role key 或廣泛 client write policy。
+- **Alternatives:** authenticated client 直接 insert/update；Vercel 使用 service-role 執行所有 mutation；只在 Server Action 寫入且不由 database 重新授權。
+- **Consequences:** 每個 mutation RPC 必須版本化、最小化 grant、驗證 tenant/permission 並有負向測試；複雜 RPC 需避免繞過 RLS 後造成越權。員工登入帳號建立、停用與連結仍需獨立受控流程。

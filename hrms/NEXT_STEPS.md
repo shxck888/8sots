@@ -4,17 +4,17 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 — Auth and tenant foundation IN PROGRESS**。自訂帳號登入、production 管理員、tenant membership、RBAC bootstrap、Vercel 與 custom domain 已驗證；尚未完成第二 tenant 的跨租戶 RLS integration test。
+**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、production 管理員、RBAC bootstrap、管理後台與員工主檔已驗證；尚未完成員工登入帳號 provisioning 與第二 tenant 的跨租戶 RLS integration test。
 
 ## Next Recommended Task (P0)
 
-完成 Auth/Organization 的 production end-to-end 驗收：
+完成 Employee/Auth 的下一個安全切片：
 
-1. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
-2. 為 server mutation 實作 `platform.admin` permission enforcement 與負向測試。
+1. 建立員工登入帳號 provisioning／停用流程，將 Supabase Auth User 安全連結至 `employees.auth_user_id`。
+2. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
 3. 依 production schema 產生並提交 database TypeScript types。
 
-上述 integration tests 與文件同步完成後，Auth/Organization foundation 才能標 DONE。
+上述 integration tests 與文件同步完成後，Auth/Organization/Employee foundation 才能標 DONE。
 
 ## Pending Priorities
 
@@ -29,8 +29,8 @@ Last Updated: 2026-08-25
 
 ### P1 — Phase 1 domain foundation
 
-- Organization CRUD 與 permission-checked server mutation。
-- Employee 主檔與 effective-dated employment record。
+- Organization CRUD 與其他模組的 permission-checked server mutation。
+- Employee 登入帳號連結與 effective-dated employment record。
 - Shift/Shift Segment、Schedule version/publish 與跨日測試。
 - GPS Punch（同意、精度、geofence、反作弊）與 immutable punch evidence。
 - Attendance 計算、異常與可重現版本關聯。

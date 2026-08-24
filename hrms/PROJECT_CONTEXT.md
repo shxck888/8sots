@@ -6,7 +6,7 @@ Last Updated: 2026-08-25
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，以 responsive Web / PWA 服務員工、主管、HR 與業主。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE；法規、費率與薪資規則必須可設定並保留版本。
 
-目前是 **Build 1（Auth and tenant foundation）**。Next.js 應用、Supabase production schema、Vercel deployment、`hrms.8sots.com.tw` 與 public environment variables 已建立。自訂帳號/password 登入、登出、session refresh、route protection 與 active tenant 顯示已通過 production end-to-end 驗證。首位管理員 `admin` 已建立並綁定 `8sots` tenant、`platform_admin` role 與 `platform.admin` permission；跨租戶 RLS integration test 尚未完成。
+目前是 **Build 1（Auth, tenant and employee foundation）**。Next.js 應用、Supabase production schema、Vercel deployment、`hrms.8sots.com.tw` 與 public environment variables 已建立。自訂帳號登入與管理員員工管理已通過 production 驗證。首位管理員 `admin` 已綁定 `8sots` tenant、`platform_admin` role 與 `platform.admin` permission；員工登入帳號連結與第二 tenant 的跨租戶 RLS integration test 尚未完成。
 
 ## Current Status
 
@@ -16,19 +16,22 @@ Last Updated: 2026-08-25
 - Responsive 員工「今日工作台」靜態 UI；不代表打卡、班表或出勤功能已串接。
 - `GET /api/health` 與 `GET /api/v1/me` 基線。
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
-- Supabase production 已套用並在 migration history 確認 `202608240001 foundation`、`202608240002 data_api_grants` 與 `202608250003 platform_admin_permission`。
+- Supabase production 已套用並在 migration history 確認 `202608240001 foundation`、`202608240002 data_api_grants`、`202608250003 platform_admin_permission` 與 `202608250004 employee_management`。
 - GitHub `shxck888/8sots/hrms`、Vercel `8sots-hrms`、Supabase public credentials 與 `hrms.8sots.com.tw`。
-- 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。登入程式切片通過 lint、TypeScript、23 項 Vitest、production build 與本機 HTTP smoke test。
+- 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。
 - Production 管理員登入、tenant membership 顯示與登出 smoke test 已通過；Supabase bootstrap query 同時驗證 active membership、role 與 permission。
+- 管理後台員工列表、搜尋、新增與編輯已上線；員工資料 tenant-scoped、無直接 client write，mutation 經 `employee.manage` permission-checked RPC 並寫入 audit log。正式資料庫 transaction create/update/rollback 驗證通過。
+- 目前程式通過 ESLint、TypeScript、34 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
 - Organization / RLS foundation：首位 tenant 與管理員已建立；尚未建立第二 tenant fixture 與跨租戶負向 integration test。
+- 員工登入帳號 provisioning、停用與 `employees.auth_user_id` 連結尚未實作。
 - 首頁仍以代表性假資料呈現班表、出勤與打卡，按鈕尚未連接 domain operation。
 
 ### PLANNED
 
-- Password recovery、邀請、員工主檔、排班、打卡、出勤與後續業務模組。
+- Password recovery、邀請、員工帳號連結、排班、打卡、出勤與後續業務模組。
 - Phase 2：Leave、Overtime、Punch Correction、Approval。
 - Phase 3：Salary、Payroll、Insurance、Payslip。
 - Phase 4：分析、人事成本、營收整合、進階規則、多公司與外部 API。
@@ -42,14 +45,15 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（23 tests）、Next production build |
+| Quality | ESLint、TypeScript strict、Vitest（34 tests）、Next production build |
 
 ## Core Modules
 
 - **DONE:** Platform 與 database foundation。
 - **DONE:** 自訂帳號登入、登出、session 與 route protection production slice。
+- **DONE:** 管理後台與 tenant-scoped 員工主檔新增／查詢／編輯 production slice。
 - **IN PROGRESS:** Organization、跨租戶 RLS、RBAC/Audit application enforcement。
-- **PLANNED:** Employee、Schedule、Attendance、Leave、Overtime、Approval、Payroll、Insurance、Notification、Report。
+- **PLANNED:** Employee Account/Employment History、Schedule、Attendance、Leave、Overtime、Approval、Payroll、Insurance、Notification、Report。
 
 ## Non-Negotiable Rules
 
@@ -67,7 +71,8 @@ Last Updated: 2026-08-25
 - `app/page.tsx`：需要 session 的員工工作台
 - `app/api/health/route.ts`、`app/api/v1/me/route.ts`：目前 API
 - `lib/supabase/server.ts`：server-side Supabase client
-- `supabase/migrations/`：已套用 production 的 foundation migrations
+- `app/admin/employees/`、`lib/admin.ts`、`lib/employees.ts`：員工管理 UI、Server Actions、授權與 validation
+- `supabase/migrations/`：已套用 production 的版本化 schema、grant 與 reference-data migrations
 - `tests/`：unit 與 migration contract tests
 
-登入功能已完成 production 驗證；整體 Auth/Organization foundation 仍維持 IN PROGRESS，直到跨租戶 RLS fixture 與 application permission enforcement 完成。
+登入與員工主檔管理已完成 production 驗證；整體 Auth/Organization/Employee foundation 仍維持 IN PROGRESS，直到員工帳號連結、跨租戶 RLS fixture 與完整 permission enforcement 完成。

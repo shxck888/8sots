@@ -15,6 +15,9 @@
 - 建立首位 production 管理員 `admin`、`8sots` tenant、active membership、`platform_admin` role、`platform.admin` permission 與 bootstrap audit record。
 - 新增 `202608250003_platform_admin_permission.sql`，將全域管理員 permission reference data 納入版本控制。
 - 已在 Supabase production migration history 確認 `202608250003 platform_admin_permission` 套用成功。
+- 新增管理後台與員工列表、搜尋、新增及編輯頁面。
+- 新增員工資料 Zod validation、狀態標籤與 11 項相關 unit/contract tests。
+- 新增 ADR-014，記錄 permission-checked audited employee RPC 架構。
 
 ### Changed
 
@@ -27,10 +30,13 @@
 
 - 新增 idempotent reference-data migration `202608250003_platform_admin_permission.sql`；無 table/schema breaking change。
 - Production 已建立 `8sots` tenant、管理員 membership/RBAC 關聯及 audit record；不將環境特定 Auth user UUID 寫入 migration。
+- 新增並套用 `202608250004_employee_management.sql`：Employee table、`employee_status`、`employee.manage` permission、permission evaluator、audited create/update RPC 與 tenant RLS。
+- Employee table 僅授予 authenticated SELECT；新增／修改只能執行明確 grant 的 permission-checked RPC，無 delete 或直接 client write。
 
 ### API
 
 - 新增 `GET /auth/callback`；既有 JSON API contract 無 breaking change。
+- 新增員工管理 Server Actions 與 database RPC；既有 JSON API 無變更。
 
 ### Breaking Changes
 
@@ -39,9 +45,10 @@
 
 ### Validation
 
-- ESLint、TypeScript、23 個 Vitest tests 與 Next.js production build 通過。
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
 - Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。
+- ESLint、TypeScript、34 個 Vitest tests 與 Next.js production build 通過。
+- Production 管理後台列表／表單 render、console、migration history 與 transaction-scoped create/update/rollback 驗證通過；沒有留下測試員工資料。
 
 ## 2026-08-24
 
