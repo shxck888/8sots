@@ -18,7 +18,7 @@ Last Updated: 2026-08-24
 - Responsive 員工「今日工作台」靜態 UI 與 PWA manifest；此項只代表介面切片完成，不代表打卡、班表或出勤功能已串接。
 - `GET /api/health`（HTTP smoke test 200）。
 - 基礎 migration contract tests：RLS 啟用、tenant composite FK 與 client 無寫入 policy。
-- 初始化本機 Git repository，預設分支為 `main`；尚未建立 commit 或 GitHub remote。
+- 原始碼已同步至 GitHub repository `shxck888/8sots` 的 `main` 分支下 `hrms/` 目錄。
 
 ### IN PROGRESS
 

@@ -12,6 +12,7 @@
 - 建立 responsive 員工今日工作台、行動版導覽與 PWA manifest。
 - 建立 Supabase SSR server client、環境變數範本及 13 項通過的 unit/contract tests。
 - 初始化本機 Git repository，預設分支為 `main`。
+- 將 Build 1 專案同步至 `shxck888/8sots` repository 的 `hrms/` 目錄。
 
 ### Changed
 

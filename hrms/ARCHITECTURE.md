@@ -75,7 +75,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - **Implemented locally**：Next.js 16、React 19、TypeScript、Supabase JS/SSR、Zod、ESLint、Vitest、PWA manifest、environment template。
 - **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL。
 - **Not yet selected**：object storage、queue、cache、observability、preview/production environment topology。
-- 已初始化本機 Git repository；尚無 GitHub remote、遠端 Supabase project connection、Vercel deployment、CI workflow 或備份／還原驗證。
+- GitHub source 位於 `shxck888/8sots` 的 `hrms/`；尚無遠端 Supabase project connection、Vercel deployment、CI workflow 或備份／還原驗證。
 
 ## Current API Surface
 

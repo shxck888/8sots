@@ -22,7 +22,7 @@ Last Updated: 2026-08-24
 
 ### P0 — Deployment and security baseline
 
-- 建立第一個 Git commit、連接 GitHub remote；建立 Vercel preview/production 專案與 build checks。
+- 將 Vercel project 的 Root Directory 設為 `hrms`，建立 preview/production 專案與 build checks。
 - 決定 Supabase/Vercel region、local/preview/production 分層與 secret rotation。
 - 完成 tenant threat model、service-role 使用規則、CSP/security headers、rate limit 與 audit writer。
 - 建立 migration ownership、forward-fix、seed、備份及還原驗證流程。
@@ -53,7 +53,7 @@ Last Updated: 2026-08-24
 
 ## Known Issues / Risks
 
-- 本機 Git repository 已初始化但尚無 commit/remote；GitHub/Vercel delivery 尚未建立。
+- 原始碼已位於 `shxck888/8sots/hrms`；Vercel project 與自動部署尚未建立。
 - 沒有 Supabase credentials；migration 只有靜態 contract tests，尚未由真實 PostgreSQL 執行。
 - Docker/Supabase local stack 不可用，因此本輪無法執行 database integration tests。
 - 工作台是代表性假資料；打卡按鈕及班表尚無業務行為。
