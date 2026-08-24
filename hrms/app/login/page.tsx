@@ -1,1 +1,56 @@
-m«ëˆ§½©buªàºg§µªişZ Šéj­³,j›jÇºà7an{¦Š)ßŠW¨¢ë_ŠW›n·š‘ºŞjG§r‡^vËkŠx"Ú'ºg!j¶œµêåŠw¬×^r‡^uç(uë"›­†¥¥Ø¬¦V²¶¬™ë,j¢Šzn¶)éº×â•ç^}«¥µú+²×bŠ.¶›­¢ëiº×â•ç^}«¥µú+²×hº
+import { redirect } from "next/navigation";
+import { ShieldCheck, Sparkles } from "lucide-react";
+import { sanitizeNextPath } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { LoginForm } from "./login-form";
+
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  let currentUser = null;
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    currentUser = data.user;
+  } catch {
+    // The form displays a configuration error if a user attempts to sign in.
+  }
+
+  if (currentUser) {
+    redirect("/");
+  }
+
+  const { next } = await searchParams;
+
+  return (
+    <main className="login-shell">
+      <section className="login-story" aria-label="é¤é£² eHR ä»‹ç´¹">
+        <div className="login-brand">
+          <span className="brand-mark"><Sparkles size={20} /></span>
+          <span>é¤é£² <strong>eHR</strong></span>
+        </div>
+        <div className="login-story-copy">
+          <span className="login-kicker">RESTAURANT PEOPLE OPERATIONS</span>
+          <h1>è®“æ¯ä¸€å€‹ç­æ¬¡ï¼Œ<br />éƒ½å¾å®‰å¿ƒé–‹å§‹ã€‚</h1>
+          <p>æ’ç­ã€å‡ºå‹¤èˆ‡äººäº‹è³‡è¨Šé›†ä¸­åœ¨åŒä¸€å€‹å®‰å…¨å…¥å£ï¼Œè®“é¤é£²åœ˜éšŠæŠŠæ™‚é–“ç•™çµ¦çœŸæ­£é‡è¦çš„æœå‹™ã€‚</p>
+        </div>
+        <div className="login-trust"><ShieldCheck size={18} /> ä»¥ Supabase Auth ä¿è­·å¸³è™Ÿèˆ‡å·¥ä½œè³‡æ–™</div>
+      </section>
+
+      <section className="login-panel">
+        <div className="login-card">
+          <span className="login-kicker">WELCOME BACK</span>
+          <h2>ç™»å…¥å“¡å·¥å·¥ä½œå°</h2>
+          <p className="login-intro">ä½¿ç”¨å…¬å¸æä¾›çš„å·¥ä½œå¸³è™Ÿç™»å…¥ã€‚</p>
+          <LoginForm nextPath={sanitizeNextPath(next)} />
+          <p className="login-help">å°šæœªå–å¾—å¸³è™Ÿæˆ–å¿˜è¨˜å¯†ç¢¼ï¼Ÿè«‹è¯çµ¡é–€å¸‚ä¸»ç®¡æˆ– HRã€‚</p>
+        </div>
+      </section>
+    </main>
+  );
+}

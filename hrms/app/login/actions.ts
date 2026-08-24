@@ -1,1 +1,47 @@
-m«ëˆ§½©buªàºg§µªişZ ŠÚrØ¨ËlRÆ y¶¬{®vçºh¢ø¥zŠ.µø¥y¶ëy©­æ¤zw(uçl¶¸§‚)í¢{¦r«iË^®X§zÀİuç(uç^r‡^²)éºØazZ]ŠÊek+aŠÉ²Æ z(§¦ëb›­~)^uçÚº[_¢»-v)è¢ëiºÚ.¶›­~)^uçÚº[_¢»-v‹­
+"use server";
+
+import { redirect } from "next/navigation";
+import { loginFormSchema, sanitizeNextPath, type LoginFormState } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export async function login(
+  _previousState: LoginFormState,
+  formData: FormData,
+): Promise<LoginFormState> {
+  const parsed = loginFormSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    next: formData.get("next"),
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  let supabase;
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return { message: "ç™»å…¥æœå‹™å°šæœªè¨­å®šå®Œæˆï¼Œè«‹è¯çµ¡ç³»çµ±ç®¡ç†å“¡ã€‚" };
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return { message: "Email æˆ–å¯†ç¢¼ä¸æ­£ç¢ºï¼Œè«‹é‡æ–°ç¢ºèªã€‚" };
+  }
+
+  redirect(sanitizeNextPath(parsed.data.next));
+}
+
+export async function logout() {
+  try {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+  } finally {
+    redirect("/login");
+  }
+}

@@ -1,1 +1,37 @@
-m«ëˆ§½©buªàºg§¶X›ı«­†Û±¨m«ë€İ…¹îš(§~)^¢‹­~)^mºŞjFëy©ÊyÛ-®)àŠ{héœ…ªÚr×«–)Ş°7]yÊy×œ¡×¬Šzn¶^–—b²™ZÊØb²g¬±¨Š)éºØ§¦ë_ŠWyö®–×è®Ë]Šz(ºÚn¶‹­¦ë_ŠWyö®–×è®Ë]¢ë
+import { z } from "zod";
+
+export const loginFormSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("è«‹è¼¸å…¥æœ‰æ•ˆçš„ Email")),
+  password: z.string().min(8, "å¯†ç¢¼è‡³å°‘éœ€è¦ 8 å€‹å­—å…ƒ").max(128, "å¯†ç¢¼é•·åº¦è¶…éé™åˆ¶"),
+  next: z.string().optional(),
+});
+
+export type LoginFormState = {
+  message?: string;
+  fieldErrors?: {
+    email?: string[];
+    password?: string[];
+  };
+};
+
+export function sanitizeNextPath(value: unknown): string {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  return value;
+}
+
+export function getUserDisplayName(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}): string {
+  const metadataName = user.user_metadata?.full_name ?? user.user_metadata?.name;
+
+  if (typeof metadataName === "string" && metadataName.trim()) {
+    return metadataName.trim();
+  }
+
+  const emailName = user.email?.split("@")[0]?.trim();
+  return emailName || "å¤¥ä¼´";
+}

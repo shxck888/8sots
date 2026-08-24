@@ -1,1 +1,26 @@
-m«ëˆ§½©buªàºg§µªiý«­‡÷–VÚrOë¢ë^¶Å,j›jÇºà7an{¦Š)ßŠW¨¢ë_ŠW›n·š‘ºÞjG§r‡^vËkŠx"žÚ'ºg!j¶œµêåŠw¬×^r‡^uç(uë"ž›­†¥¥Ø¬¦V²¶¬™ë,j¢Šzn¶)éº×â•ç^}«¥µú+²×bžŠ.¶›­¢ëiº×â•ç^}«¥µú+²×hº
+import { NextResponse } from "next/server";
+import { sanitizeNextPath } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const next = sanitizeNextPath(requestUrl.searchParams.get("next"));
+
+  if (code) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (!error) {
+        return NextResponse.redirect(new URL(next, requestUrl.origin));
+      }
+    } catch {
+      // Fall through to the safe login error response.
+    }
+  }
+
+  const loginUrl = new URL("/login", requestUrl.origin);
+  loginUrl.searchParams.set("error", "callback_failed");
+  return NextResponse.redirect(loginUrl);
+}
