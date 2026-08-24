@@ -22,6 +22,11 @@ const employeeMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const employeeAuthLinkFixMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250005_employee_auth_link_unique_fix.sql"),
+  "utf8",
+).toLowerCase();
+
 const tenantTables = [
   "tenants",
   "tenant_memberships",
@@ -99,5 +104,15 @@ describe("foundation migration contract", () => {
     expect(employeeMigration).toContain("'employee.created'");
     expect(employeeMigration).toContain("'employee.updated'");
     expect(employeeMigration).toContain("insert into public.audit_logs");
+  });
+
+  it("allows multiple employees without Auth links while keeping real links unique", () => {
+    expect(employeeAuthLinkFixMigration).toContain(
+      "drop constraint if exists employees_tenant_id_auth_user_id_key",
+    );
+    expect(employeeAuthLinkFixMigration).toContain(
+      "on public.employees (tenant_id, auth_user_id)",
+    );
+    expect(employeeAuthLinkFixMigration).toContain("where auth_user_id is not null");
   });
 });

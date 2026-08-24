@@ -16,12 +16,12 @@ Last Updated: 2026-08-25
 - Responsive 員工「今日工作台」靜態 UI；不代表打卡、班表或出勤功能已串接。
 - `GET /api/health` 與 `GET /api/v1/me` 基線。
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
-- Supabase production 已套用並在 migration history 確認 `202608240001 foundation`、`202608240002 data_api_grants`、`202608250003 platform_admin_permission` 與 `202608250004 employee_management`。
+- Supabase production 已套用並在 migration history 確認 `202608240001` 至 `202608250005`；其中 `005` 將 Employee Auth link 唯一性修正為只限制非空連結。
 - GitHub `shxck888/8sots/hrms`、Vercel `8sots-hrms`、Supabase public credentials 與 `hrms.8sots.com.tw`。
 - 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。
 - Production 管理員登入、tenant membership 顯示與登出 smoke test 已通過；Supabase bootstrap query 同時驗證 active membership、role 與 permission。
 - 管理後台員工列表、搜尋、新增與編輯已上線；員工資料 tenant-scoped、無直接 client write，mutation 經 `employee.manage` permission-checked RPC 並寫入 audit log。正式資料庫 transaction create/update/rollback 驗證通過。
-- 目前程式通過 ESLint、TypeScript、34 項 Vitest 與 Next.js production build。
+- 目前程式通過 ESLint、TypeScript、35 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
@@ -45,7 +45,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（34 tests）、Next production build |
+| Quality | ESLint、TypeScript strict、Vitest（35 tests）、Next production build |
 
 ## Core Modules
 

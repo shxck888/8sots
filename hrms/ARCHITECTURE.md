@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。四筆 migrations 已套用至 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。五筆 migrations 已套用至 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -51,7 +51,7 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`202608250004` 新增 Employee、`employee.manage`、permission evaluator 及 audited create/update RPC。Authenticated client 只可依 RLS 讀取同 tenant Employee，沒有直接 table write privilege；其他實體仍是 logical plan。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`202608250004` 新增 Employee、`employee.manage`、permission evaluator 及 audited create/update RPC；`202608250005` 以 partial unique index 確保只有非空 `auth_user_id` 連結唯一。Authenticated client 只可依 RLS 讀取同 tenant Employee，沒有直接 table write privilege；其他實體仍是 logical plan。
 
 ## Multi-Tenant Strategy
 
