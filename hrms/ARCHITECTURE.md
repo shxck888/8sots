@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。Migrations `001`–`010` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Migrations `001`–`011` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -51,7 +51,7 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010` 建立 `shifts`、`shift_segments`、`schedule_versions`、`schedule_assignments` 與 `schedule.manage`；authenticated client 仍只有同 tenant SELECT，所有排班 mutation 由 permission-checked audited RPC 執行。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010` 建立 Schedule domain；`011` 保證同 tenant／期間只有一份 draft，建立新版會複製 published assignments，`save_schedule_assignments` 在單一 transaction 驗證並儲存整週變更。Authenticated client 仍只有同 tenant SELECT。
 
 ## Multi-Tenant Strategy
 
@@ -91,7 +91,8 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - `/admin/employees`、`/new`、`/[id]`：permission-protected 員工列表、搜尋、新增與編輯 UI。
 - Employee Server Actions：Zod validation 後呼叫 `create_employee_master` / `update_employee_master` / `set_employee_photo`；RPC 在 database 重新驗證權限並寫入 audit evidence。照片寫入私人 Storage bucket。
 - Employee Account Server Actions：以 server-only Auth Admin API 建立帳號／重設密碼／ban 或 unban，並呼叫 `link_employee_auth_account`、`set_employee_auth_account_status`、`record_employee_password_reset` 同步資料與 audit；不是公開 JSON API。
-- Schedule database RPC：`upsert_shift_template`、`create_schedule_draft`、`assign_schedule_shift`、`publish_schedule`。皆要求 `schedule.manage`、驗證 tenant 並寫入 Audit Log；管理 UI 尚未建立，亦非公開 JSON API。
+- Schedule database RPC：`upsert_shift_template`、`create_schedule_draft`、`assign_schedule_shift`、`save_schedule_assignments`、`publish_schedule`。皆要求 `schedule.manage`、驗證 tenant 並寫入 Audit Log；不是公開 JSON API。
+- `POST` Server Actions under `/admin/schedules`：建立草稿、呼叫 `save_schedule_assignments` 儲存整週、發布班表；每個 action 都重新取得 `schedule.manage` admin context，亦非公開 JSON API。
 - `createServerClient<Database>` 與 `createClient<Database>`：所有 `.from()`／`.rpc()` 從 production schema 取得 table、view、enum、relationship 與 function argument inference。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。

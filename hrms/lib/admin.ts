@@ -12,7 +12,10 @@ export type AdminContext = {
   tenantName: string;
 };
 
-export async function getAdminContext(): Promise<AdminContext | null> {
+async function getMembershipContext(): Promise<{
+  context: AdminContext;
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+} | null> {
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
@@ -28,17 +31,42 @@ export async function getAdminContext(): Promise<AdminContext | null> {
   const membership = (memberships?.[0] ?? null) as MembershipRow | null;
   if (!membership) return null;
 
-  const { data: allowed, error: permissionError } = await supabase.rpc(
+  const tenant = Array.isArray(membership.tenants) ? membership.tenants[0] : membership.tenants;
+  return {
+    supabase,
+    context: {
+      userId: authData.user.id,
+      tenantId: membership.tenant_id,
+      tenantName: tenant?.name ?? "未命名組織",
+    },
+  };
+}
+
+export async function getAdminContext(
+  permissionCode = "employee.manage",
+): Promise<AdminContext | null> {
+  const membership = await getMembershipContext();
+  if (!membership) return null;
+
+  const { data: allowed, error: permissionError } = await membership.supabase.rpc(
     "current_user_has_permission",
-    { p_tenant_id: membership.tenant_id, p_permission_code: "employee.manage" },
+    { p_tenant_id: membership.context.tenantId, p_permission_code: permissionCode },
   );
 
   if (permissionError || allowed !== true) return null;
+  return membership.context;
+}
 
-  const tenant = Array.isArray(membership.tenants) ? membership.tenants[0] : membership.tenants;
-  return {
-    userId: authData.user.id,
-    tenantId: membership.tenant_id,
-    tenantName: tenant?.name ?? "未命名組織",
-  };
+export async function getAdminShellContext(): Promise<AdminContext | null> {
+  const membership = await getMembershipContext();
+  if (!membership) return null;
+  const checks = await Promise.all([
+    membership.supabase.rpc("current_user_has_permission", {
+      p_tenant_id: membership.context.tenantId, p_permission_code: "employee.manage",
+    }),
+    membership.supabase.rpc("current_user_has_permission", {
+      p_tenant_id: membership.context.tenantId, p_permission_code: "schedule.manage",
+    }),
+  ]);
+  return checks.some(({ data, error }) => !error && data === true) ? membership.context : null;
 }

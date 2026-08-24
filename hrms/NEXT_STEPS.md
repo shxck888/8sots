@@ -4,18 +4,18 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 與 Schedule database foundation DONE**。自訂帳號登入、管理員、完整 Employee Master、員工帳號生命週期、跨租戶隔離、Shift/Segment 與 Schedule draft/publish 皆已通過 production 驗證。
+**Build 1、Schedule foundation 與管理員週排班第一版 DONE**。草稿建立／複製、整週原子儲存與發布已完成；目前不要求門市。
 
 ## Next Recommended Task (P0)
 
-開始無門市前提下的排班管理 UI：
+開始員工端真實班表：
 
-1. 建立管理後台排班入口與週／月日曆，顯示員工、日期、平日班及假日班。
-2. 串接建立 Schedule Draft、批次指派／修改 Assignment 與 Publish 操作。
-3. 草稿與已發布狀態清楚分離，發布前顯示空班、重複與非 active 員工警示。
-4. 補上 Server Action validation、權限負向測試及 responsive UI 測試。
+1. 建立 `/my-schedule` 或工作台班表區塊，只讀取包含自己的 published schedule。
+2. 顯示平日兩段班、假日連續班、未排班及跨日時間，清楚標示 work date。
+3. 將首頁「今日班表」與剩餘時間由真實 Assignment/Shift Segment 計算，移除假資料。
+4. 補上員工只能讀自己班表的 application/RLS boundary 與 production negative test。
 
-排班 schema 與正式班別已完成；兩份 rollback-only production integration tests 共 14 項核心 assertion 通過並確認 fixtures 殘留為 0。
+排班 schema、正式班別與管理後台週表已完成；rollback-only production tests 已涵蓋 clone、batch save、publish 與 immutable boundaries，fixtures 殘留為 0。
 Production Database types、client generics 與 migration drift checks 已完成；重新產生使用 `npm run db:types`，執行時需要 read-only `SUPABASE_ACCESS_TOKEN`。
 
 ## Pending Priorities
@@ -33,7 +33,7 @@ Production Database types、client generics 與 migration drift checks 已完成
 
 - Organization CRUD 與其他模組的 permission-checked server mutation。
 - Password recovery、invitation 與 MFA（Employee 帳號建立／重設／停用／恢復已完成）。
-- Schedule 管理日曆、草稿指派／發布與員工端真實班表。
+- 員工端真實班表與管理後台發布前完整性警示。
 - GPS Punch（同意、精度、geofence、反作弊）與 immutable punch evidence。
 - Attendance 計算、異常與可重現版本關聯。
 - Phase 1 permission matrix 與完整 audit trail。

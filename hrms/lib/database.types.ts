@@ -1133,6 +1133,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_schedule_assignments: {
+        Args: {
+          p_assignments: Json
+          p_schedule_version_id: string
+          p_tenant_id: string
+        }
+        Returns: number
+      }
       update_employee: {
         Args: {
           p_email: string

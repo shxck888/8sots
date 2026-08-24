@@ -174,3 +174,4 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 正確表達海之星平日兩段班與假日連續班，保留班表歷史可重現性，並延續既有 tenant/RBAC/audit defense in depth。
 - **Alternatives:** 單一開始／結束時間加固定休息分鐘；直接覆寫已發布班表；每個班段建立一筆獨立排班；強制先建立門市。
 - **Consequences:** 班別一旦被正式班表使用，如需調整必須建立新班別；發布新版本會將同期間舊版本標為 superseded。假日判定目前由排班者選擇班別，後續 Holiday Calendar 必須以獨立版本化規則接入。
+- **Implementation:** `010` 建立版本與 immutable guards；`011` 限制同期間單一 draft、從 published 版本複製 assignments，並以一個 audited RPC 原子儲存整週表格變更。

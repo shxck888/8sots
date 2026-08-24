@@ -169,6 +169,55 @@ begin
 end;
 $$;
 
+select set_config(
+  'test.schedule_version_2',
+  public.create_schedule_draft(
+    current_setting('test.tenant_a')::uuid,
+    current_date,
+    current_date + 6
+  )::text,
+  true
+);
+
+do $$
+declare
+  v_count integer;
+begin
+  select count(*) into v_count
+  from public.schedule_assignments
+  where schedule_version_id = current_setting('test.schedule_version_2')::uuid
+    and employee_id = current_setting('test.employee_a')::uuid
+    and work_date = current_date
+    and shift_id = current_setting('test.weekday_shift')::uuid;
+  if v_count <> 1 then raise exception 'published schedule clone failed'; end if;
+
+  perform public.save_schedule_assignments(
+    current_setting('test.tenant_a')::uuid,
+    current_setting('test.schedule_version_2')::uuid,
+    jsonb_build_array(
+      jsonb_build_object(
+        'employee_id', current_setting('test.employee_a')::uuid,
+        'work_date', current_date,
+        'shift_id', current_setting('test.holiday_shift')::uuid
+      ),
+      jsonb_build_object(
+        'employee_id', current_setting('test.employee_a')::uuid,
+        'work_date', current_date + 1,
+        'shift_id', null
+      )
+    )
+  );
+
+  select count(*) into v_count
+  from public.schedule_assignments
+  where schedule_version_id = current_setting('test.schedule_version_2')::uuid
+    and employee_id = current_setting('test.employee_a')::uuid
+    and work_date = current_date
+    and shift_id = current_setting('test.holiday_shift')::uuid;
+  if v_count <> 1 then raise exception 'batch schedule assignment save failed'; end if;
+end;
+$$;
+
 reset role;
 
 select
@@ -179,6 +228,8 @@ select
   true as cross_tenant_rpc_blocked,
   true as schedule_published,
   true as published_schedule_immutable,
-  true as published_shift_immutable;
+  true as published_shift_immutable,
+  true as published_schedule_cloned,
+  true as batch_assignment_saved;
 
 rollback;

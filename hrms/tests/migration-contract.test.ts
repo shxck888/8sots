@@ -52,6 +52,11 @@ const scheduleMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const scheduleBatchMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250011_schedule_batch_save.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -231,6 +236,18 @@ describe("foundation migration contract", () => {
     );
   });
 
+  it("saves weekly assignment edits atomically through one audited RPC", () => {
+    expect(scheduleBatchMigration).toContain("save_schedule_assignments");
+    expect(scheduleBatchMigration).toContain("current_user_has_permission");
+    expect(scheduleBatchMigration).toContain("'schedule.manage'");
+    expect(scheduleBatchMigration).toContain("only draft schedules can be changed");
+    expect(scheduleBatchMigration).toContain("duplicate employee work date assignment");
+    expect(scheduleBatchMigration).toContain("schedule.assignments_saved");
+    expect(scheduleBatchMigration).toContain("insert into public.audit_logs");
+    expect(scheduleBatchMigration).toContain("schedule_versions_one_draft_period_idx");
+    expect(scheduleBatchMigration).toContain("copied_assignments");
+  });
+
   it("versions the actual Seastar weekday and holiday shift templates", () => {
     expect(scheduleSeed).toContain("'weekday_split', '平日班'");
     expect(scheduleSeed).toContain("(v_tenant_id, v_shift_id, 1, 600, 840)");
@@ -249,6 +266,8 @@ describe("foundation migration contract", () => {
     expect(scheduleFoundationTest).toContain("cross-tenant schedule rpc unexpectedly succeeded");
     expect(scheduleFoundationTest).toContain("published schedule mutation unexpectedly succeeded");
     expect(scheduleFoundationTest).toContain("published shift mutation unexpectedly succeeded");
+    expect(scheduleFoundationTest).toContain("published schedule clone failed");
+    expect(scheduleFoundationTest).toContain("batch schedule assignment save failed");
   });
 
   it("keeps the cross-tenant RLS integration fixture transaction-scoped", () => {

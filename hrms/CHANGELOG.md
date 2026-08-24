@@ -30,6 +30,8 @@
 - 新增海之星正式平日班（10:00–14:00、16:00–21:00）與假日班（10:00–21:00）。
 - 新增 `supabase/tests/schedule_foundation.sql`，以 rollback-only production test 驗證工時、跨日、重疊、跨租戶、發布與 immutable history。
 - 新增 ADR-017，記錄版本化班表與已發布班別／指派不可變決策。
+- 新增管理後台週排班頁：週切換、版本摘要、員工七日班別表格、建立／複製草稿、儲存與發布。
+- 新增 `lib/schedules.ts` 日期、跨日時間顯示與 assignment 表單 parser，以及 7 項 unit tests。
 
 ### Changed
 
@@ -52,6 +54,7 @@
 - 新增並套用 forward-fix `202608250009_prevent_self_account_suspension.sql`：database RPC 拒絕操作者停用或變更自己的帳號狀態。
 - 新增並套用 `202608250010_schedule_foundation.sql`：`shifts`、`shift_segments`、`schedule_versions`、`schedule_assignments`、`schedule_version_status`、`schedule.manage`、tenant RLS、composite tenant FKs、immutable triggers 與 audited RPC。
 - 新增 environment seed `8sots_schedule_templates.sql`；正式資料為 `WEEKDAY_SPLIT` 540 分鐘與 `HOLIDAY_CONTINUOUS` 660 分鐘。
+- 新增並套用 `202608250011_schedule_batch_save.sql`：同期間單一 draft index、published → draft assignment copy 與 `save_schedule_assignments` 原子批次 RPC。
 
 ### API
 
@@ -60,6 +63,7 @@
 - Employee Server Action/RPC contract 擴充為完整 Employee Master；舊的內部簡版表單 contract 被取代，公開 JSON API 無 breaking change。
 - 新增內部 Employee Account Server Actions；既有公開 JSON API 無新增、變更或 breaking change。
 - 新增內部 Schedule database RPC：班別 upsert、建立草稿、指派員工班別及發布；尚未建立 UI，既有公開 JSON API 無 breaking change。
+- 新增 `/admin/schedules` Server Actions：建立草稿、整週儲存與發布；既有公開 JSON API 無 breaking change。
 
 ### Breaking Changes
 
@@ -83,6 +87,9 @@
 - `202608250010` 先在 production 完整 transaction/rollback 驗證，再正式套用並記錄 migration history。
 - 排班 production integration test 8 項全數通過；確認正式班別為 540／660 分鐘，測試 Shift、Tenant、Employee fixture 殘留皆為 0。
 - ESLint、TypeScript、61 個 Vitest tests 與 Next.js production build 通過。
+- `202608250011` production transaction/rollback、正式套用、RPC/index/migration history 與 fixture cleanup 驗證通過。
+- 排班 production integration test 擴充為 published version clone 與 batch assignment save；所有 assertion 通過並 rollback。
+- ESLint、TypeScript、68 個 Vitest tests 與包含 `/admin/schedules` 的 Next.js production build 通過。
 
 ## 2026-08-24
 
