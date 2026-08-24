@@ -8,14 +8,15 @@ Last Updated: 2026-08-25
 
 ## Next Recommended Task (P0)
 
-完成 Schema/application contract 收斂，為下一個 domain module 建立型別安全基線：
+開始無門市前提下的排班 domain foundation：
 
-1. 依 production schema 產生並提交 Supabase Database TypeScript types。
-2. 將 server、admin 與 Employee data access 改用產生的 Database generic。
-3. 加入 types drift 檢查，避免 migration 與 application contract 分歧。
-4. 完成後開始 Shift/Shift Segment 與 Schedule version/publish schema。
+1. 建立 tenant-wide Shift、Shift Segment 與跨日／兩段班 validation。
+2. 建立 Schedule、Schedule Assignment 與 draft/published version semantics；`location_id` 暫不作必填。
+3. 使用 permission-checked audited RPC 建立、修改及發布班表。
+4. 補上跨午夜、重疊班段、發布後不可直接覆寫及跨租戶負向 tests。
 
 跨租戶測試已收錄於 `supabase/tests/cross_tenant_rls.sql`，六項 production assertion 通過並確認 fixture 殘留為 0。
+Production Database types、client generics 與 migration drift checks 已完成；重新產生使用 `npm run db:types`，執行時需要 read-only `SUPABASE_ACCESS_TOKEN`。
 
 ## Pending Priorities
 

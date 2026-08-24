@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Tables } from "@/lib/database.types";
 
 const optionalText = (max: number, message: string) =>
   z.string().trim().max(max, message).transform((value) => value || null);
@@ -52,20 +53,19 @@ export type EmployeeFormState = {
   fieldErrors?: Partial<Record<keyof z.input<typeof employeeFormSchema>, string[]>>;
 };
 
-export type EmployeeMasterRecord = {
-  id: string; tenant_id: string; auth_user_id: string | null;
-  employee_no: string; full_name: string; english_name: string | null;
-  national_id_last4: string | null; birth_date: string | null; gender: GenderType | null;
-  address: string | null; photo_path: string | null; photo_url?: string | null;
-  mobile: string | null; email: string | null;
-  emergency_contact_name: string | null; emergency_contact_phone: string | null;
-  employment_record_id: string | null; department_id: string | null; department_name: string | null;
-  position_id: string | null; position_name: string | null;
-  supervisor_employee_id: string | null; supervisor_name: string | null;
-  employment_type: EmploymentType | null; hire_date: string | null;
-  termination_date: string | null; probation_end_date: string | null;
-  status: EmployeeStatus | null; effective_from: string | null;
-  notes: string | null; created_at: string; updated_at: string;
+type GeneratedEmployeeMasterRecord = Tables<"employee_master_current">;
+
+export type EmployeeMasterRecord = Omit<
+  GeneratedEmployeeMasterRecord,
+  "id" | "tenant_id" | "employee_no" | "full_name" | "created_at" | "updated_at"
+> & {
+  id: string;
+  tenant_id: string;
+  employee_no: string;
+  full_name: string;
+  created_at: string;
+  updated_at: string;
+  photo_url?: string | null;
 };
 
 export const employeeStatusLabels: Record<EmployeeStatus, string> = {

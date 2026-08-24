@@ -23,6 +23,9 @@
 - 新增員工登入帳號管理：建立自訂帳號、重設密碼、停用及恢復登入。
 - 新增 ADR-016，記錄 server-only Auth Admin boundary、Employee/Auth link、跨系統補償與自我停用防護。
 - 新增 `supabase/tests/cross_tenant_rls.sql` 與執行 runbook，提供 rollback-only 第二 tenant 安全 fixture。
+- 從 Supabase production schema 產生完整 `lib/database.types.ts`，涵蓋 tables、Employee Master view、RPCs、enums 與 relationships。
+- 新增 application `Database` overlay，僅修正 generator 無法表達的 Employee Master nullable PostgreSQL function arguments。
+- 新增 migration-to-types drift tests，並加入 `npm run db:types` 再生指令。
 
 ### Changed
 
@@ -68,6 +71,8 @@
 - Supabase production 跨租戶 integration test 六項斷言全數通過：同租戶可讀、跨租戶 Tenant/Employee 不可讀、authenticated client 不可寫、anon 不可讀、跨租戶 RPC 與 composite foreign key 均被阻擋。
 - 跨租戶測試使用 transaction-scoped fixture 並執行 `ROLLBACK`；獨立清理查詢確認 Tenant、Company、Employee 殘留皆為 0。
 - ESLint、TypeScript 與 53 個 Vitest tests 通過；本次只有測試與文件變更，不含 Database Migration、公開 API 或 Breaking Change。
+- Server session 與 server-only Auth Admin clients 已改用 `Database` generic；Employee Master／Account domain types 改由 generated types 衍生。
+- ESLint、TypeScript、56 個 Vitest tests 與 Next.js production build 通過；typed data boundary 變更不包含 Database Migration、公開 API 或 Breaking Change。
 
 ## 2026-08-24
 

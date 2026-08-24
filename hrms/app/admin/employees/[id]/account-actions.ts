@@ -7,7 +7,6 @@ import {
   employeeAccountCredentialsSchema,
   employeePasswordSchema,
   type EmployeeAccountState,
-  type EmployeeAuthAccount,
 } from "@/lib/employee-accounts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -26,7 +25,7 @@ async function getAccount(employeeId: string, tenantId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.from("employee_auth_accounts").select("*")
     .eq("tenant_id", tenantId).eq("employee_id", employeeId).maybeSingle();
-  return data as EmployeeAuthAccount | null;
+  return data;
 }
 
 function adminClientOrNull() {

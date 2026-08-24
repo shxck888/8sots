@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Tables } from "@/lib/database.types";
 import { loginFormSchema } from "./auth";
 
 export const employeeAccountCredentialsSchema = loginFormSchema.pick({
@@ -16,12 +17,4 @@ export type EmployeeAccountState = {
   fieldErrors?: { username?: string[]; password?: string[] };
 };
 
-export type EmployeeAuthAccount = {
-  employee_id: string;
-  tenant_id: string;
-  auth_user_id: string;
-  username: string;
-  status: "active" | "suspended";
-  provisioned_at: string;
-  updated_at: string;
-};
+export type EmployeeAuthAccount = Tables<"employee_auth_accounts">;

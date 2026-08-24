@@ -113,6 +113,7 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 減少連線管理與雙重 schema abstraction，直接使用 PostgreSQL/RLS 能力。
 - **Alternatives:** Prisma + pooler；Drizzle + PostgreSQL driver。
 - **Consequences:** 必須從已套用 Schema 產生 TypeScript database types；複雜交易需使用 database function/RPC 或受控 server transaction 策略。
+- **Implementation:** 2026-08-25 已從 production schema 產生 `lib/database.types.ts`，server/admin clients 套用 `Database` generic，並以 contract test 防止 versioned migrations 與 generated types 漂移。
 
 ## ADR-012: Tokyo as the Supabase primary region
 

@@ -5,7 +5,6 @@ import { getAdminContext } from "@/lib/admin";
 import type { EmployeeMasterRecord } from "@/lib/employees";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EmployeeForm } from "../employee-form";
-import type { EmployeeAuthAccount } from "@/lib/employee-accounts";
 import { EmployeeAccountPanel } from "./account-panel";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +34,7 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
       <Link className="admin-back" href="/admin/employees"><ChevronLeft size={16} /> 返回員工列表</Link>
       <header className="admin-page-header compact"><div><span className="admin-eyebrow">EDIT EMPLOYEE</span><h1>編輯員工</h1><p>{employee.employee_no} · {employee.full_name}</p></div></header>
       <section className="admin-panel form-panel"><EmployeeForm employee={employee} supervisors={supervisors ?? []} /></section>
-      <EmployeeAccountPanel employeeId={id} account={account as EmployeeAuthAccount | null} />
+      <EmployeeAccountPanel employeeId={id} account={account} />
     </>
   );
 }

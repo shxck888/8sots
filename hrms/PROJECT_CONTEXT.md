@@ -24,7 +24,8 @@ Last Updated: 2026-08-25
 - 完整 Employee Master 已上線：身分證加密／遮罩、生日、性別、地址、私人照片、緊急聯絡、部門、職位、主管、五種任職類型、離職日、試用期與 effective-dated employment record。Production transaction create/update/rollback、私人 bucket、正式表單與 console smoke test 通過，未留下測試資料。
 - 員工登入帳號管理已上線：管理員可建立自訂帳號、重設密碼、停用及恢復；Auth User 與 Employee 分離，以 `auth_user_id` 連結並同步 active membership。密碼不落資料庫或 audit；service-role 只存在 server-side。Production E2E 已完成並清除所有測試資料。
 - 跨租戶安全 integration test 已在 Supabase production 通過：同租戶可讀、跨租戶不可讀、authenticated client 不可寫、anon 不可讀、跨租戶 RPC 與 foreign key 皆被阻擋；transaction rollback 後 Tenant／Company／Employee fixture 殘留均為 0。
-- 目前程式通過 ESLint、TypeScript、53 項 Vitest 與 Next.js production build。
+- 已從 Supabase production schema 產生 `lib/database.types.ts`，server session 與 Auth Admin clients 均使用 application `Database` generic；Employee Master／Account 型別從 generated types 衍生，migration-to-types drift contract 已建立。
+- 目前程式通過 ESLint、TypeScript、56 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
@@ -46,7 +47,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（53 tests）、Next production build；Supabase production rollback-only RLS integration test |
+| Quality | ESLint、TypeScript strict、Vitest（56 tests）、Next production build；generated Database types drift contract；Supabase production rollback-only RLS integration test |
 
 ## Core Modules
 
@@ -74,10 +75,11 @@ Last Updated: 2026-08-25
 - `app/page.tsx`：需要 session 的員工工作台
 - `app/api/health/route.ts`、`app/api/v1/me/route.ts`：目前 API
 - `lib/supabase/server.ts`、`lib/supabase/admin.ts`：一般 server session client 與 server-only Auth Admin client
+- `lib/database.types.ts`、`lib/database.ts`：production-generated Schema types 與 PostgreSQL function nullable-argument application overlay
 - `app/admin/employees/`、`lib/admin.ts`、`lib/employees.ts`、`lib/pii.ts`：員工管理 UI、Server Actions、授權、validation 與身分證保護
 - `app/admin/employees/[id]/account-actions.ts`、`account-panel.tsx`、`lib/employee-accounts.ts`：員工帳號建立、重設與狀態管理
 - `supabase/migrations/`：已套用 production 的版本化 schema、grant 與 reference-data migrations
 - `supabase/tests/cross_tenant_rls.sql`：production-compatible、rollback-only 的跨租戶負向安全測試
 - `tests/`：unit 與 migration contract tests
 
-登入、員工主檔、員工帳號生命週期與跨租戶隔離已完成 production 驗證。下一階段應先產生 production database TypeScript types，再開始 Schedule/Attendance domain foundation。
+登入、員工主檔、員工帳號生命週期、跨租戶隔離與 typed data-access baseline 已完成 production 驗證。下一階段開始 tenant-wide Shift/Shift Segment 與 Schedule version/publish foundation；目前不要求建立門市。
