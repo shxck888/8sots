@@ -51,7 +51,7 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-第一個 migration 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log；尚未套用。其他實體仍是 logical plan。
+第一個 migration 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log；第二個 migration 只授予 authenticated tenant/RBAC 查詢表的 SELECT，anon 無表權限且 Audit Log 保持 server-only。兩者尚未套用。其他實體仍是 logical plan。
 
 ## Multi-Tenant Strategy
 
@@ -73,9 +73,9 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 ## Infrastructure
 
 - **Implemented locally**：Next.js 16、React 19、TypeScript、Supabase JS/SSR、Zod、ESLint、Vitest、PWA manifest、environment template。
-- **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL。
+- **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL；Supabase primary region 為 Tokyo (`ap-northeast-1`)。
 - **Not yet selected**：object storage、queue、cache、observability、preview/production environment topology。
-- GitHub source 位於 `shxck888/8sots` 的 `hrms/`；尚無遠端 Supabase project connection、Vercel deployment、CI workflow 或備份／還原驗證。
+- GitHub source 位於 `shxck888/8sots/hrms`，Supabase production project 已建立；尚未部署 migrations、Vercel project、CI workflow 或備份／還原驗證。
 
 ## Current API Surface
 

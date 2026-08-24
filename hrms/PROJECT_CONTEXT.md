@@ -6,7 +6,7 @@ Last Updated: 2026-08-24
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，預計以 Responsive Web / PWA 讓員工、主管、HR 與業主在同一入口依角色及權限使用。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE，且法規、費率與薪資規則必須可設定並保留版本。
 
-目前是 **Build 1（Foundation vertical slice）**。已建立 Next.js App Router 應用、餐飲員工工作台的 responsive 靜態切片、PWA manifest、健康檢查 API、Supabase server client、登入者組織查詢 API，以及第一批尚未套用至遠端資料庫的 Supabase SQL migration。交付方向為 GitHub → Vercel，資料庫與認證採 Supabase。
+目前是 **Build 1（Foundation vertical slice）**。已建立 Next.js App Router 應用、餐飲員工工作台的 responsive 靜態切片、PWA manifest、健康檢查 API、Supabase server client、登入者組織查詢 API，以及兩份尚未套用至遠端資料庫的 Supabase SQL migrations。Supabase production project 已建立於 Tokyo；GitHub integration 與 migration deployment 尚待在 Dashboard 啟用。
 
 ## Current Status
 
@@ -19,10 +19,11 @@ Last Updated: 2026-08-24
 - `GET /api/health`（HTTP smoke test 200）。
 - 基礎 migration contract tests：RLS 啟用、tenant composite FK 與 client 無寫入 policy。
 - 原始碼已同步至 GitHub repository `shxck888/8sots` 的 `main` 分支下 `hrms/` 目錄。
+- Data API 最小權限 migration：anon 無表權限、authenticated 只有 tenant/RBAC 查詢表的 SELECT、Audit Log 不對 client 開放。
 
 ### IN PROGRESS
 
-- Auth / Organization foundation：Supabase client、`GET /api/v1/me` 與 SQL migration 已建立，但尚無 Supabase project credentials、尚未實際套用 migration，也未做真實登入／RLS integration test。
+- Auth / Organization foundation：Supabase production project、client、`GET /api/v1/me` 與 SQL migrations 已建立，但 Vercel 尚未設定 credentials、migrations 尚未實際套用，也未做真實登入／RLS integration test。
 - 首頁目前使用代表性假資料，按鈕尚未連接 domain operation。
 
 ### PLANNED
@@ -40,10 +41,10 @@ Last Updated: 2026-08-24
 | Client | Next.js 16 App Router、React 19、TypeScript、responsive Web / PWA |
 | Hosting | Vercel |
 | Source control / delivery source | GitHub |
-| Database | Supabase PostgreSQL |
+| Database | Supabase PostgreSQL，primary region Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、REST-style JSON |
 | Data access / validation / auth | Supabase JS/SSR（不使用 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest、Next production build |
+| Quality | ESLint、TypeScript strict、Vitest（16 tests）、Next production build |
 | Queue / cache / object storage | 尚未選定；依後續工作負載導入 |
 
 ## Core Modules
@@ -84,6 +85,7 @@ Last Updated: 2026-08-24
 - `app/api/v1/me/route.ts`：登入者與 tenant membership 查詢
 - `lib/supabase/server.ts`：server-side Supabase client
 - `supabase/migrations/202608240001_foundation.sql`：尚待實際套用的 tenant/RBAC/RLS foundation migration
+- `supabase/migrations/202608240002_data_api_grants.sql`：尚待套用的最小 Data API grants
 - `tests/`：unit 與 migration contract tests
 
 目前沒有遠端 Supabase 套用紀錄或 production deployment；SQL migration 存在不代表遠端資料表已建立。

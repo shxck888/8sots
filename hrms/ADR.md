@@ -113,3 +113,13 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 減少連線管理與雙重 schema abstraction，直接使用 PostgreSQL/RLS 能力。
 - **Alternatives:** Prisma + pooler；Drizzle + PostgreSQL driver。
 - **Consequences:** 必須從已套用 Schema 產生 TypeScript database types；複雜交易需使用 database function/RPC 或受控 server transaction 策略。
+
+## ADR-012: Tokyo as the Supabase primary region
+
+- **Status:** Accepted
+- **Date:** 2026-08-24
+- **Context:** 主要使用者在台灣，Supabase project 建立時必須選定 primary database region。
+- **Decision:** Supabase PostgreSQL primary region 使用 Northeast Asia (Tokyo), `ap-northeast-1`。
+- **Reason:** 鄰近台灣且提供明確資料位置，project 已依此建立。
+- **Alternatives:** Southeast Asia (Singapore)；一般 Asia-Pacific region。
+- **Consequences:** Vercel server functions 應盡量選擇鄰近 Tokyo 的執行 region，並以實測延遲確認；跨區備援與資料落地需求仍需另行評估。

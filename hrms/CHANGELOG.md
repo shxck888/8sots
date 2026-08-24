@@ -13,6 +13,8 @@
 - 建立 Supabase SSR server client、環境變數範本及 13 項通過的 unit/contract tests。
 - 初始化本機 Git repository，預設分支為 `main`。
 - 將 Build 1 專案同步至 `shxck888/8sots` repository 的 `hrms/` 目錄。
+- 新增 Data API grants migration 與相關安全 contract tests。
+- 記錄 Supabase production project primary region 為 Tokyo。
 
 ### Changed
 
@@ -23,6 +25,7 @@
 - 新增 `202608240001_foundation.sql`，定義 Tenant、Membership、Company、Location、Role、Permission、Scope 與 Audit Log 基礎結構。
 - Migration 啟用 tenant RLS read policies、composite tenant foreign keys，並刻意不授予 authenticated client 寫入 policy。
 - Migration 尚未套用至 Supabase project，因此遠端資料庫目前沒有可驗證變更。
+- 新增 `202608240002_data_api_grants.sql`：撤銷 anon/authenticated 預設表權限，只授予 authenticated tenant/RBAC 必要表 SELECT；Audit Log 不開放 client access。
 
 ### API
 
@@ -35,5 +38,5 @@
 
 ### Validation
 
-- TypeScript、ESLint、13 個 Vitest tests 與 Next.js production build 通過。
+- TypeScript、ESLint、16 個 Vitest tests 與 Next.js production build 通過。
 - Local smoke test：首頁 `200`、health `200`、未設定 Supabase 的 me endpoint `503`（符合預期）。

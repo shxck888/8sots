@@ -4,17 +4,17 @@ Last Updated: 2026-08-24
 
 ## Current Phase
 
-**Build 1 — Auth and tenant foundation IN PROGRESS**。應用骨架與靜態工作台已可 build；Supabase migration 尚未套用，尚未完成真實登入、tenant/RLS integration test 或部署。
+**Build 1 — Auth and tenant foundation IN PROGRESS**。應用骨架與靜態工作台已可 build；Supabase production project 已建立於 Tokyo，但 migrations 尚未套用，尚未完成真實登入、tenant/RLS integration test 或 Vercel deployment。
 
 ## Next Recommended Task (P0)
 
 完成可登入且可驗證 tenant isolation 的第一個 end-to-end slice：
 
-1. 建立／連結 Supabase development project，填入本機環境變數。
-2. 用 Supabase CLI 套用 `202608240001_foundation.sql`，產生並提交 database TypeScript types。
-3. 實作登入、登出、callback/session refresh，以及無 session 的 route protection。
-4. 建立兩個 tenant 與測試使用者的安全 seed／fixture，驗證同租戶可讀、跨租戶不可讀、client 不可寫。
-5. 將首頁假資料替換為目前使用者、tenant、location 與 membership scope；驗證 mobile/desktop 登入流程。
+1. 在 Supabase Dashboard 啟用 GitHub integration：repository `shxck888/8sots`、working directory `hrms`、production branch `main`。
+2. 開啟 Deploy to production，確認 `202608240001` 與 `202608240002` 依序成功，並產生／提交 database TypeScript types。
+3. 將 Supabase URL 與 publishable key 設定至 Vercel environment，絕不使用 secret/service-role key 作為 public variable。
+4. 實作登入、登出、callback/session refresh，以及無 session 的 route protection。
+5. 建立兩個 tenant 與測試使用者的安全 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
 
 完成 code、migration apply、integration tests 與文件同步後，Auth/Organization foundation 才能標 DONE。
 
@@ -23,7 +23,7 @@ Last Updated: 2026-08-24
 ### P0 — Deployment and security baseline
 
 - 將 Vercel project 的 Root Directory 設為 `hrms`，建立 preview/production 專案與 build checks。
-- 決定 Supabase/Vercel region、local/preview/production 分層與 secret rotation。
+- 決定 Vercel function region、local/preview/production 分層與 secret rotation；Supabase 已選 Tokyo。
 - 完成 tenant threat model、service-role 使用規則、CSP/security headers、rate limit 與 audit writer。
 - 建立 migration ownership、forward-fix、seed、備份及還原驗證流程。
 - 確認台灣個資、勞動、薪資及保存政策的合格審查責任。
@@ -45,7 +45,7 @@ Last Updated: 2026-08-24
 
 ## Decisions Needed
 
-- Supabase/Vercel region 及環境拓撲。
+- Vercel function region 及 preview/production 環境拓撲（Supabase 已選 Tokyo）。
 - Auth MFA、password recovery、invitation 與帳號綁定政策。
 - PostgreSQL 金額表示（`numeric` 或 integer minor unit）。
 - Background job/queue、cache、object storage 與 observability。
@@ -54,7 +54,7 @@ Last Updated: 2026-08-24
 ## Known Issues / Risks
 
 - 原始碼已位於 `shxck888/8sots/hrms`；Vercel project 與自動部署尚未建立。
-- 沒有 Supabase credentials；migration 只有靜態 contract tests，尚未由真實 PostgreSQL 執行。
+- Supabase project 已建立但 credentials 尚未放入本機/Vercel；migrations 只有靜態 contract tests，尚未由真實 PostgreSQL 執行。
 - Docker/Supabase local stack 不可用，因此本輪無法執行 database integration tests。
 - 工作台是代表性假資料；打卡按鈕及班表尚無業務行為。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。
