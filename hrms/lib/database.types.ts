@@ -714,6 +714,210 @@ export type Database = {
           },
         ]
       }
+      schedule_assignments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          notes: string | null
+          schedule_version_id: string
+          shift_id: string
+          tenant_id: string
+          updated_at: string
+          work_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          notes?: string | null
+          schedule_version_id: string
+          shift_id: string
+          tenant_id: string
+          updated_at?: string
+          work_date: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          schedule_version_id?: string
+          shift_id?: string
+          tenant_id?: string
+          updated_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_assignments_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "schedule_assignments_tenant_id_schedule_version_id_fkey"
+            columns: ["tenant_id", "schedule_version_id"]
+            isOneToOne: false
+            referencedRelation: "schedule_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "schedule_assignments_tenant_id_shift_id_fkey"
+            columns: ["tenant_id", "shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "schedule_assignments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          period_end: string
+          period_start: string
+          published_at: string | null
+          published_by: string | null
+          status: Database["public"]["Enums"]["schedule_version_status"]
+          tenant_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          published_at?: string | null
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["schedule_version_status"]
+          tenant_id: string
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          published_at?: string | null
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["schedule_version_status"]
+          tenant_id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_segments: {
+        Row: {
+          created_at: string
+          end_minute: number
+          id: string
+          segment_order: number
+          shift_id: string
+          start_minute: number
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_minute: number
+          id?: string
+          segment_order: number
+          shift_id: string
+          start_minute: number
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          end_minute?: number
+          id?: string
+          segment_order?: number
+          shift_id?: string
+          start_minute?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_segments_tenant_id_shift_id_fkey"
+            columns: ["tenant_id", "shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "shift_segments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shifts: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["organization_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["organization_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["organization_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_memberships: {
         Row: {
           created_at: string
@@ -830,6 +1034,17 @@ export type Database = {
       }
     }
     Functions: {
+      assign_schedule_shift: {
+        Args: {
+          p_employee_id: string
+          p_notes: string
+          p_schedule_version_id: string
+          p_shift_id: string
+          p_tenant_id: string
+          p_work_date: string
+        }
+        Returns: string
+      }
       create_employee: {
         Args: {
           p_email: string
@@ -872,6 +1087,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_schedule_draft: {
+        Args: {
+          p_period_end: string
+          p_period_start: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       current_user_has_permission: {
         Args: { p_permission_code: string; p_tenant_id: string }
         Returns: boolean
@@ -888,6 +1111,10 @@ export type Database = {
       }
       record_employee_password_reset: {
         Args: { p_employee_id: string; p_tenant_id: string }
+        Returns: undefined
+      }
+      publish_schedule: {
+        Args: { p_schedule_version_id: string; p_tenant_id: string }
         Returns: undefined
       }
       set_employee_auth_account_status: {
@@ -950,6 +1177,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      upsert_shift_template: {
+        Args: {
+          p_code: string
+          p_name: string
+          p_segments: Json
+          p_tenant_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       employee_auth_status: "active" | "suspended"
@@ -964,6 +1200,7 @@ export type Database = {
       membership_status: "invited" | "active" | "suspended" | "revoked"
       organization_status: "active" | "inactive" | "archived"
       role_scope_type: "tenant" | "company" | "location" | "department" | "self"
+      schedule_version_status: "draft" | "published" | "superseded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1104,6 +1341,7 @@ export const Constants = {
       membership_status: ["invited", "active", "suspended", "revoked"],
       organization_status: ["active", "inactive", "archived"],
       role_scope_type: ["tenant", "company", "location", "department", "self"],
+      schedule_version_status: ["draft", "published", "superseded"],
     },
   },
 } as const

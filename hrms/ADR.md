@@ -164,3 +164,13 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 保留 Supabase 的密碼與 session 安全模型，限制高權限金鑰暴露面，並維持 tenant、RBAC 與 audit defense in depth。
 - **Alternatives:** client 直接呼叫 Auth Admin；將密碼保存於 HR 資料庫；建立帳號時自動授予角色；忽略 Auth/DB 部分成功。
 - **Consequences:** Vercel 必須設定及輪替 `SUPABASE_SERVICE_ROLE_KEY`；跨系統操作必須持續維護補償與 production E2E；未來 invitation、recovery email 與 MFA 需新增流程，不能假設內部 identifier 可收信。
+
+## ADR-017: Versioned schedules and immutable published shift history
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 餐飲排班需要兩段班、跨日班、草稿修改與正式發布；若發布後直接修改 Assignment 或班別區段，歷史考勤會隨主檔漂移。
+- **Decision:** Shift 由有序 `start_minute`／`end_minute` segments 組成，offset 以 work date 為基準且結束可超過午夜。Schedule 使用 draft/published/superseded versions；員工每日指派一個 Shift，拆班由 Shift Segments 表達。發布後 Assignment 不可異動，已被 published/superseded schedule 使用的 Shift Segments 也不可覆寫。Mutation 只能經 `schedule.manage` permission-checked audited RPC，且不要求 `location_id`。
+- **Reason:** 正確表達海之星平日兩段班與假日連續班，保留班表歷史可重現性，並延續既有 tenant/RBAC/audit defense in depth。
+- **Alternatives:** 單一開始／結束時間加固定休息分鐘；直接覆寫已發布班表；每個班段建立一筆獨立排班；強制先建立門市。
+- **Consequences:** 班別一旦被正式班表使用，如需調整必須建立新班別；發布新版本會將同期間舊版本標為 superseded。假日判定目前由排班者選擇班別，後續 Holiday Calendar 必須以獨立版本化規則接入。

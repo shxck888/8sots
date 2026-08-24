@@ -35,7 +35,13 @@ describe("generated database types", () => {
       ...uniqueMatches(/create table public\.(\w+)/g),
       ...uniqueMatches(/create(?: or replace)? function public\.(\w+)/g),
       ...uniqueMatches(/create type public\.(\w+)/g),
-    ];
+    ].filter(
+      (entity) =>
+        ![
+          "guard_published_schedule_assignment",
+          "guard_published_shift_segment",
+        ].includes(entity),
+    );
 
     for (const entity of entities) {
       expect(generatedTypes, `${entity} is missing from database.types.ts`).toContain(

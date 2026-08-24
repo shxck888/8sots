@@ -4,18 +4,18 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 — Auth, tenant and employee foundation DONE**。自訂帳號登入、管理員、完整 Employee Master、員工帳號生命週期與第二 tenant 跨租戶隔離皆已通過 production 驗證。
+**Build 1 與 Schedule database foundation DONE**。自訂帳號登入、管理員、完整 Employee Master、員工帳號生命週期、跨租戶隔離、Shift/Segment 與 Schedule draft/publish 皆已通過 production 驗證。
 
 ## Next Recommended Task (P0)
 
-開始無門市前提下的排班 domain foundation：
+開始無門市前提下的排班管理 UI：
 
-1. 建立 tenant-wide Shift、Shift Segment 與跨日／兩段班 validation。
-2. 建立 Schedule、Schedule Assignment 與 draft/published version semantics；`location_id` 暫不作必填。
-3. 使用 permission-checked audited RPC 建立、修改及發布班表。
-4. 補上跨午夜、重疊班段、發布後不可直接覆寫及跨租戶負向 tests。
+1. 建立管理後台排班入口與週／月日曆，顯示員工、日期、平日班及假日班。
+2. 串接建立 Schedule Draft、批次指派／修改 Assignment 與 Publish 操作。
+3. 草稿與已發布狀態清楚分離，發布前顯示空班、重複與非 active 員工警示。
+4. 補上 Server Action validation、權限負向測試及 responsive UI 測試。
 
-跨租戶測試已收錄於 `supabase/tests/cross_tenant_rls.sql`，六項 production assertion 通過並確認 fixture 殘留為 0。
+排班 schema 與正式班別已完成；兩份 rollback-only production integration tests 共 14 項核心 assertion 通過並確認 fixtures 殘留為 0。
 Production Database types、client generics 與 migration drift checks 已完成；重新產生使用 `npm run db:types`，執行時需要 read-only `SUPABASE_ACCESS_TOKEN`。
 
 ## Pending Priorities
@@ -33,7 +33,7 @@ Production Database types、client generics 與 migration drift checks 已完成
 
 - Organization CRUD 與其他模組的 permission-checked server mutation。
 - Password recovery、invitation 與 MFA（Employee 帳號建立／重設／停用／恢復已完成）。
-- Shift/Shift Segment、Schedule version/publish 與跨日測試。
+- Schedule 管理日曆、草稿指派／發布與員工端真實班表。
 - GPS Punch（同意、精度、geofence、反作弊）與 immutable punch evidence。
 - Attendance 計算、異常與可重現版本關聯。
 - Phase 1 permission matrix 與完整 audit trail。
@@ -56,7 +56,7 @@ Production Database types、client generics 與 migration drift checks 已完成
 
 - Production 維持單一正式 tenant；第二 tenant 僅在 rollback-only integration test transaction 中建立，不是常駐測試資料。
 - Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端環境執行。
-- 工作台班表、統計與打卡仍是代表性假資料，尚無業務行為。
+- 工作台班表、統計與打卡仍是代表性假資料；Schedule schema 已有真實資料，但尚未串接 UI。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。
 
 ## Definition of Done

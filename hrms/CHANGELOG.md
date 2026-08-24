@@ -26,6 +26,10 @@
 - 從 Supabase production schema 產生完整 `lib/database.types.ts`，涵蓋 tables、Employee Master view、RPCs、enums 與 relationships。
 - 新增 application `Database` overlay，僅修正 generator 無法表達的 Employee Master nullable PostgreSQL function arguments。
 - 新增 migration-to-types drift tests，並加入 `npm run db:types` 再生指令。
+- 新增 tenant-wide Shift、ordered Shift Segment、Schedule Version 與 Schedule Assignment foundation。
+- 新增海之星正式平日班（10:00–14:00、16:00–21:00）與假日班（10:00–21:00）。
+- 新增 `supabase/tests/schedule_foundation.sql`，以 rollback-only production test 驗證工時、跨日、重疊、跨租戶、發布與 immutable history。
+- 新增 ADR-017，記錄版本化班表與已發布班別／指派不可變決策。
 
 ### Changed
 
@@ -46,6 +50,8 @@
 - Supabase production migration history 已確認 `202608250006` 與 `202608250007` 套用成功。
 - 新增並套用 `202608250008_employee_auth_accounts.sql`：`employee_auth_accounts`、Auth link、active membership 同步、帳號狀態／密碼重設 audited RPC 與最小 SELECT grant。
 - 新增並套用 forward-fix `202608250009_prevent_self_account_suspension.sql`：database RPC 拒絕操作者停用或變更自己的帳號狀態。
+- 新增並套用 `202608250010_schedule_foundation.sql`：`shifts`、`shift_segments`、`schedule_versions`、`schedule_assignments`、`schedule_version_status`、`schedule.manage`、tenant RLS、composite tenant FKs、immutable triggers 與 audited RPC。
+- 新增 environment seed `8sots_schedule_templates.sql`；正式資料為 `WEEKDAY_SPLIT` 540 分鐘與 `HOLIDAY_CONTINUOUS` 660 分鐘。
 
 ### API
 
@@ -53,6 +59,7 @@
 - 新增員工管理 Server Actions 與 database RPC；既有 JSON API 無變更。
 - Employee Server Action/RPC contract 擴充為完整 Employee Master；舊的內部簡版表單 contract 被取代，公開 JSON API 無 breaking change。
 - 新增內部 Employee Account Server Actions；既有公開 JSON API 無新增、變更或 breaking change。
+- 新增內部 Schedule database RPC：班別 upsert、建立草稿、指派員工班別及發布；尚未建立 UI，既有公開 JSON API 無 breaking change。
 
 ### Breaking Changes
 
@@ -73,6 +80,9 @@
 - ESLint、TypeScript 與 53 個 Vitest tests 通過；本次只有測試與文件變更，不含 Database Migration、公開 API 或 Breaking Change。
 - Server session 與 server-only Auth Admin clients 已改用 `Database` generic；Employee Master／Account domain types 改由 generated types 衍生。
 - ESLint、TypeScript、56 個 Vitest tests 與 Next.js production build 通過；typed data boundary 變更不包含 Database Migration、公開 API 或 Breaking Change。
+- `202608250010` 先在 production 完整 transaction/rollback 驗證，再正式套用並記錄 migration history。
+- 排班 production integration test 8 項全數通過；確認正式班別為 540／660 分鐘，測試 Shift、Tenant、Employee fixture 殘留皆為 0。
+- ESLint、TypeScript、61 個 Vitest tests 與 Next.js production build 通過。
 
 ## 2026-08-24
 

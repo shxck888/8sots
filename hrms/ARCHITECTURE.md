@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。Migrations `001`–`009` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Migrations `001`–`010` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -43,7 +43,7 @@ Supabase Auth + PostgreSQL with RLS
 
 - Organization：Tenant → Company → Location / Department → Position
 - Identity & people：User、Employee、Employee Profile/Contact、Employment Record、Department、Position、Role、Permission、Scope
-- Scheduling：Shift、Shift Segment、Schedule、Schedule Change
+- Scheduling：Shift → ordered Shift Segment；Schedule Version → per-employee/date Assignment。版本狀態為 draft/published/superseded，發布後保留不可變歷史。
 - Attendance：Punch Record、Punch Correction、Attendance Day/Detail/Exception
 - Absence：Leave Type/Grant/Balance/Request/Usage、Overtime、Comp Time
 - Workflow：Approval Flow/Step/Request/Action
@@ -51,7 +51,7 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004/005` 建立 Employee 與安全的 Auth link；`006` 新增 Profile、Contact、Department、Position、effective-dated Employment Record、完整 audited RPC 與私人 `employee-photos` bucket；`007` 以 tenant timezone 計算任職異動生效日；`008/009` 建立 `employee_auth_accounts`、帳號狀態 audited RPC、membership 同步及 database-level 自我停用防護。Authenticated client 只可依 RLS 讀取同 tenant 資料，沒有直接 table write privilege。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010` 建立 `shifts`、`shift_segments`、`schedule_versions`、`schedule_assignments` 與 `schedule.manage`；authenticated client 仍只有同 tenant SELECT，所有排班 mutation 由 permission-checked audited RPC 執行。
 
 ## Multi-Tenant Strategy
 
@@ -66,6 +66,8 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - 後端時間基準為 UTC，DB 使用具時區語意的 timestamp；任職 effective date 依 tenant timezone 計算，UI 預設 `Asia/Taipei`。
 - 排班與考勤另保存 local work date/timezone，支援跨午夜。
 - 工時／休息時間使用整數分鐘。
+- Shift segment 以 work date 起點的 minute offset 表示：開始為 `0..1439`，結束可至 `2880`，因此可跨午夜；班段不可重疊。
+- 海之星目前的 `WEEKDAY_SPLIT` 為 `600–840`、`960–1260`，`HOLIDAY_CONTINUOUS` 為 `600–1260`。是否屬假日由排班指派決定，尚未接上 holiday calendar。
 - 金額採精確型別（PostgreSQL `numeric` 或整數最小單位），選擇待 Schema ADR。
 - 重要歷史狀態使用 immutable record、effective dating 或 snapshot，使重算可追溯。
 - 一般主檔傾向 soft delete；依法或業務要求不可刪除的交易紀錄採保留／封存。
@@ -73,7 +75,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 ## Infrastructure
 
 - **Implemented locally**：Next.js 16、React 19、TypeScript、Supabase JS/SSR、Zod、ESLint、Vitest、PWA manifest、environment template。
-- **Typed data boundary**：`lib/database.types.ts` 由 Supabase production schema 產生；`lib/database.ts` 只覆蓋 generator 無法推斷的 Employee Master nullable function arguments。Migration contract test 會檢查所有 versioned table/function/enum 是否存在於生成檔。
+- **Typed data boundary**：`lib/database.types.ts` 以 production schema 為基線並同步已驗證的 `010` schema；`lib/database.ts` 只覆蓋 generator 無法推斷的 Employee Master nullable function arguments。Migration contract test 會檢查所有 PostgREST-visible versioned table/function/enum；trigger functions 不屬 Data API surface。
 - **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL；Supabase primary region 為 Tokyo (`ap-northeast-1`)。
 - **Selected**：Supabase Storage 私人 bucket 保存員工照片，3 MB，僅 JPEG/PNG/WebP；由短效 signed URL 顯示。
 - **Selected**：Vercel Sensitive `SUPABASE_SERVICE_ROLE_KEY` 僅供 server-only Auth Admin client 使用，不得使用 `NEXT_PUBLIC_` 前綴或傳入 client bundle。
@@ -89,6 +91,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - `/admin/employees`、`/new`、`/[id]`：permission-protected 員工列表、搜尋、新增與編輯 UI。
 - Employee Server Actions：Zod validation 後呼叫 `create_employee_master` / `update_employee_master` / `set_employee_photo`；RPC 在 database 重新驗證權限並寫入 audit evidence。照片寫入私人 Storage bucket。
 - Employee Account Server Actions：以 server-only Auth Admin API 建立帳號／重設密碼／ban 或 unban，並呼叫 `link_employee_auth_account`、`set_employee_auth_account_status`、`record_employee_password_reset` 同步資料與 audit；不是公開 JSON API。
+- Schedule database RPC：`upsert_shift_template`、`create_schedule_draft`、`assign_schedule_shift`、`publish_schedule`。皆要求 `schedule.manage`、驗證 tenant 並寫入 Audit Log；管理 UI 尚未建立，亦非公開 JSON API。
 - `createServerClient<Database>` 與 `createClient<Database>`：所有 `.from()`／`.rpc()` 從 production schema 取得 table、view、enum、relationship 與 function argument inference。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。

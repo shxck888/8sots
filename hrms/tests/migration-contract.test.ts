@@ -47,8 +47,23 @@ const preventSelfSuspensionMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const scheduleMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250010_schedule_foundation.sql"),
+  "utf8",
+).toLowerCase();
+
+const scheduleSeed = readFileSync(
+  join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
+  "utf8",
+).toLowerCase();
+
 const crossTenantRlsTest = readFileSync(
   join(process.cwd(), "supabase/tests/cross_tenant_rls.sql"),
+  "utf8",
+).toLowerCase();
+
+const scheduleFoundationTest = readFileSync(
+  join(process.cwd(), "supabase/tests/schedule_foundation.sql"),
   "utf8",
 ).toLowerCase();
 
@@ -184,6 +199,56 @@ describe("foundation migration contract", () => {
   it("prevents administrators from changing their own login status", () => {
     expect(preventSelfSuspensionMigration).toContain("v_account.auth_user_id = (select auth.uid())");
     expect(preventSelfSuspensionMigration).toContain("cannot change own account status");
+  });
+
+  it("models tenant-wide shifts as ordered segments and supports cross-midnight offsets", () => {
+    expect(scheduleMigration).toContain("create table public.shifts");
+    expect(scheduleMigration).toContain("create table public.shift_segments");
+    expect(scheduleMigration).toContain("start_minute >= 0 and start_minute < 1440");
+    expect(scheduleMigration).toContain("end_minute <= 2880");
+    expect(scheduleMigration).toContain("shift segments overlap");
+    expect(scheduleMigration).not.toContain("location_id");
+  });
+
+  it("creates versioned draft and published schedules with immutable history", () => {
+    expect(scheduleMigration).toContain("create table public.schedule_versions");
+    expect(scheduleMigration).toContain("create table public.schedule_assignments");
+    expect(scheduleMigration).toContain("schedule_versions_one_published_period_idx");
+    expect(scheduleMigration).toContain("guard_published_schedule_assignment");
+    expect(scheduleMigration).toContain("guard_published_shift_segment");
+    expect(scheduleMigration).toContain("published or superseded schedules are immutable");
+  });
+
+  it("keeps schedule writes behind permission-checked audited RPCs", () => {
+    expect(scheduleMigration).toContain("'schedule.manage'");
+    expect(scheduleMigration).toContain("upsert_shift_template");
+    expect(scheduleMigration).toContain("create_schedule_draft");
+    expect(scheduleMigration).toContain("assign_schedule_shift");
+    expect(scheduleMigration).toContain("publish_schedule");
+    expect(scheduleMigration).toContain("insert into public.audit_logs");
+    expect(scheduleMigration).not.toMatch(
+      /grant\s+(insert|update|delete|all)[\s\S]*?public\.(shifts|shift_segments|schedule_versions|schedule_assignments)[\s\S]*?to authenticated/,
+    );
+  });
+
+  it("versions the actual Seastar weekday and holiday shift templates", () => {
+    expect(scheduleSeed).toContain("'weekday_split', '平日班'");
+    expect(scheduleSeed).toContain("(v_tenant_id, v_shift_id, 1, 600, 840)");
+    expect(scheduleSeed).toContain("(v_tenant_id, v_shift_id, 2, 960, 1260)");
+    expect(scheduleSeed).toContain("'holiday_continuous', '假日班'");
+    expect(scheduleSeed).toContain("(v_tenant_id, v_shift_id, 1, 600, 1260)");
+  });
+
+  it("keeps schedule integration fixtures rollback-only and covers critical boundaries", () => {
+    expect(scheduleFoundationTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(scheduleFoundationTest.trim()).toMatch(/rollback;$/);
+    expect(scheduleFoundationTest).not.toContain("commit;");
+    expect(scheduleFoundationTest).toContain("weekday shift minutes mismatch");
+    expect(scheduleFoundationTest).toContain("cross-midnight shift minutes mismatch");
+    expect(scheduleFoundationTest).toContain("overlapping shift segments unexpectedly succeeded");
+    expect(scheduleFoundationTest).toContain("cross-tenant schedule rpc unexpectedly succeeded");
+    expect(scheduleFoundationTest).toContain("published schedule mutation unexpectedly succeeded");
+    expect(scheduleFoundationTest).toContain("published shift mutation unexpectedly succeeded");
   });
 
   it("keeps the cross-tenant RLS integration fixture transaction-scoped", () => {
