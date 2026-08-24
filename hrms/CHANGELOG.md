@@ -15,6 +15,8 @@
 - 將 Build 1 專案同步至 `shxck888/8sots` repository 的 `hrms/` 目錄。
 - 新增 Data API grants migration 與相關安全 contract tests。
 - 記錄 Supabase production project primary region 為 Tokyo。
+- 啟用 Supabase GitHub integration：repository `shxck888/8sots`、working directory `hrms`、production branch `main`。
+- 以 commit `212c386` 觸發 production migration deployment；GitHub 上兩個 Vercel checks 均成功。
 
 ### Changed
 
@@ -24,8 +26,9 @@
 
 - 新增 `202608240001_foundation.sql`，定義 Tenant、Membership、Company、Location、Role、Permission、Scope 與 Audit Log 基礎結構。
 - Migration 啟用 tenant RLS read policies、composite tenant foreign keys，並刻意不授予 authenticated client 寫入 policy。
-- Migration 尚未套用至 Supabase project，因此遠端資料庫目前沒有可驗證變更。
-- 新增 `202608240002_data_api_grants.sql`：撤銷 anon/authenticated 預設表權限，只授予 authenticated tenant/RBAC 必要表 SELECT；Audit Log 不開放 client access。
+- `202608240001 foundation` 已成功套用至 Supabase production，建立 tenant/RBAC/location/audit 基礎資料表與 RLS。
+- 新增並已套用 `202608240002_data_api_grants.sql`：撤銷 anon/authenticated 預設表權限，只授予 authenticated tenant/RBAC 必要表 SELECT；Audit Log 不開放 client access。
+- 透過 `supabase_migrations.schema_migrations` 唯讀查詢確認 production migration history 包含 `202608240001 foundation` 與 `202608240002 data_api_grants`。
 
 ### API
 
