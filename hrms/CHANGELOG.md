@@ -37,6 +37,7 @@
 - 新增並套用 forward-fix `202608250005_employee_auth_link_unique_fix.sql`，允許多位尚未連結 Auth User 的員工，同時維持非空 `auth_user_id` 的 tenant 內唯一性。
 - 新增 `202608250006_employee_master_details.sql`：Department、Position、Employee Profile/Contact、effective-dated Employment Record、完整 Employee Master RPC、RLS、audit 與私人 `employee-photos` bucket。
 - 新增 forward-fix `202608250007_employment_effective_date_timezone_fix.sql`，任職異動依 tenant timezone 產生生效日，避免 UTC 日期邊界建立無效區間。
+- Supabase production migration history 已確認 `202608250006` 與 `202608250007` 套用成功。
 
 ### API
 
@@ -55,6 +56,7 @@
 - Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。
 - ESLint、TypeScript、42 個 Vitest tests 與 Next.js production build 通過。
 - Production 管理後台列表／表單 render、console、migration history 與 transaction-scoped create/update/rollback 驗證通過；沒有留下測試員工資料。
+- 完整 Employee Master production transaction 新增／修改／查詢／rollback 通過；測試後 `MASTER_TMP` 為 0 筆，私人照片 bucket 設定正確，正式新增頁全欄位 render 且 browser console 無錯誤。
 
 ## 2026-08-24
 

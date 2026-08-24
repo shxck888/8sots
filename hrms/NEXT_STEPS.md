@@ -4,11 +4,11 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、管理員與簡版員工管理已驗證；完整 Employee Master 正在 production 驗證。完成後尚有員工帳號 provisioning 與第二 tenant 跨租戶 RLS integration test。
+**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、管理員與完整 Employee Master 已通過 production 驗證；尚有員工帳號 provisioning 與第二 tenant 跨租戶 RLS integration test。
 
 ## Next Recommended Task (P0)
 
-完整 Employee Master production 驗證完成後，進行 Employee/Auth 的下一個安全切片：
+進行 Employee/Auth 的下一個安全切片：
 
 1. 建立員工登入帳號 provisioning／停用流程，將 Supabase Auth User 安全連結至 `employees.auth_user_id`。
 2. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。

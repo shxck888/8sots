@@ -6,7 +6,7 @@ Last Updated: 2026-08-25
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，以 responsive Web / PWA 服務員工、主管、HR 與業主。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE；法規、費率與薪資規則必須可設定並保留版本。
 
-目前是 **Build 1（Auth, tenant and employee foundation）**。Next.js 應用、Supabase production schema、Vercel deployment 與 `hrms.8sots.com.tw` 已建立。自訂帳號登入與管理員員工管理已通過 production 驗證。Employee Master 已擴充個資、聯絡、組織、任職履歷與私人照片，migration 及 production transaction 驗證仍在進行；員工登入帳號連結與第二 tenant 的跨租戶 RLS integration test尚未完成。
+目前是 **Build 1（Auth, tenant and employee foundation）**。Next.js 應用、Supabase production schema、Vercel deployment 與 `hrms.8sots.com.tw` 已建立。自訂帳號登入、管理員後台與完整 Employee Master 已通過 production 驗證；員工登入帳號連結與第二 tenant 的跨租戶 RLS integration test 尚未完成。
 
 ## Current Status
 
@@ -16,16 +16,16 @@ Last Updated: 2026-08-25
 - Responsive 員工「今日工作台」靜態 UI；不代表打卡、班表或出勤功能已串接。
 - `GET /api/health` 與 `GET /api/v1/me` 基線。
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
-- Supabase production 已套用並確認 `202608240001` 至 `202608250006`；`006` 建立完整 Employee Master 正規化 schema 與私人照片 bucket。`007` 時區 forward-fix 待部署驗證。
+- Supabase production 已套用並在 migration history 確認 `202608240001` 至 `202608250007`；`006` 建立完整 Employee Master 與私人照片 bucket，`007` 修正 tenant timezone 任職生效日。
 - GitHub `shxck888/8sots/hrms`、Vercel `8sots-hrms`、Supabase public credentials 與 `hrms.8sots.com.tw`。
 - 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。
 - Production 管理員登入、tenant membership 顯示與登出 smoke test 已通過；Supabase bootstrap query 同時驗證 active membership、role 與 permission。
 - 簡版管理後台員工列表、搜尋、新增與編輯已上線；資料 tenant-scoped、無直接 client write，mutation 經 `employee.manage` permission-checked RPC 並寫入 audit log。
+- 完整 Employee Master 已上線：身分證加密／遮罩、生日、性別、地址、私人照片、緊急聯絡、部門、職位、主管、五種任職類型、離職日、試用期與 effective-dated employment record。Production transaction create/update/rollback、私人 bucket、正式表單與 console smoke test 通過，未留下測試資料。
 - 目前程式通過 ESLint、TypeScript、42 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
-- 完整 Employee Master：身分證、生日、性別、地址、私人照片、緊急聯絡、部門、職位、主管、五種任職類型、離職日與試用期均已完成 code/schema；待 `006/007` production transaction 與 UI smoke test 後標 DONE。
 - Organization / RLS foundation：首位 tenant 與管理員已建立；尚未建立第二 tenant fixture 與跨租戶負向 integration test。
 - 員工登入帳號 provisioning、停用與 `employees.auth_user_id` 連結尚未實作。
 - 首頁仍以代表性假資料呈現班表、出勤與打卡，按鈕尚未連接 domain operation。
@@ -53,7 +53,7 @@ Last Updated: 2026-08-25
 - **DONE:** Platform 與 database foundation。
 - **DONE:** 自訂帳號登入、登出、session 與 route protection production slice。
 - **DONE:** 管理後台與 tenant-scoped 簡版員工主檔新增／查詢／編輯 production slice。
-- **IN PROGRESS:** 完整 Employee Master 與私人照片 production 驗證。
+- **DONE:** 完整 Employee Master、effective-dated 任職履歷、身分證保護與私人照片 production slice。
 - **IN PROGRESS:** Organization、跨租戶 RLS、RBAC/Audit application enforcement。
 - **PLANNED:** Employee Account/Employment History、Schedule、Attendance、Leave、Overtime、Approval、Payroll、Insurance、Notification、Report。
 
