@@ -42,6 +42,11 @@ const employeeAuthAccountsMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const preventSelfSuspensionMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250009_prevent_self_account_suspension.sql"),
+  "utf8",
+).toLowerCase();
+
 const tenantTables = [
   "tenants",
   "tenant_memberships",
@@ -169,5 +174,10 @@ describe("foundation migration contract", () => {
     expect(employeeAuthAccountsMigration).toContain("record_employee_password_reset");
     expect(employeeAuthAccountsMigration).toContain("employee.account_provisioned");
     expect(employeeAuthAccountsMigration).not.toContain("password text");
+  });
+
+  it("prevents administrators from changing their own login status", () => {
+    expect(preventSelfSuspensionMigration).toContain("v_account.auth_user_id = (select auth.uid())");
+    expect(preventSelfSuspensionMigration).toContain("cannot change own account status");
   });
 });
