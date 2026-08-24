@@ -10,10 +10,9 @@ Last Updated: 2026-08-25
 
 完成 Auth/Organization 的 production end-to-end 驗收：
 
-1. 確認 `202608250003` 出現在 Supabase production migration history。
-2. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
-3. 為 server mutation 實作 `platform.admin` permission enforcement 與負向測試。
-4. 依 production schema 產生並提交 database TypeScript types。
+1. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
+2. 為 server mutation 實作 `platform.admin` permission enforcement 與負向測試。
+3. 依 production schema 產生並提交 database TypeScript types。
 
 上述 integration tests 與文件同步完成後，Auth/Organization foundation 才能標 DONE。
 
