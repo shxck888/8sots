@@ -4,15 +4,15 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 — Auth and tenant foundation IN PROGRESS**。應用、Supabase migrations、Vercel、custom domain、public credentials 與登入程式切片已建立；尚未完成正式帳號登入與 tenant/RLS integration test。
+**Build 1 — Auth and tenant foundation IN PROGRESS**。自訂帳號登入、production 管理員、tenant membership、RBAC bootstrap、Vercel 與 custom domain 已驗證；尚未完成第二 tenant 的跨租戶 RLS integration test。
 
 ## Next Recommended Task (P0)
 
 完成 Auth/Organization 的 production end-to-end 驗收：
 
-1. 在 Supabase Auth 建立首位管理員 `admin`，內部 identifier 為 `admin@auth.8sots.com.tw`，並確認 Site URL、Redirect URLs 包含正式網域。
-2. 為測試帳號建立 active tenant membership，從 `https://hrms.8sots.com.tw/login` 完成登入、session refresh、首頁資料與登出 smoke test。
-3. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
+1. 確認 `202608250003` 出現在 Supabase production migration history。
+2. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
+3. 為 server mutation 實作 `platform.admin` permission enforcement 與負向測試。
 4. 依 production schema 產生並提交 database TypeScript types。
 
 上述 integration tests 與文件同步完成後，Auth/Organization foundation 才能標 DONE。
@@ -53,7 +53,7 @@ Last Updated: 2026-08-25
 
 ## Known Issues / Risks
 
-- 沒有受控的測試帳號與 tenant fixtures，因此登入程式尚不能標 DONE。
+- 目前只有 production 管理員與單一 tenant；仍缺可重複執行的第二 tenant 安全 fixture。
 - Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端環境執行。
 - 工作台班表、統計與打卡仍是代表性假資料，尚無業務行為。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。

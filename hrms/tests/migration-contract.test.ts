@@ -12,6 +12,11 @@ const grantsMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const platformAdminMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250003_platform_admin_permission.sql"),
+  "utf8",
+).toLowerCase();
+
 const tenantTables = [
   "tenants",
   "tenant_memberships",
@@ -61,5 +66,11 @@ describe("foundation migration contract", () => {
     const grantSelectBlock = grantsMigration.match(/grant select on table([\s\S]*?)to authenticated/)?.[1];
     expect(grantSelectBlock).toBeDefined();
     expect(grantSelectBlock).not.toContain("public.audit_logs");
+  });
+
+  it("versions the platform administrator permission as reference data", () => {
+    expect(platformAdminMigration).toContain("'platform.admin'");
+    expect(platformAdminMigration).toContain("on conflict (code) do update");
+    expect(platformAdminMigration).not.toContain("auth.users");
   });
 });

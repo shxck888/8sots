@@ -6,7 +6,7 @@ Last Updated: 2026-08-25
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，以 responsive Web / PWA 服務員工、主管、HR 與業主。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE；法規、費率與薪資規則必須可設定並保留版本。
 
-目前是 **Build 1（Auth and tenant foundation）**。Next.js 應用、Supabase production schema、Vercel deployment、`hrms.8sots.com.tw` 與 public environment variables 已建立。自訂帳號/password 登入頁、登出、PKCE callback、cookie session refresh、未登入 route protection，以及登入者／active tenant 顯示已完成本機驗證；尚待建立正式管理員帳號並完成 production Auth/RLS end-to-end 驗證。
+目前是 **Build 1（Auth and tenant foundation）**。Next.js 應用、Supabase production schema、Vercel deployment、`hrms.8sots.com.tw` 與 public environment variables 已建立。自訂帳號/password 登入、登出、session refresh、route protection 與 active tenant 顯示已通過 production end-to-end 驗證。首位管理員 `admin` 已建立並綁定 `8sots` tenant、`platform_admin` role 與 `platform.admin` permission；跨租戶 RLS integration test 尚未完成。
 
 ## Current Status
 
@@ -16,13 +16,14 @@ Last Updated: 2026-08-25
 - Responsive 員工「今日工作台」靜態 UI；不代表打卡、班表或出勤功能已串接。
 - `GET /api/health` 與 `GET /api/v1/me` 基線。
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
-- Supabase production 已套用 `202608240001 foundation` 與 `202608240002 data_api_grants`。
+- Supabase production 已套用 `202608240001 foundation` 與 `202608240002 data_api_grants`；`202608250003 platform_admin_permission` 已建立並待 migration history 確認。
 - GitHub `shxck888/8sots/hrms`、Vercel `8sots-hrms`、Supabase public credentials 與 `hrms.8sots.com.tw`。
-- 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。登入程式切片通過 lint、TypeScript、22 項 Vitest、production build 與本機 HTTP smoke test；此項不等同 production Auth 已驗收。
+- 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。登入程式切片通過 lint、TypeScript、23 項 Vitest、production build 與本機 HTTP smoke test。
+- Production 管理員登入、tenant membership 顯示與登出 smoke test 已通過；Supabase bootstrap query 同時驗證 active membership、role 與 permission。
 
 ### IN PROGRESS
 
-- Auth / Organization foundation：程式、production schema、credentials 與 deployment 已建立；尚未做真實帳號登入、tenant fixture 與跨租戶 RLS integration test。
+- Organization / RLS foundation：首位 tenant 與管理員已建立；尚未建立第二 tenant fixture 與跨租戶負向 integration test。
 - 首頁仍以代表性假資料呈現班表、出勤與打卡，按鈕尚未連接 domain operation。
 
 ### PLANNED
@@ -46,7 +47,8 @@ Last Updated: 2026-08-25
 ## Core Modules
 
 - **DONE:** Platform 與 database foundation。
-- **IN PROGRESS:** Auth production verification、Organization、RBAC/Audit application enforcement。
+- **DONE:** 自訂帳號登入、登出、session 與 route protection production slice。
+- **IN PROGRESS:** Organization、跨租戶 RLS、RBAC/Audit application enforcement。
 - **PLANNED:** Employee、Schedule、Attendance、Leave、Overtime、Approval、Payroll、Insurance、Notification、Report。
 
 ## Non-Negotiable Rules
@@ -68,4 +70,4 @@ Last Updated: 2026-08-25
 - `supabase/migrations/`：已套用 production 的 foundation migrations
 - `tests/`：unit 與 migration contract tests
 
-Auth 仍維持 IN PROGRESS，因為目前沒有受控測試帳號與跨租戶 fixture 的正式環境驗證證據。
+登入功能已完成 production 驗證；整體 Auth/Organization foundation 仍維持 IN PROGRESS，直到跨租戶 RLS fixture 與 application permission enforcement 完成。

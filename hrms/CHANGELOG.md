@@ -12,16 +12,20 @@
 - 新增 Auth validation、redirect 與 user display name tests。
 - 新增自訂帳號驗證及 `{username}@auth.8sots.com.tw` 內部 Supabase identifier 映射。
 - 新增 ADR-013，記錄自訂帳號與 Supabase Auth 的整合方式。
+- 建立首位 production 管理員 `admin`、`8sots` tenant、active membership、`platform_admin` role、`platform.admin` permission 與 bootstrap audit record。
+- 新增 `202608250003_platform_admin_permission.sql`，將全域管理員 permission reference data 納入版本控制。
 
 ### Changed
 
 - 未登入存取 `/` 現在會 `307` 導向 `/login`；已登入存取 `/login` 會導向 `/`。
 - 專案文件同步為已完成 Supabase migrations、Vercel environment/custom domain 的實際狀態。
 - 登入欄位由 Email 改為 3–32 位英數／底線帳號；密碼規則改為 6–64 位英數混合。
+- 修正 Vercel Supabase environment variables 的空值與被截短 publishable key，重新部署 production。
 
 ### Database
 
-- 無新 migration 或 schema change。`202608240001` 與 `202608240002` 已存在 production。
+- 新增 idempotent reference-data migration `202608250003_platform_admin_permission.sql`；無 table/schema breaking change。
+- Production 已建立 `8sots` tenant、管理員 membership/RBAC 關聯及 audit record；不將環境特定 Auth user UUID 寫入 migration。
 
 ### API
 
@@ -34,9 +38,9 @@
 
 ### Validation
 
-- ESLint、TypeScript、22 個 Vitest tests 與 Next.js production build 通過。
+- ESLint、TypeScript、23 個 Vitest tests 與 Next.js production build 通過。
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
-- 正式 Supabase 帳號登入與 tenant/RLS integration test 尚未執行，因此 Auth 功能仍標 IN PROGRESS。
+- Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。
 
 ## 2026-08-24
 
