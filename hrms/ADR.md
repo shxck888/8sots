@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Last Updated: 2026-08-24
+Last Updated: 2026-08-25
 
 ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日後變更需新增 ADR 並將舊紀錄標為 Superseded，不覆蓋歷史。
 
@@ -123,3 +123,13 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 鄰近台灣且提供明確資料位置，project 已依此建立。
 - **Alternatives:** Southeast Asia (Singapore)；一般 Asia-Pacific region。
 - **Consequences:** Vercel server functions 應盡量選擇鄰近 Tokyo 的執行 region，並以實測延遲確認；跨區備援與資料落地需求仍需另行評估。
+
+## ADR-013: Custom usernames backed by internal Supabase email identifiers
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 餐飲門市人員需要由公司自訂、容易輸入且不依賴個人 Email 的登入帳號；既有 session 與 identity provider 為 Supabase Auth。
+- **Decision:** 使用者以 3–32 位英文字母、數字或底線帳號登入；server 將小寫正規化帳號映射為 `{username}@auth.8sots.com.tw`，再使用 Supabase password auth。密碼限 6–64 位英數，且至少包含一個英文字母與一個數字。內部 identifier 不顯示於登入介面。
+- **Reason:** 保留 Supabase 的密碼雜湊、token 與 session 管理，同時提供門市適用的自訂帳號體驗，避免自建 authentication stack。
+- **Alternatives:** 要求每位員工使用真實 Email；自建 username/password 儲存與 session；以手機號碼登入。
+- **Consequences:** 帳號大小寫不敏感且由 Supabase email uniqueness 保證唯一；帳號建立與改名必須使用同一映射規則；內部 email 不可用於寄信，password recovery 需由管理流程重設或未來另綁 recovery email；identifier domain 與正規化規則不得任意更改。

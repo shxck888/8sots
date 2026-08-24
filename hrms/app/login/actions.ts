@@ -1,7 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { loginFormSchema, sanitizeNextPath, type LoginFormState } from "@/lib/auth";
+import {
+  loginFormSchema,
+  sanitizeNextPath,
+  usernameToAuthEmail,
+  type LoginFormState,
+} from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function login(
@@ -9,7 +14,7 @@ export async function login(
   formData: FormData,
 ): Promise<LoginFormState> {
   const parsed = loginFormSchema.safeParse({
-    email: formData.get("email"),
+    username: formData.get("username"),
     password: formData.get("password"),
     next: formData.get("next"),
   });
@@ -26,12 +31,12 @@ export async function login(
   }
 
   const { error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
+    email: usernameToAuthEmail(parsed.data.username),
     password: parsed.data.password,
   });
 
   if (error) {
-    return { message: "Email 或密碼不正確，請重新確認。" };
+    return { message: "帳號或密碼不正確，請重新確認。" };
   }
 
   redirect(sanitizeNextPath(parsed.data.next));

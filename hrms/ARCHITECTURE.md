@@ -59,7 +59,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 
 ## Authentication and Authorization
 
-認證採 Supabase Auth email/password。`/login` 的 Server Action 呼叫 `signInWithPassword`，`/auth/callback` 交換 PKCE code，Next.js 16 Proxy 刷新 cookie session；首頁在 server 端取得 user，無 session 導向 `/login`，登出使用 Server Action。授權採 RBAC + scope；migration 已建立 role/permission/scope 結構，但 mutation enforcement 與真實 tenant/RLS integration test 尚未完成。
+認證採 Supabase Auth。使用者輸入 3–32 位英數／底線自訂帳號，server 將正規化後的帳號映射成 `{username}@auth.8sots.com.tw` 作為 Supabase 內部 email identifier；使用者不需知道內部 email。密碼限 6–64 位英數且必須同時包含英文字母與數字。`/login` 的 Server Action 呼叫 `signInWithPassword`，`/auth/callback` 交換 PKCE code，Next.js 16 Proxy 刷新 cookie session；首頁在 server 端取得 user，無 session 導向 `/login`，登出使用 Server Action。授權採 RBAC + scope；migration 已建立 role/permission/scope 結構，但 mutation enforcement 與真實 tenant/RLS integration test 尚未完成。
 
 ## Data Conventions
 
@@ -82,7 +82,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - `GET /api/health`：無外部依賴的服務 liveness，回傳 `status/service/timestamp`。
 - `GET /api/v1/me`：以 Supabase Auth 取得使用者並回傳 active tenant memberships；未登入為 `401`，環境未設定為 `503`。
 - `GET /login`：登入頁；已登入者 server-side redirect 至 `/`。
-- Login/logout Server Actions：驗證 credentials、建立或清除 session cookie；不直接暴露 Supabase 原始錯誤。
+- Login/logout Server Actions：驗證自訂帳號與密碼、將帳號映射為內部 Supabase identifier、建立或清除 session cookie；不直接暴露 Supabase 原始錯誤。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。
 

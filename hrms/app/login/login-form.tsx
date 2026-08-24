@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
+import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
 import type { LoginFormState } from "@/lib/auth";
 import { login } from "./actions";
 
@@ -14,20 +14,24 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
     <form action={formAction} className="login-form">
       <input name="next" type="hidden" value={nextPath} />
 
-      <label htmlFor="email">工作 Email</label>
+      <label htmlFor="username">帳號</label>
       <div className="login-input">
-        <Mail aria-hidden="true" size={19} />
+        <UserRound aria-hidden="true" size={19} />
         <input
-          autoComplete="email"
+          autoCapitalize="none"
+          autoComplete="username"
           autoFocus
-          id="email"
-          name="email"
-          placeholder="name@company.com"
+          id="username"
+          maxLength={32}
+          minLength={3}
+          name="username"
+          pattern="[A-Za-z0-9_]{3,32}"
+          placeholder="請輸入帳號"
           required
-          type="email"
+          type="text"
         />
       </div>
-      {state.fieldErrors?.email?.map((error) => (
+      {state.fieldErrors?.username?.map((error) => (
         <p className="field-error" key={error}>{error}</p>
       ))}
 
@@ -37,8 +41,10 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         <input
           autoComplete="current-password"
           id="password"
-          minLength={8}
+          maxLength={64}
+          minLength={6}
           name="password"
+          pattern="(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]{6,64}"
           placeholder="輸入密碼"
           required
           type="password"

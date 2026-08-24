@@ -10,7 +10,7 @@ Last Updated: 2026-08-25
 
 完成 Auth/Organization 的 production end-to-end 驗收：
 
-1. 在 Supabase Auth 建立受控的首位管理員／測試帳號，確認 email/password provider 與 Site URL、Redirect URLs 包含正式網域。
+1. 在 Supabase Auth 建立首位管理員 `admin`，內部 identifier 為 `admin@auth.8sots.com.tw`，並確認 Site URL、Redirect URLs 包含正式網域。
 2. 為測試帳號建立 active tenant membership，從 `https://hrms.8sots.com.tw/login` 完成登入、session refresh、首頁資料與登出 smoke test。
 3. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
 4. 依 production schema 產生並提交 database TypeScript types。
@@ -23,7 +23,7 @@ Last Updated: 2026-08-25
 
 - 驗證每次 GitHub commit 的 Vercel production deployment 與 custom-domain TLS 狀態。
 - 決定 Vercel function region、local/preview/production 分層與 secret rotation；Supabase 已選 Tokyo。
-- 定義邀請、首位管理員、password recovery、MFA 與帳號停用政策。
+- 定義邀請、內部 identifier 改名、password recovery、MFA 與帳號停用政策。
 - 完成 tenant threat model、service-role 使用規則、CSP/security headers、rate limit 與 audit writer。
 - 建立 migration ownership、forward-fix、seed、備份及還原驗證流程。
 - 確認台灣個資、勞動、薪資及保存政策的合格審查責任。
@@ -46,7 +46,7 @@ Last Updated: 2026-08-25
 ## Decisions Needed
 
 - Vercel function region 及 preview/production 環境拓撲。
-- Auth MFA、password recovery、invitation 與帳號綁定政策。
+- Auth MFA、非 Email 帳號的 password recovery、invitation 與帳號綁定政策。
 - PostgreSQL 金額表示（`numeric` 或 integer minor unit）。
 - Background job/queue、cache、object storage 與 observability。
 - REST API versioning、idempotency key 與 pagination conventions。

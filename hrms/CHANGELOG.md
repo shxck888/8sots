@@ -10,11 +10,14 @@
 - 新增登入／登出 Server Actions、PKCE Auth callback 與 Next.js Proxy session refresh。
 - 首頁改為需要有效 session，並顯示真實使用者 email、顯示名稱及第一筆 active tenant membership。
 - 新增 Auth validation、redirect 與 user display name tests。
+- 新增自訂帳號驗證及 `{username}@auth.8sots.com.tw` 內部 Supabase identifier 映射。
+- 新增 ADR-013，記錄自訂帳號與 Supabase Auth 的整合方式。
 
 ### Changed
 
 - 未登入存取 `/` 現在會 `307` 導向 `/login`；已登入存取 `/login` 會導向 `/`。
 - 專案文件同步為已完成 Supabase migrations、Vercel environment/custom domain 的實際狀態。
+- 登入欄位由 Email 改為 3–32 位英數／底線帳號；密碼規則改為 6–64 位英數混合。
 
 ### Database
 
@@ -27,10 +30,11 @@
 ### Breaking Changes
 
 - 首頁不再允許匿名瀏覽；這是預期的 authentication boundary 變更。
+- 登入識別由 Email 改為自訂帳號；原 Email 不能直接填入新登入欄位。
 
 ### Validation
 
-- ESLint、TypeScript、20 個 Vitest tests 與 Next.js production build 通過。
+- ESLint、TypeScript、22 個 Vitest tests 與 Next.js production build 通過。
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
 - 正式 Supabase 帳號登入與 tenant/RLS integration test 尚未執行，因此 Auth 功能仍標 IN PROGRESS。
 

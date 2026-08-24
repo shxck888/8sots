@@ -6,7 +6,7 @@ Last Updated: 2026-08-25
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，以 responsive Web / PWA 服務員工、主管、HR 與業主。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE；法規、費率與薪資規則必須可設定並保留版本。
 
-目前是 **Build 1（Auth and tenant foundation）**。Next.js 應用、Supabase production schema、Vercel deployment、`hrms.8sots.com.tw` 與 public environment variables 已建立。Email/password 登入頁、登出、PKCE callback、cookie session refresh、未登入 route protection，以及登入者／active tenant 顯示已完成本機驗證；尚待建立正式測試帳號並完成 production Auth/RLS end-to-end 驗證。
+目前是 **Build 1（Auth and tenant foundation）**。Next.js 應用、Supabase production schema、Vercel deployment、`hrms.8sots.com.tw` 與 public environment variables 已建立。自訂帳號/password 登入頁、登出、PKCE callback、cookie session refresh、未登入 route protection，以及登入者／active tenant 顯示已完成本機驗證；尚待建立正式管理員帳號並完成 production Auth/RLS end-to-end 驗證。
 
 ## Current Status
 
@@ -18,7 +18,7 @@ Last Updated: 2026-08-25
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
 - Supabase production 已套用 `202608240001 foundation` 與 `202608240002 data_api_grants`。
 - GitHub `shxck888/8sots/hrms`、Vercel `8sots-hrms`、Supabase public credentials 與 `hrms.8sots.com.tw`。
-- 登入程式切片通過 lint、TypeScript、20 項 Vitest、production build 與本機 HTTP smoke test；此項不等同 production Auth 已驗收。
+- 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。登入程式切片通過 lint、TypeScript、22 項 Vitest、production build 與本機 HTTP smoke test；此項不等同 production Auth 已驗收。
 
 ### IN PROGRESS
 
@@ -27,7 +27,7 @@ Last Updated: 2026-08-25
 
 ### PLANNED
 
-- Password recovery、邀請／首位管理員建置、員工主檔、排班、打卡、出勤與後續業務模組。
+- Password recovery、邀請、員工主檔、排班、打卡、出勤與後續業務模組。
 - Phase 2：Leave、Overtime、Punch Correction、Approval。
 - Phase 3：Salary、Payroll、Insurance、Payslip。
 - Phase 4：分析、人事成本、營收整合、進階規則、多公司與外部 API。
@@ -41,7 +41,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（20 tests）、Next production build |
+| Quality | ESLint、TypeScript strict、Vitest（22 tests）、Next production build |
 
 ## Core Modules
 
@@ -61,7 +61,7 @@ Last Updated: 2026-08-25
 ## Important Files
 
 - `app/login/`、`app/auth/callback/route.ts`、`proxy.ts`：登入、登出、callback 與 session refresh
-- `lib/auth.ts`：登入輸入、安全 redirect 與顯示名稱規則
+- `lib/auth.ts`：自訂帳號／密碼規則、Supabase 內部識別映射、安全 redirect 與顯示名稱規則
 - `app/page.tsx`：需要 session 的員工工作台
 - `app/api/health/route.ts`、`app/api/v1/me/route.ts`：目前 API
 - `lib/supabase/server.ts`：server-side Supabase client
