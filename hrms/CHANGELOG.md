@@ -20,6 +20,8 @@
 - 新增 ADR-014，記錄 permission-checked audited employee RPC 架構。
 - 新增完整 Employee Master：身分證、生日、性別、地址、照片、緊急聯絡人、部門、職位、主管、任職類型、離職日期與試用期。
 - 新增 ADR-015，記錄 Employee Master 正規化、PII 加密、私人照片與 tenant timezone 生效日。
+- 新增員工登入帳號管理：建立自訂帳號、重設密碼、停用及恢復登入。
+- 新增 ADR-016，記錄 server-only Auth Admin boundary、Employee/Auth link、跨系統補償與自我停用防護。
 
 ### Changed
 
@@ -38,12 +40,15 @@
 - 新增 `202608250006_employee_master_details.sql`：Department、Position、Employee Profile/Contact、effective-dated Employment Record、完整 Employee Master RPC、RLS、audit 與私人 `employee-photos` bucket。
 - 新增 forward-fix `202608250007_employment_effective_date_timezone_fix.sql`，任職異動依 tenant timezone 產生生效日，避免 UTC 日期邊界建立無效區間。
 - Supabase production migration history 已確認 `202608250006` 與 `202608250007` 套用成功。
+- 新增並套用 `202608250008_employee_auth_accounts.sql`：`employee_auth_accounts`、Auth link、active membership 同步、帳號狀態／密碼重設 audited RPC 與最小 SELECT grant。
+- 新增並套用 forward-fix `202608250009_prevent_self_account_suspension.sql`：database RPC 拒絕操作者停用或變更自己的帳號狀態。
 
 ### API
 
 - 新增 `GET /auth/callback`；既有 JSON API contract 無 breaking change。
 - 新增員工管理 Server Actions 與 database RPC；既有 JSON API 無變更。
 - Employee Server Action/RPC contract 擴充為完整 Employee Master；舊的內部簡版表單 contract 被取代，公開 JSON API 無 breaking change。
+- 新增內部 Employee Account Server Actions；既有公開 JSON API 無新增、變更或 breaking change。
 
 ### Breaking Changes
 
@@ -54,9 +59,11 @@
 
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
 - Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。
-- ESLint、TypeScript、42 個 Vitest tests 與 Next.js production build 通過。
+- ESLint、TypeScript、51 個 Vitest tests 與 Next.js production build 通過。
 - Production 管理後台列表／表單 render、console、migration history 與 transaction-scoped create/update/rollback 驗證通過；沒有留下測試員工資料。
 - 完整 Employee Master production transaction 新增／修改／查詢／rollback 通過；測試後 `MASTER_TMP` 為 0 筆，私人照片 bucket 設定正確，正式新增頁全欄位 render 且 browser console 無錯誤。
+- Employee Account production E2E 通過：建立帳號、重設密碼、停用、恢復及 UI 狀態皆成功，browser console 無錯誤；測試 Auth User、Employee、Account、Department、Position 與相關 audit 已清除，五項殘留計數皆為 0。
+- Database transaction 驗證 Auth link、membership、password-reset audit 與 database-level self-suspension rejection，測試 transaction 已 rollback。
 
 ## 2026-08-24
 

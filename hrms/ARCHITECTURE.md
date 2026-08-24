@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。Migrations `001`–`007` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Migrations `001`–`009` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -22,7 +22,7 @@ Supabase Auth + PostgreSQL with RLS
 
 - **Auth**：身分驗證、session/token 生命週期；不決定業務資料 scope。
 - **Organization**：Tenant、Company、Location、Department、Position 與組織範圍。
-- **Employee**：tenant-scoped 員工主檔拆分為 Employee、Profile、Contact 與 effective-dated Employment Record；另有 Department、Position、主管關係、私人照片與管理後台。登入帳號連結尚未實作。
+- **Employee**：tenant-scoped 員工主檔拆分為 Employee、Profile、Contact 與 effective-dated Employment Record；另有 Department、Position、主管關係、私人照片、管理後台及受控 Employee/Auth Account 生命週期。
 - **Schedule**：Shift、Shift Segment、排班及發布版本；不產生原始打卡。
 - **Attendance**：Punch、工作日歸屬、考勤計算與異常；不自動核准加班。
 - **Leave / Overtime**：申請、額度／認列及業務狀態。
@@ -51,15 +51,15 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004/005` 建立 Employee 與安全的 Auth link；`006` 新增 Profile、Contact、Department、Position、effective-dated Employment Record、完整 audited RPC 與私人 `employee-photos` bucket；`007` 以 tenant timezone 計算任職異動生效日。Authenticated client 只可依 RLS 讀取同 tenant 資料，沒有直接 table write privilege。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004/005` 建立 Employee 與安全的 Auth link；`006` 新增 Profile、Contact、Department、Position、effective-dated Employment Record、完整 audited RPC 與私人 `employee-photos` bucket；`007` 以 tenant timezone 計算任職異動生效日；`008/009` 建立 `employee_auth_accounts`、帳號狀態 audited RPC、membership 同步及 database-level 自我停用防護。Authenticated client 只可依 RLS 讀取同 tenant 資料，沒有直接 table write privilege。
 
 ## Multi-Tenant Strategy
 
-Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 只有同 tenant read policies，沒有業務表直接 write privilege。員工 mutation 已採 Server Action → permission-checked security-definer RPC → Employee/Audit Log 同步寫入；其他模組仍須沿用相同原則。service-role 限制仍待 production threat model 驗證。
+Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 只有同 tenant read policies，沒有業務表直接 write privilege。員工 mutation 已採 Server Action → permission-checked security-definer RPC → Employee/Audit Log 同步寫入；其他模組仍須沿用相同原則。Supabase Auth Admin 操作是例外的跨系統流程，只能由 server-only service-role client 執行，且 database RPC 仍重新驗證 tenant 與 `employee.manage`。
 
 ## Authentication and Authorization
 
-認證採 Supabase Auth。使用者輸入 3–32 位英數／底線自訂帳號，server 將正規化後的帳號映射成 `{username}@auth.8sots.com.tw` 作為 Supabase 內部 email identifier。授權採 RBAC + scope；管理後台在 layout、每個 Server Action 及 database RPC 三層驗證 `employee.manage`，`platform.admin` 可覆蓋該權限。第二 tenant 的負向 RLS integration test 尚未完成。
+認證採 Supabase Auth。使用者輸入 3–32 位英數／底線自訂帳號，server 將正規化後的帳號映射成 `{username}@auth.8sots.com.tw` 作為 Supabase 內部 email identifier。員工帳號由 Auth Admin API 建立／更新，並透過 `employees.auth_user_id`、`employee_auth_accounts` 與 active `tenant_memberships` 連結；建立帳號不自動授予管理角色。授權採 RBAC + scope；管理後台在 layout、每個 Server Action 及 database RPC 三層驗證 `employee.manage`，`platform.admin` 可覆蓋該權限。停用／恢復採 Auth ban 與 DB 狀態同步，跨系統失敗使用補償動作；application 與 database 皆防止操作者停用自己。第二 tenant 的負向 RLS integration test 尚未完成。
 
 ## Data Conventions
 
@@ -75,6 +75,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - **Implemented locally**：Next.js 16、React 19、TypeScript、Supabase JS/SSR、Zod、ESLint、Vitest、PWA manifest、environment template。
 - **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL；Supabase primary region 為 Tokyo (`ap-northeast-1`)。
 - **Selected**：Supabase Storage 私人 bucket 保存員工照片，3 MB，僅 JPEG/PNG/WebP；由短效 signed URL 顯示。
+- **Selected**：Vercel Sensitive `SUPABASE_SERVICE_ROLE_KEY` 僅供 server-only Auth Admin client 使用，不得使用 `NEXT_PUBLIC_` 前綴或傳入 client bundle。
 - **Not yet selected**：queue、cache、observability、preview/production environment topology。
 - GitHub source 位於 `shxck888/8sots/hrms`；Vercel project、custom domain、Supabase production project 與 migrations 已建立。備份／還原驗證、獨立 CI workflow 與 production Auth/RLS integration test 尚未完成。
 
@@ -86,9 +87,10 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - Login/logout Server Actions：驗證自訂帳號與密碼、將帳號映射為內部 Supabase identifier、建立或清除 session cookie；不直接暴露 Supabase 原始錯誤。
 - `/admin/employees`、`/new`、`/[id]`：permission-protected 員工列表、搜尋、新增與編輯 UI。
 - Employee Server Actions：Zod validation 後呼叫 `create_employee_master` / `update_employee_master` / `set_employee_photo`；RPC 在 database 重新驗證權限並寫入 audit evidence。照片寫入私人 Storage bucket。
+- Employee Account Server Actions：以 server-only Auth Admin API 建立帳號／重設密碼／ban 或 unban，並呼叫 `link_employee_auth_account`、`set_employee_auth_account_status`、`record_employee_password_reset` 同步資料與 audit；不是公開 JSON API。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。
 
 ## Security Baseline
 
-必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前身分證以 server-only AES-256-GCM 加密、HMAC-SHA256 hash 做唯一查找、UI 僅顯示末四碼；照片為私人 bucket。另有 tenant composite keys、RLS read isolation、無 client table writes與 audited permission checks；其餘控制仍待實作與 integration test。
+必須納入 tenant isolation、least privilege、secure cookies/CSRF、rate limiting、輸入驗證、PII/銀行資料保護、secret management、audit log 及 HTTPS。目前身分證以 server-only AES-256-GCM 加密、HMAC-SHA256 hash 做唯一查找、UI 僅顯示末四碼；照片為私人 bucket。密碼只交由 Supabase Auth 處理，不保存於業務資料或 audit。另有 tenant composite keys、RLS read isolation、無 client table writes、audited permission checks、自我停用防護及 Auth/DB 跨系統補償；其餘控制仍待實作與 integration test。

@@ -4,15 +4,16 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、管理員與完整 Employee Master 已通過 production 驗證；尚有員工帳號 provisioning 與第二 tenant 跨租戶 RLS integration test。
+**Build 1 — Auth, tenant and employee foundation IN PROGRESS**。自訂帳號登入、管理員、完整 Employee Master 與員工帳號生命週期已通過 production 驗證；尚缺第二 tenant 跨租戶 RLS integration test。
 
 ## Next Recommended Task (P0)
 
-進行 Employee/Auth 的下一個安全切片：
+完成可重複執行的跨租戶安全驗證：
 
-1. 建立員工登入帳號 provisioning／停用流程，將 Supabase Auth User 安全連結至 `employees.auth_user_id`。
-2. 建立第二 tenant 與測試使用者 fixture，驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫。
-3. 依 production schema 產生並提交 database TypeScript types。
+1. 建立第二 tenant、管理員與員工 fixture。
+2. 驗證同租戶可讀、跨租戶不可讀、anon/client 不可寫，以及跨租戶 foreign key/RPC 負向案例。
+3. 測試後自動 rollback 或清除 fixture，並把流程納入 integration test runbook。
+4. 依 production schema 產生並提交 database TypeScript types。
 
 上述 integration tests 與文件同步完成後，Auth/Organization/Employee foundation 才能標 DONE。
 
@@ -30,7 +31,7 @@ Last Updated: 2026-08-25
 ### P1 — Phase 1 domain foundation
 
 - Organization CRUD 與其他模組的 permission-checked server mutation。
-- Employee 登入帳號連結與停用流程（effective-dated employment record 已建構）。
+- Password recovery、invitation 與 MFA（Employee 帳號建立／重設／停用／恢復已完成）。
 - Shift/Shift Segment、Schedule version/publish 與跨日測試。
 - GPS Punch（同意、精度、geofence、反作弊）與 immutable punch evidence。
 - Attendance 計算、異常與可重現版本關聯。
@@ -52,7 +53,7 @@ Last Updated: 2026-08-25
 
 ## Known Issues / Risks
 
-- 目前只有 production 管理員與單一 tenant；仍缺可重複執行的第二 tenant 安全 fixture。
+- 目前只有 production 管理員與單一正式 tenant；仍缺可重複執行的第二 tenant 安全 fixture。
 - Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端環境執行。
 - 工作台班表、統計與打卡仍是代表性假資料，尚無業務行為。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。

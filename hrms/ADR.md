@@ -153,3 +153,13 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 降低敏感資料暴露面、維持租戶隔離與可追溯任職歷史，並正確處理台灣與 UTC 日期邊界。
 - **Alternatives:** 將所有欄位放在 Employee 單表；明文保存身分證；公開照片 bucket；使用資料庫 UTC 日期作生效日。
 - **Consequences:** Vercel 必須安全管理 `PII_ENCRYPTION_KEY` 並規劃輪替；加密欄位不能直接模糊搜尋；照片顯示需要短效簽名；任職異動需透過 audited RPC，禁止直接覆寫歷史。
+
+## ADR-016: Controlled Employee Auth provisioning with a server-only admin boundary
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 管理員需要替員工建立、重設、停用及恢復登入帳號；Supabase Auth Admin API 需要 service-role，但員工資料、租戶 membership 與 audit 位於 PostgreSQL，兩邊無法共用單一 transaction。
+- **Decision:** Employee 與 Auth User 維持分離，以 `employees.auth_user_id` 連結；帳號狀態另存 tenant-scoped `employee_auth_accounts`。Auth Admin 操作只由 Vercel server-only service-role client 執行，database 變更透過 permission-checked audited RPC。建立帳號會建立 active tenant membership，但不自動授予管理角色。密碼不保存、不回讀，也不寫入 audit。停用／恢復同步 Auth ban 與 database 狀態，失敗時執行補償動作；application 與 database RPC 均拒絕操作者停用自己的帳號。
+- **Reason:** 保留 Supabase 的密碼與 session 安全模型，限制高權限金鑰暴露面，並維持 tenant、RBAC 與 audit defense in depth。
+- **Alternatives:** client 直接呼叫 Auth Admin；將密碼保存於 HR 資料庫；建立帳號時自動授予角色；忽略 Auth/DB 部分成功。
+- **Consequences:** Vercel 必須設定及輪替 `SUPABASE_SERVICE_ROLE_KEY`；跨系統操作必須持續維護補償與 production E2E；未來 invitation、recovery email 與 MFA 需新增流程，不能假設內部 identifier 可收信。
