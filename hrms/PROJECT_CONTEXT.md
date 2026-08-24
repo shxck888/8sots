@@ -6,7 +6,7 @@ Last Updated: 2026-08-24
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，預計以 Responsive Web / PWA 讓員工、主管、HR 與業主在同一入口依角色及權限使用。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE，且法規、費率與薪資規則必須可設定並保留版本。
 
-目前是 **Build 1（Foundation vertical slice）**。已建立 Next.js App Router 應用、餐飲員工工作台的 responsive 靜態切片、PWA manifest、健康檢查 API、Supabase server client、登入者組織查詢 API，以及兩份尚未套用至遠端資料庫的 Supabase SQL migrations。Supabase production project 已建立於 Tokyo；GitHub integration 與 migration deployment 尚待在 Dashboard 啟用。
+目前是 **Build 1（Foundation vertical slice）**。已建立 Next.js App Router 應用、餐飲員工工作台的 responsive 靜態切片、PWA manifest、健康檢查 API、Supabase server client、登入者組織查詢 API。Supabase production project 已建立於 Tokyo，GitHub integration 已連接 `shxck888/8sots`（working directory `hrms`、production branch `main`），兩份 SQL migrations 已成功套用至 production。Vercel build checks 已成功，但 credentials、真實登入與 tenant/RLS integration test 尚未完成。
 
 ## Current Status
 
@@ -20,15 +20,16 @@ Last Updated: 2026-08-24
 - 基礎 migration contract tests：RLS 啟用、tenant composite FK 與 client 無寫入 policy。
 - 原始碼已同步至 GitHub repository `shxck888/8sots` 的 `main` 分支下 `hrms/` 目錄。
 - Data API 最小權限 migration：anon 無表權限、authenticated 只有 tenant/RBAC 查詢表的 SELECT、Audit Log 不對 client 開放。
+- Supabase production 已成功套用 `202608240001 foundation` 與 `202608240002 data_api_grants`，並以 migration history 唯讀查詢驗證。
 
 ### IN PROGRESS
 
-- Auth / Organization foundation：Supabase production project、client、`GET /api/v1/me` 與 SQL migrations 已建立，但 Vercel 尚未設定 credentials、migrations 尚未實際套用，也未做真實登入／RLS integration test。
+- Auth / Organization foundation：Supabase production schema、client 與 `GET /api/v1/me` 已建立；Vercel 尚待確認 credentials，且尚未做真實登入／RLS integration test。
 - 首頁目前使用代表性假資料，按鈕尚未連接 domain operation。
 
 ### PLANNED
 
-- 實際遠端資料庫、登入頁、員工資料、打卡、排班、出勤、業務 API 與 Vercel/GitHub 部署設定。
+- 登入頁、員工資料、打卡、排班、出勤、業務 API、Vercel credentials 與 production domain 驗證。
 - Phase 1：技術骨架、Auth、Organization、Employee、Location、Shift、Schedule、GPS Punch、Attendance。
 - Phase 2：Leave、Overtime、Punch Correction、Approval。
 - Phase 3：Salary、Payroll、Insurance、Payslip。
@@ -84,8 +85,8 @@ Last Updated: 2026-08-24
 - `app/api/health/route.ts`：不依賴外部服務的健康檢查
 - `app/api/v1/me/route.ts`：登入者與 tenant membership 查詢
 - `lib/supabase/server.ts`：server-side Supabase client
-- `supabase/migrations/202608240001_foundation.sql`：尚待實際套用的 tenant/RBAC/RLS foundation migration
-- `supabase/migrations/202608240002_data_api_grants.sql`：尚待套用的最小 Data API grants
+- `supabase/migrations/202608240001_foundation.sql`：已套用至 production 的 tenant/RBAC/RLS foundation migration
+- `supabase/migrations/202608240002_data_api_grants.sql`：已套用至 production 的最小 Data API grants
 - `tests/`：unit 與 migration contract tests
 
-目前沒有遠端 Supabase 套用紀錄或 production deployment；SQL migration 存在不代表遠端資料表已建立。
+Supabase production migration history 已確認兩筆版本：`202608240001 foundation`、`202608240002 data_api_grants`。這只代表資料庫 foundation 已部署，不代表 Auth/Organization 功能已完成。
