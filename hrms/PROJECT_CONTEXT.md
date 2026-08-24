@@ -42,7 +42,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（22 tests）、Next production build |
+| Quality | ESLint、TypeScript strict、Vitest（23 tests）、Next production build |
 
 ## Core Modules
 
