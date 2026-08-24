@@ -56,6 +56,9 @@ export async function provisionEmployeeAccount(
     app_metadata: { tenant_id: context.admin.tenantId, employee_id: employeeId },
   });
   if (error || !data.user) {
+    console.error("employee Auth provisioning failed", {
+      code: error?.code, status: error?.status, message: error?.message,
+    });
     return { message: error?.code === "email_exists" ? "這個帳號已被使用。" : "登入帳號建立失敗，請稍後再試。" };
   }
 
