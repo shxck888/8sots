@@ -90,6 +90,7 @@
 - `202608250011` production transaction/rollback、正式套用、RPC/index/migration history 與 fixture cleanup 驗證通過。
 - 排班 production integration test 擴充為 published version clone 與 batch assignment save；所有 assertion 通過並 rollback。
 - ESLint、TypeScript、68 個 Vitest tests 與包含 `/admin/schedules` 的 Next.js production build 通過。
+- Production `/admin/schedules` 以管理員 session 成功載入；班別、在職員工及週期資料正常，console 無 warning/error。390px viewport 導覽可見、摘要為雙欄且頁面沒有水平溢出。
 
 ## 2026-08-24
 

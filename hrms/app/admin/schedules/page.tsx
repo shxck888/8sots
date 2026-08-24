@@ -157,11 +157,11 @@ export default async function SchedulesPage({ searchParams }: {
             </div>
           </form>
           <div className="schedule-publish-bar">
-            <div><strong>發布本週班表</strong><span>請先儲存草稿。發布後本版本不可直接修改。</span></div>
+            <div><strong>發布本週班表</strong><span>{assignmentMap.size === 0 ? "至少安排一個班別並儲存後才能發布。" : "請先儲存草稿。發布後本版本不可直接修改。"}</span></div>
             <form action={publishSchedule}>
               <input name="scheduleVersionId" type="hidden" value={draft.id} />
               <input name="weekStart" type="hidden" value={weekStart} />
-              <PublishButton />
+              <PublishButton disabled={assignmentMap.size === 0} />
             </form>
           </div>
         </>
