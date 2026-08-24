@@ -37,6 +37,11 @@ const employmentTimezoneFixMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const employeeAuthAccountsMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250008_employee_auth_accounts.sql"),
+  "utf8",
+).toLowerCase();
+
 const tenantTables = [
   "tenants",
   "tenant_memberships",
@@ -154,5 +159,15 @@ describe("foundation migration contract", () => {
     expect(employmentTimezoneFixMigration).toContain("at time zone t.timezone");
     expect(employmentTimezoneFixMigration).toContain("effective_from >= v_effective_date");
     expect(employmentTimezoneFixMigration).toContain("effective_to = v_effective_date - 1");
+  });
+
+  it("provisions employee Auth accounts through permission-checked audited RPCs", () => {
+    expect(employeeAuthAccountsMigration).toContain("create table public.employee_auth_accounts");
+    expect(employeeAuthAccountsMigration).toContain("alter table public.employee_auth_accounts enable row level security");
+    expect(employeeAuthAccountsMigration).toContain("link_employee_auth_account");
+    expect(employeeAuthAccountsMigration).toContain("set_employee_auth_account_status");
+    expect(employeeAuthAccountsMigration).toContain("record_employee_password_reset");
+    expect(employeeAuthAccountsMigration).toContain("employee.account_provisioned");
+    expect(employeeAuthAccountsMigration).not.toContain("password text");
   });
 });
