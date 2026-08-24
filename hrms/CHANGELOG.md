@@ -14,6 +14,7 @@
 - 新增 ADR-013，記錄自訂帳號與 Supabase Auth 的整合方式。
 - 建立首位 production 管理員 `admin`、`8sots` tenant、active membership、`platform_admin` role、`platform.admin` permission 與 bootstrap audit record。
 - 新增 `202608250003_platform_admin_permission.sql`，將全域管理員 permission reference data 納入版本控制。
+- 已在 Supabase production migration history 確認 `202608250003 platform_admin_permission` 套用成功。
 
 ### Changed
 
