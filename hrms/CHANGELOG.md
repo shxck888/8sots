@@ -100,6 +100,7 @@
 - `202608250012` 已套用 Supabase production；catalog 驗證新 policy、舊 policy 移除與 migration history 三項皆為 `true`。
 - Employee Schedule RLS rollback-only production test 三項全數通過：本人 published 可讀、他人 published 與本人 draft 不可讀；測試 Auth／Membership／Employee／Schedule fixtures 全部 rollback。
 - ESLint、TypeScript、73 個 Vitest tests 與包含 `/my-schedule` 的 Next.js production build 通過。
+- Vercel production deployment `55bf792` 為 Ready；`hrms.8sots.com.tw/` 與 `/my-schedule` 使用既有管理員 session 載入成功，真實 tenant、disabled 未上線功能及未連結 Employee 空狀態正確。
 
 ## 2026-08-24
 
