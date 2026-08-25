@@ -108,6 +108,8 @@
 - Vercel production deployment `55bf792` 為 Ready；`hrms.8sots.com.tw/` 與 `/my-schedule` 使用既有管理員 session 載入成功，真實 tenant、disabled 未上線功能及未連結 Employee 空狀態正確。
 - `202608250013` 先完整 transaction/rollback 驗證，再正式套用並寫入 migration history；Punch rollback-only production test 四項皆為 `true`，測試 Auth／Employee／Punch fixtures 殘留均為 0。
 - ESLint、TypeScript、81 個 Vitest tests 與包含 `/attendance`、`/admin/attendance` 的 Next.js production build 通過。
+- GitHub commit `5ffa76b` 首次自動部署因單一 blob 的 UTF-8 傳輸錯誤失敗；forward-fix `22c4681` 還原原始 UTF-8 內容後，Vercel production deployment 為 Ready。
+- `hrms.8sots.com.tw/`、`/attendance`、`/admin/attendance` 使用既有登入 session smoke test 通過；管理員未連結 Employee 時正確顯示不可打卡／空紀錄狀態。
 
 ## 2026-08-24
 

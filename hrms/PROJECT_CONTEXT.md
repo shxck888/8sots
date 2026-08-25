@@ -31,14 +31,14 @@ Last Updated: 2026-08-25
 - 員工端 `/my-schedule` 週班表第一版：週切換、兩段／連續／跨日班段、週工時與未排班狀態；僅顯示自己的 published assignments，未排班不被誤標為休假。
 - `lib/database.types.ts` 已同步 production 已驗證的 `010` schema，server session 與 Auth Admin clients 均使用 application `Database` generic；migration-to-types drift contract 已建立。
 - Employee Schedule RLS rollback-only production test 三項通過：本人 published 可讀、他人 published 與本人 draft 不可讀；全部 fixtures 已 rollback。
-- Vercel production commit `55bf792` 已 Ready；正式網域首頁與 `/my-schedule` 以管理員 session 載入成功，未連結 Employee 時顯示安全空狀態。
+- Vercel production commit `22c4681` 已 Ready；正式網域首頁、`/my-schedule`、`/attendance` 與 `/admin/attendance` 已完成登入 session smoke test，未連結 Employee 時顯示安全空狀態。
 - GPS 原始打卡 foundation 已完成：`/` 要求每次定位同意後才可打卡，`/attendance` 顯示個人紀錄，`/admin/attendance` 以 `attendance.manage` 顯示 tenant 原始證據。正式時間採 server timestamp；同工作日依序交替上／下班以支援兩段班；原始資料不可更新或刪除。
 - Production rollback-only Punch 測試四項通過：上下班交替、idempotency 防重、禁止 authenticated 直接新增、禁止修改原始紀錄；Auth／Employee／Punch fixtures 均為 0。
 - 目前程式通過 ESLint、TypeScript、81 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
-- 打卡 UI 與 schema 已完成，待 GitHub／Vercel production deployment 與正式網域 smoke test。
+- 無；下一個建議任務為 Attendance Day 可重現計算與 Punch Correction foundation。
 
 ### PLANNED
 

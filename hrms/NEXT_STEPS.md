@@ -47,7 +47,7 @@ Last Updated: 2026-08-25
 
 ## Known Issues / Risks
 
-- Production 目前沒有可供正式 GPS 打卡驗收的已連結 Employee 帳號；database RPC 已用 rollback-only Auth/Employee fixture 驗證，UI 只完成未連結狀態 smoke 前置條件。
+- Production 目前沒有可供正式 GPS 打卡驗收的已連結 Employee 帳號；database RPC 已用 rollback-only Auth/Employee fixture 驗證，正式網域已完成未連結狀態 smoke test。
 - 尚無 Location/geofence；GPS 座標目前只保存為 evidence，不能判定是否到店。
 - 打卡交替可支援兩段班，但尚未計算工時、遲到、早退、缺卡或加班。
 - Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端 transaction 中執行。
