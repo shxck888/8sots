@@ -96,7 +96,7 @@
 
 ### Validation
 
-- ESLint、TypeScript、94 個 Vitest tests 與 Next.js production build 通過；migration history 已顯示 `202608250015 navigation_performance_rpcs`。
+- ESLint、TypeScript、94 個 Vitest tests 與 Next.js production build 通過；migration history 已顯示 `202608250015 navigation_performance_rpcs`。Vercel production commit `9982787` 為 Ready，Deployment Resources 確認動態 routes 均部署於 `HND1`，正式網址登入 smoke test 與主要頁面 `200` 通過。
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
 - Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。
 - ESLint、TypeScript、51 個 Vitest tests 與 Next.js production build 通過。
