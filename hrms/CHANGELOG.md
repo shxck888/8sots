@@ -35,6 +35,9 @@
 - 新增員工端 `/my-schedule` 週班表、週切換、班段／週工時、未排班與未連結員工空狀態。
 - 新增共用員工 Workspace Shell 與 published schedule server data service；首頁今日班表與本月排班時數改讀真實資料。
 - 新增 ADR-018，記錄員工只能讀自己的已發布班表。
+- 新增 GPS 原始上／下班打卡、每次定位同意、伺服器正式時間、定位精度提示與明確未設定店址圍欄狀態。
+- 新增員工 `/attendance` 個人打卡紀錄與管理員 `/admin/attendance` tenant 原始證據唯讀頁。
+- 新增 ADR-019，記錄 server-authoritative、append-only、idempotent Punch evidence 決策。
 
 ### Changed
 
@@ -60,6 +63,7 @@
 - 新增 environment seed `8sots_schedule_templates.sql`；正式資料為 `WEEKDAY_SPLIT` 540 分鐘與 `HOLIDAY_CONTINUOUS` 660 分鐘。
 - 新增並套用 `202608250011_schedule_batch_save.sql`：同期間單一 draft index、published → draft assignment copy 與 `save_schedule_assignments` 原子批次 RPC。
 - 新增並套用 `202608250012_employee_schedule_visibility.sql`：一般員工只能 SELECT 自己的 published schedule assignments，`schedule.manage` 管理員保留 tenant-scoped 管理讀取；無 schema 或資料 breaking change。
+- 新增並套用 `202608250013_punch_foundation.sql`：Punch enums、append-only `punch_records`、`attendance.manage`、本人／管理員 RLS、immutable trigger 與 audited/idempotent `record_gps_punch` RPC。新增 schema，不破壞既有資料。
 
 ### API
 
@@ -70,6 +74,7 @@
 - 新增內部 Schedule database RPC：班別 upsert、建立草稿、指派員工班別及發布；尚未建立 UI，既有公開 JSON API 無 breaking change。
 - 新增 `/admin/schedules` Server Actions：建立草稿、整週儲存與發布；既有公開 JSON API 無 breaking change。
 - 新增 server-rendered `GET /my-schedule` 與首頁 published schedule read；既有公開 JSON API 無變更。
+- 新增內部 GPS Punch Server Action、`record_gps_punch` database RPC 與 server-rendered `/attendance`、`/admin/attendance`；既有公開 JSON API 無 breaking change。
 
 ### Breaking Changes
 
@@ -101,6 +106,8 @@
 - Employee Schedule RLS rollback-only production test 三項全數通過：本人 published 可讀、他人 published 與本人 draft 不可讀；測試 Auth／Membership／Employee／Schedule fixtures 全部 rollback。
 - ESLint、TypeScript、73 個 Vitest tests 與包含 `/my-schedule` 的 Next.js production build 通過。
 - Vercel production deployment `55bf792` 為 Ready；`hrms.8sots.com.tw/` 與 `/my-schedule` 使用既有管理員 session 載入成功，真實 tenant、disabled 未上線功能及未連結 Employee 空狀態正確。
+- `202608250013` 先完整 transaction/rollback 驗證，再正式套用並寫入 migration history；Punch rollback-only production test 四項皆為 `true`，測試 Auth／Employee／Punch fixtures 殘留均為 0。
+- ESLint、TypeScript、81 個 Vitest tests 與包含 `/attendance`、`/admin/attendance` 的 Next.js production build 通過。
 
 ## 2026-08-24
 

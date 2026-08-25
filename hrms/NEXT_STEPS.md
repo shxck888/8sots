@@ -4,61 +4,55 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1、管理員週排班與員工 published schedule 第一版 DONE**。草稿建立／複製、整週原子儲存、發布、員工個人週表與真實今日班表已完成；目前不要求門市。
+**Build 1 的登入、Employee Master、版本化排班與 GPS 原始打卡第一版 DONE**。Punch Record 使用伺服器時間、明確定位同意、idempotency 與 append-only 保護；員工只看自己，`attendance.manage` 管理員可看 tenant 原始證據。海之星尚未建立門市，因此 geofence 顯示 `not_configured`，QR 尚未啟用。
 
 ## Next Recommended Task (P0)
 
-開始 GPS／QR Punch foundation：
+建立可重現的 Attendance Day 計算與 Punch Correction foundation：
 
-1. 建立 append-only Punch Record，保存 tenant、employee、work date、server/client timestamp、timezone、來源、裝置與 evidence。
-2. 定義 GPS 同意、座標精度、geofence、定位失敗、mock location／重送與離線補送規則；QR token 必須短效且防重放。
-3. 打卡 mutation 採 permission／身份檢查、idempotency key、database constraint 與 audit evidence，不允許直接 client table write。
-4. 先完成 migration、rollback-only production integration test 與管理員可檢視的原始紀錄，再啟用首頁打卡按鈕。
-
-排班 schema、正式班別、管理後台週表、員工個人週表與 RLS boundary 已完成；`012` production catalog 與 rollback-only 員工負向 RLS 三項驗證皆通過。
-Production Database types、client generics 與 migration drift checks 已完成；重新產生使用 `npm run db:types`，執行時需要 read-only `SUPABASE_ACCESS_TOKEN`。
+1. 由 published Schedule + immutable Punch Records 產生每日出勤明細，不修改原始 Punch。
+2. 定義兩段班的配對、跨日 work date、缺卡、遲到、早退、超時與未排班打卡規則；計算規則必須版本化。
+3. 建立獨立 Punch Correction 申請／核准／套用紀錄，保留原值、建議值、原因、操作者與 audit evidence。
+4. 先完成 migration、permission/RLS、rollback-only production integration tests 與管理員唯讀異常清單，再製作員工申請 UI。
 
 ## Pending Priorities
 
-### P0 — Deployment and security baseline
+### P0 — Attendance correctness and security
 
-- 驗證每次 GitHub commit 的 Vercel production deployment 與 custom-domain TLS 狀態。
-- 決定 Vercel function region、local/preview/production 分層與 secret rotation；Supabase 已選 Tokyo。
-- 定義邀請、內部 identifier 改名、password recovery、MFA 與帳號停用政策。
-- 完成 tenant threat model、service-role 使用規則、CSP/security headers、rate limit 與 audit writer。
-- 建立 migration ownership、forward-fix、seed、備份及還原驗證流程。
-- 確認台灣個資、勞動、薪資及保存政策的合格審查責任。
+- Attendance Day／Detail／Exception 可重現計算與規則版本。
+- Punch Correction 獨立紀錄與基本簽核邊界。
+- GPS consent 保存政策、mock-location 風險、CSP/security headers、rate limit 與 audit writer 強化。
+- 每次 GitHub commit 的 Vercel production、custom-domain TLS 與 migration ownership/backup/restore 驗證。
 
-### P1 — Phase 1 domain foundation
+### P1 — Phase 1 completion
 
-- Organization CRUD 與其他模組的 permission-checked server mutation。
-- Password recovery、invitation 與 MFA（Employee 帳號建立／重設／停用／恢復已完成）。
-- 管理後台發布前完整性警示與 Holiday Calendar。
-- GPS Punch（同意、精度、geofence、反作弊）與 immutable punch evidence。
-- Attendance 計算、異常與可重現版本關聯。
-- Phase 1 permission matrix 與完整 audit trail。
+- 建立 Company／Location 管理後，再設定店址座標、半徑與 geofence；在此之前不得標示到店驗證通過。
+- QR 短效 token、防重放與裝置／離線補送規則。
+- Holiday Calendar 與排班發布前完整性警示。
+- Password recovery、invitation、MFA 與非 Email 帳號綁定政策。
+- Organization CRUD、Phase 1 permission matrix 與完整 audit trail。
 
 ### P2 — Subsequent phases
 
-- Leave、Overtime、Punch Correction、Approval。
+- Leave、Overtime、Approval、Comp Time。
 - Salary、Payroll、Insurance、Payslip 與背景 job。
 - Notification、Report、Labor Cost、Revenue integration 與進階 rule engine。
 
 ## Decisions Needed
 
+- 兩段班中間休息與缺卡配對的容錯窗口，以及未排班打卡的處理規則。
+- Punch Correction 的核准層級、可追溯套用方式與員工可見範圍。
 - Vercel function region 及 preview/production 環境拓撲。
-- Auth MFA、非 Email 帳號的 password recovery、invitation 與帳號綁定政策。
-- PostgreSQL 金額表示（`numeric` 或 integer minor unit）。
-- Background job/queue、cache 與 observability（員工照片已採 Supabase Storage）。
-- REST API versioning、idempotency key 與 pagination conventions。
+- PostgreSQL 金額表示、background job/queue、cache、observability 與公開 API conventions。
 
 ## Known Issues / Risks
 
-- Production 維持單一正式 tenant；第二 tenant 僅在 rollback-only integration test transaction 中建立，不是常駐測試資料。
-- Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端環境執行。
-- 首頁班表與已排工時已是真實 published data；休假、出勤、打卡與通知目前尚未上線，UI 已明確標示，不能視為可操作功能。
+- Production 目前沒有可供正式 GPS 打卡驗收的已連結 Employee 帳號；database RPC 已用 rollback-only Auth/Employee fixture 驗證，UI 只完成未連結狀態 smoke 前置條件。
+- 尚無 Location/geofence；GPS 座標目前只保存為 evidence，不能判定是否到店。
+- 打卡交替可支援兩段班，但尚未計算工時、遲到、早退、缺卡或加班。
+- Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端 transaction 中執行。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。
 
 ## Definition of Done
 
-功能只有在 code completed、相關 migration 已在受控環境驗證、API contract 同步、自動測試通過、tenant/security 影響已檢查且文件更新後才可標 DONE。靜態 UI、設計完成或列入 roadmap 均不算完整功能完成。
+功能只有在 code completed、migration 受控驗證並正式套用、API contract 同步、自動測試通過、tenant/security 影響檢查、production deployment/smoke test 與文件更新後才可標 DONE。靜態 UI 或 roadmap 不算完成。

@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。Migrations `001`–`012` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Migrations `001`–`013` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -51,11 +51,11 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010` 建立 Schedule domain；`011` 保證同 tenant／期間只有一份 draft，建立新版會複製 published assignments，`save_schedule_assignments` 在單一 transaction 驗證並儲存整週變更。`012` 將 Assignment read policy 分為具 `schedule.manage` 的租戶管理讀取，以及員工本人只讀 published assignments；草稿不向一般員工曝光。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010`–`012` 建立版本化排班與員工本人 published-only 讀取。`013` 建立 Punch Record：正式時間由 PostgreSQL `statement_timestamp()` 產生，client time、timezone、GPS 與同意時間保存為 evidence；同員工使用 transaction advisory lock 與 idempotency key 防止競態／重送，原始紀錄由 trigger 禁止 update/delete。
 
 ## Multi-Tenant Strategy
 
-Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 沒有業務表直接 write privilege；一般租戶主檔採同 tenant read，而 Schedule Assignment 額外限制一般員工只能讀取自己的 published rows，管理員須具 `schedule.manage`。員工 mutation 已採 Server Action → permission-checked security-definer RPC → Employee/Audit Log 同步寫入；其他模組仍須沿用相同原則。Supabase Auth Admin 操作是例外的跨系統流程，只能由 server-only service-role client 執行，且 database RPC 仍重新驗證 tenant 與 `employee.manage`。
+Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 沒有業務表直接 write privilege；Schedule Assignment 限制一般員工只能讀自己的 published rows，Punch Record 限制本人或具 `attendance.manage` 者讀取。Punch mutation 採 Server Action → identity-checked security-definer RPC → Punch/Audit Log 同步寫入。Supabase Auth Admin 操作只能由 server-only service-role client 執行。
 
 ## Authentication and Authorization
 
@@ -71,6 +71,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - 金額採精確型別（PostgreSQL `numeric` 或整數最小單位），選擇待 Schema ADR。
 - 重要歷史狀態使用 immutable record、effective dating 或 snapshot，使重算可追溯。
 - 一般主檔傾向 soft delete；依法或業務要求不可刪除的交易紀錄採保留／封存。
+- Punch 的 `occurred_at` 為正式 server time；`client_occurred_at` 只接受 server 前 10 分鐘至後 5 分鐘，GPS 誤差上限 1000 m。未建立 Location/geofence 時一律保存為 `not_configured`，不能視為到店驗證。
 
 ## Infrastructure
 
@@ -94,6 +95,8 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - Schedule database RPC：`upsert_shift_template`、`create_schedule_draft`、`assign_schedule_shift`、`save_schedule_assignments`、`publish_schedule`。皆要求 `schedule.manage`、驗證 tenant 並寫入 Audit Log；不是公開 JSON API。
 - `POST` Server Actions under `/admin/schedules`：建立草稿、呼叫 `save_schedule_assignments` 儲存整週、發布班表；每個 action 都重新取得 `schedule.manage` admin context，亦非公開 JSON API。
 - `GET /` 與 `GET /my-schedule?week=YYYY-MM-DD`：server-rendered 員工工作台與個人週班表；以登入者 `auth_user_id` 對應 Employee，application 僅查 published versions，RLS 再限制 Assignment 為本人 published rows（管理員例外）。
+- GPS Punch Server Action：只接受完整且已同意的 browser geolocation evidence，tenant 與 user 從 server session 解析後呼叫 `record_gps_punch`；不是公開 JSON API。
+- `GET /attendance` 與 `GET /admin/attendance`：員工本人紀錄及 `attendance.manage` tenant 原始證據唯讀頁。
 - `createServerClient<Database>` 與 `createClient<Database>`：所有 `.from()`／`.rpc()` 從 production schema 取得 table、view、enum、relationship 與 function argument inference。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。

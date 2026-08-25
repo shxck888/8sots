@@ -186,3 +186,14 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Alternatives:** 沿用同 tenant 全員可讀；只在 Next.js server filter；為每位員工複製一份公開班表。
 - **Consequences:** 員工帳號必須先連結 Employee 才能看到班表；未連結時 UI 顯示明確空狀態。未來主管範圍讀取需新增 scope-aware policy/RPC，不得放寬為同 tenant 全讀。
 - **Implementation:** `012` 取代原 Assignment 同 tenant read policy；`lib/my-schedule.ts`、`/my-schedule` 與首頁只讀 published schedule。
+
+## ADR-019: Server-authoritative append-only punch evidence
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 餐飲兩段班需要一天多次上下班；瀏覽器時間與 GPS 皆可能不準確或被重送。海之星目前尚未建立門市與 geofence，不能把取得座標誤稱為到店驗證。
+- **Decision:** `punch_records` 保存不可變的原始事件。`occurred_at` 使用 database server time，client timestamp、IANA timezone、座標、精度與明確同意時間只作 evidence。登入者必須連結 active Employee 與 Membership；RPC 以 employee advisory transaction lock 依工作日交替 `clock_in`／`clock_out`，並以 tenant + employee + idempotency key 防重。Authenticated client 無 table write privilege；本人可讀自己的紀錄，`attendance.manage` 可讀 tenant 紀錄。原始紀錄不得更新或刪除，更正未來使用獨立流程。
+- **Reason:** 把正式時間、證據與驗證結果分開，支援海之星兩段班，並在沒有門市設定時維持誠實且可稽核的狀態。
+- **Alternatives:** 信任瀏覽器時間；每天固定只有一次上下班；允許管理員直接修改原紀錄；沒有 geofence 仍標示 GPS 通過。
+- **Consequences:** 目前 `location_verification` 固定為 `not_configured`，QR 尚未啟用；每日出勤、遲到／早退與更正需由後續可版本化計算／修正資料產生，不能反向改 Punch Record。定位誤差超過 1000 m 或 client time 超出允許窗口會被拒絕。
+- **Implementation:** Migration `202608250013_punch_foundation.sql`、`record_gps_punch`、`/attendance`、`/admin/attendance` 與首頁 `PunchPanel`。

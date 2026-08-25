@@ -7,14 +7,14 @@ import { logout } from "@/app/login/actions";
 const nav = [
   { label: "工作台", icon: LayoutDashboard, href: "/" },
   { label: "我的班表", icon: CalendarDays, href: "/my-schedule" },
-  { label: "出勤紀錄", icon: Clock3, href: "#" },
+  { label: "出勤紀錄", icon: Clock3, href: "/attendance" },
   { label: "申請中心", icon: ReceiptText, href: "#" },
 ];
 
 export function WorkspaceShell({
   activePath, canManage, children, displayName, email, tenantName,
 }: Readonly<{
-  activePath: "/" | "/my-schedule";
+  activePath: "/" | "/my-schedule" | "/attendance";
   canManage: boolean;
   children: React.ReactNode;
   displayName: string;

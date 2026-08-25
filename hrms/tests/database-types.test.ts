@@ -40,6 +40,7 @@ describe("generated database types", () => {
         ![
           "guard_published_schedule_assignment",
           "guard_published_shift_segment",
+          "prevent_punch_record_mutation",
         ].includes(entity),
     );
 

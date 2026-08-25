@@ -1,9 +1,11 @@
 import {
-  Bell, CalendarDays, CheckCircle2, Clock3, Coffee, MapPin, QrCode, UsersRound,
+  Bell, CalendarDays, CheckCircle2, Clock3, Coffee, MapPin, UsersRound,
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
+import { PunchPanel } from "@/app/punch/punch-panel";
 import { getMyPublishedSchedule } from "@/lib/my-schedule";
+import { getEmployeePunchContext } from "@/lib/punches";
 import { formatScheduledHours, getMonthBounds, taipeiDateKey } from "@/lib/schedule-display";
 import { shiftMinuteLabel } from "@/lib/schedules";
 import { getWorkspaceContext } from "@/lib/workspace";
@@ -21,13 +23,13 @@ export default async function Home() {
 
   const now = new Date();
   const today = taipeiDateKey(now);
-  const schedule = workspace.tenantId
-    ? await getMyPublishedSchedule({
+  const [schedule, punches] = workspace.tenantId
+    ? await Promise.all([getMyPublishedSchedule({
         ...getMonthBounds(today),
         tenantId: workspace.tenantId,
         userId: workspace.userId,
-      })
-    : { employeeId: null, entries: [] };
+      }), getEmployeePunchContext({ tenantId: workspace.tenantId, userId: workspace.userId })])
+    : [{ employeeId: null, entries: [] }, { employeeId: null, records: [] }];
   const todaySchedule = schedule.entries.find((entry) => entry.workDate === today);
   const scheduledMinutes = schedule.entries.reduce((total, entry) => total + entry.totalMinutes, 0);
   const todayLabel = new Intl.DateTimeFormat("zh-TW", {
@@ -57,13 +59,12 @@ export default async function Home() {
             <span className="status-pill"><span /> 已同步發布班表</span>
             <p className="time">{timeLabel}</p>
             <p className="shift-note">{todaySchedule ? `今日班別：${todaySchedule.shiftName}` : "今日沒有已發布的排班"}</p>
-            <button className="clock-button" disabled><Clock3 size={22} /> 打卡功能建構中</button>
-            <button className="qr-button" disabled><QrCode size={18} /> QR Code 尚未啟用</button>
+            <PunchPanel enabled={Boolean(punches.employeeId)} lastEventType={punches.records[0]?.event_type ?? null} />
           </div>
           <div className="location-orbit" aria-hidden="true">
             <div className="orbit outer" /><div className="orbit inner" />
             <div className="pin"><MapPin size={25} /></div>
-            <span className="location-label">定位服務尚未啟用</span>
+            <span className="location-label">店址圍欄尚未設定</span>
           </div>
         </section>
 
@@ -96,7 +97,7 @@ export default async function Home() {
         <section className="team-card">
           <div className="section-heading"><div><span className="eyebrow">SYSTEM</span><h2>功能進度</h2></div><span className="team-count"><UsersRound size={16} /> 員工端</span></div>
           <div className="notice"><div className="notice-icon">班</div><div><strong>我的班表已連線</strong><p>只顯示管理員已發布的個人排班；草稿不會提前曝光。</p></div></div>
-          <div className="feature-status"><span><i className="online" /> 登入與個人班表</span><span><i /> 打卡、出勤與申請中心建構中</span></div>
+          <div className="feature-status"><span><i className="online" /> 登入、個人班表與 GPS 原始打卡</span><span><i /> 出勤計算、店址圍欄與申請中心建構中</span></div>
         </section>
       </div>
     </WorkspaceShell>

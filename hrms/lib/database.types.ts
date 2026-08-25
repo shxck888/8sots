@@ -676,6 +676,91 @@ export type Database = {
           },
         ]
       }
+      punch_records: {
+        Row: {
+          accuracy_m: number | null
+          client_occurred_at: string
+          created_at: string
+          created_by: string
+          employee_id: string
+          event_type: Database["public"]["Enums"]["punch_event_type"]
+          id: string
+          idempotency_key: string
+          latitude: number | null
+          location_consent_at: string | null
+          location_id: string | null
+          location_verification: Database["public"]["Enums"]["punch_location_verification"]
+          longitude: number | null
+          occurred_at: string
+          source: Database["public"]["Enums"]["punch_source"]
+          tenant_id: string
+          timezone: string
+          work_date: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          client_occurred_at: string
+          created_at?: string
+          created_by: string
+          employee_id: string
+          event_type: Database["public"]["Enums"]["punch_event_type"]
+          id?: string
+          idempotency_key: string
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_id?: string | null
+          location_verification?: Database["public"]["Enums"]["punch_location_verification"]
+          longitude?: number | null
+          occurred_at?: string
+          source: Database["public"]["Enums"]["punch_source"]
+          tenant_id: string
+          timezone: string
+          work_date: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          client_occurred_at?: string
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          event_type?: Database["public"]["Enums"]["punch_event_type"]
+          id?: string
+          idempotency_key?: string
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_id?: string | null
+          location_verification?: Database["public"]["Enums"]["punch_location_verification"]
+          longitude?: number | null
+          occurred_at?: string
+          source?: Database["public"]["Enums"]["punch_source"]
+          tenant_id?: string
+          timezone?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_location_id_fkey"
+            columns: ["tenant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roles: {
         Row: {
           code: string
@@ -1113,6 +1198,19 @@ export type Database = {
         Args: { p_employee_id: string; p_tenant_id: string }
         Returns: undefined
       }
+      record_gps_punch: {
+        Args: {
+          p_accuracy_m: number
+          p_client_occurred_at: string
+          p_idempotency_key: string
+          p_latitude: number
+          p_location_consent: boolean
+          p_longitude: number
+          p_tenant_id: string
+          p_timezone: string
+        }
+        Returns: string
+      }
       publish_schedule: {
         Args: { p_schedule_version_id: string; p_tenant_id: string }
         Returns: undefined
@@ -1207,6 +1305,13 @@ export type Database = {
       gender_type: "male" | "female" | "non_binary" | "undisclosed"
       membership_status: "invited" | "active" | "suspended" | "revoked"
       organization_status: "active" | "inactive" | "archived"
+      punch_event_type: "clock_in" | "clock_out"
+      punch_location_verification:
+        | "not_configured"
+        | "inside_geofence"
+        | "outside_geofence"
+        | "unavailable"
+      punch_source: "web_gps" | "qr"
       role_scope_type: "tenant" | "company" | "location" | "department" | "self"
       schedule_version_status: "draft" | "published" | "superseded"
     }
@@ -1348,6 +1453,14 @@ export const Constants = {
       gender_type: ["male", "female", "non_binary", "undisclosed"],
       membership_status: ["invited", "active", "suspended", "revoked"],
       organization_status: ["active", "inactive", "archived"],
+      punch_event_type: ["clock_in", "clock_out"],
+      punch_location_verification: [
+        "not_configured",
+        "inside_geofence",
+        "outside_geofence",
+        "unavailable",
+      ],
+      punch_source: ["web_gps", "qr"],
       role_scope_type: ["tenant", "company", "location", "department", "self"],
       schedule_version_status: ["draft", "published", "superseded"],
     },

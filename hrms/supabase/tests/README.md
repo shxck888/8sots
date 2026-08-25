@@ -45,3 +45,7 @@ select
 3. 自己的 draft assignment 不可讀。
 
 成功時回傳三個 `true`，最後執行 `ROLLBACK`；所有 Auth、Employee、Membership 與 Schedule fixtures 都不會保留。
+
+## GPS punch foundation
+
+`punch_foundation.sql` 以 rollback-only fixture 驗證：第一、第二次打卡依序為上班與下班；重送相同 idempotency key 不會新增資料；authenticated client 無法直接寫入；原始打卡紀錄無法修改。成功時回傳四個 `true`，所有測試資料最後都會回滾。

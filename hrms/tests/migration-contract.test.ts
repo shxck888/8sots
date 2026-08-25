@@ -62,6 +62,11 @@ const employeeScheduleVisibilityMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const punchFoundationMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250013_punch_foundation.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -79,6 +84,11 @@ const scheduleFoundationTest = readFileSync(
 
 const employeeScheduleVisibilityTest = readFileSync(
   join(process.cwd(), "supabase/tests/employee_schedule_visibility.sql"),
+  "utf8",
+).toLowerCase();
+
+const punchFoundationTest = readFileSync(
+  join(process.cwd(), "supabase/tests/punch_foundation.sql"),
   "utf8",
 ).toLowerCase();
 
@@ -286,6 +296,43 @@ describe("foundation migration contract", () => {
     expect(employeeScheduleVisibilityTest).toContain("employee published schedule read failed");
     expect(employeeScheduleVisibilityTest).toContain("other employee schedule leaked");
     expect(employeeScheduleVisibilityTest).toContain("draft employee schedule leaked");
+  });
+
+  it("creates append-only server-authoritative GPS punch evidence", () => {
+    expect(punchFoundationMigration).toContain("create table public.punch_records");
+    expect(punchFoundationMigration).toContain("occurred_at timestamptz not null default statement_timestamp()");
+    expect(punchFoundationMigration).toContain("punch_records_append_only");
+    expect(punchFoundationMigration).toContain("raw punch records are append-only");
+    expect(punchFoundationMigration).toContain("location_consent_at");
+    expect(punchFoundationMigration).toContain("unique (tenant_id, employee_id, idempotency_key)");
+  });
+
+  it("keeps GPS writes behind an identity-checked audited RPC", () => {
+    expect(punchFoundationMigration).toContain("record_gps_punch");
+    expect(punchFoundationMigration).toContain("active linked employee required");
+    expect(punchFoundationMigration).toContain("location consent required");
+    expect(punchFoundationMigration).toContain("pg_advisory_xact_lock");
+    expect(punchFoundationMigration).toContain("client timestamp outside allowed window");
+    expect(punchFoundationMigration).toContain("invalid gps evidence");
+    expect(punchFoundationMigration).toContain("'punch.recorded'");
+    expect(punchFoundationMigration).not.toMatch(/grant\s+(insert|update|delete|all)[\s\S]*?public\.punch_records[\s\S]*?to authenticated/);
+  });
+
+  it("limits punch reads to self or attendance managers", () => {
+    expect(punchFoundationMigration).toContain("'attendance.manage'");
+    expect(punchFoundationMigration).toContain("punch_records_select_manager_or_self");
+    expect(punchFoundationMigration).toContain("e.auth_user_id = (select auth.uid())");
+  });
+
+  it("keeps punch integration fixtures rollback-only and covers critical boundaries", () => {
+    expect(punchFoundationTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(punchFoundationTest.trim()).toMatch(/rollback;$/);
+    expect(punchFoundationTest).not.toContain("commit;");
+    expect(punchFoundationTest).toContain("first punch was not clock_in");
+    expect(punchFoundationTest).toContain("second punch was not clock_out");
+    expect(punchFoundationTest).toContain("idempotent punch duplicated");
+    expect(punchFoundationTest).toContain("direct punch insert unexpectedly succeeded");
+    expect(punchFoundationTest).toContain("punch mutation unexpectedly succeeded");
   });
 
   it("keeps schedule integration fixtures rollback-only and covers critical boundaries", () => {

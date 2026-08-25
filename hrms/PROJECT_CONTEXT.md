@@ -6,17 +6,17 @@ Last Updated: 2026-08-25
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，以 responsive Web / PWA 服務員工、主管、HR 與業主。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE；法規、費率與薪資規則必須可設定並保留版本。
 
-**Build 1、管理員週排班與員工已發布班表第一版已完成**。Next.js 應用、Supabase production schema、Vercel deployment 與 `hrms.8sots.com.tw` 已建立。自訂帳號登入、完整 Employee Master、員工帳號生命週期、跨租戶隔離，以及班別／班表草稿、批次儲存、發布與員工端只讀邊界皆已完成。
+**Build 1 的登入、Employee Master、排班與 GPS 原始打卡第一版已完成**。Next.js 應用、Supabase production schema、Vercel deployment 與 `hrms.8sots.com.tw` 已建立。打卡以伺服器時間為正式時間，GPS 為已同意的證據；目前沒有門市／店址圍欄，因此不宣稱通過 geofence。
 
 ## Current Status
 
 ### DONE（已完成且有驗證證據）
 
 - Next.js 16 / React 19 / TypeScript strict 應用骨架、ESLint、Vitest、production build 與 PWA manifest。
-- Responsive 員工今日工作台已讀取真實 published schedule，顯示今日班段與本月已發布排班時數；打卡、出勤、休假與通知仍明確標示未上線。
+- Responsive 員工今日工作台已讀取真實 published schedule，並提供明確同意後的 GPS 上／下班打卡；出勤計算、休假與通知仍標示未上線。
 - `GET /api/health` 與 `GET /api/v1/me` 基線。
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
-- Supabase production 已套用並在 migration history 確認 `202608240001` 至 `202608250012`；`010` 建立排班 domain，`011` 新增唯一草稿、發布版本複製與原子批次儲存 RPC，`012` 將員工 Assignment SELECT 限制為自己的已發布班表。
+- Supabase production 已套用並在 migration history 確認 `202608240001` 至 `202608250013`；`013` 建立 append-only Punch Record、本人／考勤管理員 RLS 與 audited/idempotent GPS Punch RPC。
 - GitHub `shxck888/8sots/hrms`、Vercel `8sots-hrms`、Supabase public credentials 與 `hrms.8sots.com.tw`。
 - 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。
 - Production 管理員登入、tenant membership 顯示與登出 smoke test 已通過；Supabase bootstrap query 同時驗證 active membership、role 與 permission。
@@ -32,15 +32,17 @@ Last Updated: 2026-08-25
 - `lib/database.types.ts` 已同步 production 已驗證的 `010` schema，server session 與 Auth Admin clients 均使用 application `Database` generic；migration-to-types drift contract 已建立。
 - Employee Schedule RLS rollback-only production test 三項通過：本人 published 可讀、他人 published 與本人 draft 不可讀；全部 fixtures 已 rollback。
 - Vercel production commit `55bf792` 已 Ready；正式網域首頁與 `/my-schedule` 以管理員 session 載入成功，未連結 Employee 時顯示安全空狀態。
-- 目前程式通過 ESLint、TypeScript、73 項 Vitest 與 Next.js production build。
+- GPS 原始打卡 foundation 已完成：`/` 要求每次定位同意後才可打卡，`/attendance` 顯示個人紀錄，`/admin/attendance` 以 `attendance.manage` 顯示 tenant 原始證據。正式時間採 server timestamp；同工作日依序交替上／下班以支援兩段班；原始資料不可更新或刪除。
+- Production rollback-only Punch 測試四項通過：上下班交替、idempotency 防重、禁止 authenticated 直接新增、禁止修改原始紀錄；Auth／Employee／Punch fixtures 均為 0。
+- 目前程式通過 ESLint、TypeScript、81 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
-- 下一個 domain slice 為 GPS／QR Punch 與 immutable 打卡證據；尚未開始 schema 或正式打卡功能。
+- 打卡 UI 與 schema 已完成，待 GitHub／Vercel production deployment 與正式網域 smoke test。
 
 ### PLANNED
 
-- Password recovery、邀請、MFA、打卡、出勤與後續業務模組。
+- Password recovery、邀請、MFA、QR/geofence、出勤計算、更正流程與後續業務模組。
 - Phase 2：Leave、Overtime、Punch Correction、Approval。
 - Phase 3：Salary、Payroll、Insurance、Payslip。
 - Phase 4：分析、人事成本、營收整合、進階規則、多公司與外部 API。
@@ -54,7 +56,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（73 tests）、Next production build；Database types drift contract；Supabase production rollback-only RLS／Schedule integration tests |
+| Quality | ESLint、TypeScript strict、Vitest（81 tests）、Next production build；Database types drift contract；Supabase production rollback-only RLS／Schedule／Punch integration tests |
 
 ## Core Modules
 
@@ -67,7 +69,8 @@ Last Updated: 2026-08-25
 - **DONE:** tenant-wide Shift/Shift Segment 與 Schedule draft/publish database foundation；目前不要求門市。
 - **DONE:** 管理員週排班、草稿整週儲存與發布 UI 第一版。
 - **DONE:** 員工端 Published Schedule 週表與真實今日工作台。
-- **PLANNED:** Password Recovery/MFA、Attendance、Leave、Overtime、Approval、Payroll、Insurance、Notification、Report。
+- **DONE:** GPS 原始上／下班打卡、個人紀錄與管理員唯讀證據頁；未設定店址圍欄。
+- **PLANNED:** Password Recovery/MFA、Attendance 計算與更正、QR/geofence、Leave、Overtime、Approval、Payroll、Insurance、Notification、Report。
 
 ## Non-Negotiable Rules
 
@@ -90,9 +93,10 @@ Last Updated: 2026-08-25
 - `app/admin/employees/`、`lib/admin.ts`、`lib/employees.ts`、`lib/pii.ts`：員工管理 UI、Server Actions、授權、validation 與身分證保護
 - `app/admin/employees/[id]/account-actions.ts`、`account-panel.tsx`、`lib/employee-accounts.ts`：員工帳號建立、重設與狀態管理
 - `app/admin/schedules/`、`lib/schedules.ts`：管理後台週排班、Server Actions、日期與表單 validation
+- `app/punch/`、`app/attendance/`、`app/admin/attendance/`、`lib/punch-contract.ts`、`lib/punches.ts`：GPS 打卡 action、員工紀錄與管理員原始證據
 - `supabase/migrations/`：已套用 production 的版本化 schema、grant 與 reference-data migrations
 - `supabase/migrations/202608250010_schedule_foundation.sql`、`supabase/seeds/8sots_schedule_templates.sql`：排班 schema 與海之星正式班別
-- `supabase/tests/cross_tenant_rls.sql`、`schedule_foundation.sql`、`employee_schedule_visibility.sql`：production-compatible、rollback-only 安全／排班測試
+- `supabase/tests/cross_tenant_rls.sql`、`schedule_foundation.sql`、`employee_schedule_visibility.sql`、`punch_foundation.sql`：production-compatible rollback-only 測試
 - `tests/`：unit 與 migration contract tests
 
-登入、員工主檔、員工帳號生命週期、跨租戶隔離、管理員週排班與員工已發布班表已完成。下一階段建立不可變打卡證據與 GPS／QR 打卡安全邊界。
+登入、員工主檔、員工帳號生命週期、跨租戶隔離、排班與 GPS 原始打卡已完成。下一階段建立可重現的每日出勤計算與獨立 Punch Correction；QR 與店址圍欄需等門市資料。

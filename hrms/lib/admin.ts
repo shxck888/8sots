@@ -67,6 +67,9 @@ export async function getAdminShellContext(): Promise<AdminContext | null> {
     membership.supabase.rpc("current_user_has_permission", {
       p_tenant_id: membership.context.tenantId, p_permission_code: "schedule.manage",
     }),
+    membership.supabase.rpc("current_user_has_permission", {
+      p_tenant_id: membership.context.tenantId, p_permission_code: "attendance.manage",
+    }),
   ]);
   return checks.some(({ data, error }) => !error && data === true) ? membership.context : null;
 }
