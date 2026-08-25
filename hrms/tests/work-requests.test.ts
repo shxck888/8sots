@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatRequestedMinutes, workRequestDecisionSchema, workRequestInputSchema } from "../lib/work-request-contract";
+import { calculateLeaveBalance, formatRequestedMinutes, leaveEntitlementInputSchema, workRequestDecisionSchema, workRequestInputSchema, workRequestWithdrawalSchema } from "../lib/work-request-contract";
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8").toLowerCase();
 
@@ -27,6 +27,33 @@ describe("work request center", () => {
   it("formats requested duration for readable summaries", () => {
     expect(formatRequestedMinutes(90)).toBe("1 小時 30 分鐘");
     expect(formatRequestedMinutes(1500)).toBe("1 天 1 小時");
+  });
+
+  it("validates withdrawal and annual leave entitlement inputs", () => {
+    expect(workRequestWithdrawalSchema.safeParse({ requestId: crypto.randomUUID() }).success).toBe(true);
+    expect(leaveEntitlementInputSchema.safeParse({ employeeId: crypto.randomUUID(), leaveTypeId: crypto.randomUUID(), entitlementYear: 2026, entitledHours: 80, note: "年度特休" }).success).toBe(true);
+    expect(calculateLeaveBalance(4800, 960)).toEqual({ entitledMinutes: 4800, usedMinutes: 960, remainingMinutes: 3840 });
+  });
+
+  it("adds audited withdrawal, balances, and attendance snapshot integration", () => {
+    const migration = read("supabase/migrations/202608250017_request_withdrawal_balances_attendance.sql");
+    expect(migration).toContain("create table public.work_request_withdrawals");
+    expect(migration).toContain("create table public.leave_entitlements");
+    expect(migration).toContain("create or replace function public.withdraw_work_request");
+    expect(migration).toContain("create or replace function public.upsert_leave_entitlement");
+    expect(migration).toContain("approved_leave_minutes");
+    expect(migration).toContain("approved_overtime_minutes");
+    expect(migration).toContain("least(wr.ends_at, aseg.scheduled_end_at)");
+    expect(migration).toContain("greatest(wr.starts_at, aseg.scheduled_start_at)");
+    expect(migration).toContain("insert into public.audit_logs");
+  });
+
+  it("keeps V2 database acceptance rollback-only", () => {
+    const integration = read("supabase/tests/request_center_v2.sql");
+    expect(integration).toContain("begin;");
+    expect(integration).toContain("withdraw_work_request");
+    expect(integration).toContain("upsert_leave_entitlement");
+    expect(integration.trim().endsWith("rollback;")).toBe(true);
   });
 
   it("keeps request writes behind audited permission-checked RPCs", () => {

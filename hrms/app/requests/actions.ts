@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
-import { workRequestInputSchema, type WorkRequestActionState } from "@/lib/work-request-contract";
+import { workRequestInputSchema, workRequestWithdrawalSchema, type WorkRequestActionState } from "@/lib/work-request-contract";
 
 export async function createWorkRequest(input: unknown): Promise<WorkRequestActionState> {
   const parsed = workRequestInputSchema.safeParse(input);
@@ -37,4 +37,18 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
   revalidatePath("/requests");
   revalidatePath("/admin/requests");
   return { ok: true, message: "申請已送出，請等待管理員審核。" };
+}
+
+export async function withdrawWorkRequest(formData: FormData) {
+  const parsed = workRequestWithdrawalSchema.safeParse({ requestId: formData.get("requestId") });
+  if (!parsed.success) return;
+  const workspace = await getWorkspaceContext();
+  if (!workspace?.tenantId || !workspace.employeeId) return;
+  const supabase = await createSupabaseServerClient();
+  await supabase.rpc("withdraw_work_request", {
+    p_request_id: parsed.data.requestId,
+    p_tenant_id: workspace.tenantId,
+  });
+  revalidatePath("/requests");
+  revalidatePath("/admin/requests");
 }

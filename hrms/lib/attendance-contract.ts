@@ -38,6 +38,7 @@ export const attendanceStatusLabels = {
   complete: "完整",
   exception: "有異常",
   unscheduled: "未排班",
+  leave: "請假",
 } as const;
 
 export type CorrectionActionState = { ok: boolean; message: string };

@@ -24,10 +24,24 @@ export const workRequestDecisionSchema = z.object({
   reviewNote: z.string().trim().max(500),
 });
 
+export const workRequestWithdrawalSchema = z.object({ requestId: z.uuid() });
+
+export const leaveEntitlementInputSchema = z.object({
+  employeeId: z.uuid(),
+  leaveTypeId: z.uuid(),
+  entitlementYear: z.coerce.number().int().min(2000).max(2200),
+  entitledHours: z.coerce.number().min(0).max(8784),
+  note: z.string().trim().max(200),
+});
+
 export type WorkRequestActionState = { ok: boolean; message: string };
 
 export const workRequestTypeLabels = { leave: "請假", overtime: "加班" } as const;
 export const workRequestDecisionLabels = { approved: "已核准", rejected: "已拒絕" } as const;
+
+export function calculateLeaveBalance(entitledMinutes: number, usedMinutes: number) {
+  return { entitledMinutes, usedMinutes, remainingMinutes: entitledMinutes - usedMinutes };
+}
 
 export function formatRequestedMinutes(minutes: number): string {
   const days = Math.floor(minutes / 1440);

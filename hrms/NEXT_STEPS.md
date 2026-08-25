@@ -4,7 +4,7 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**請假／加班申請中心第一版 DONE**。`016` migration、employee/admin UI、100 項測試、Vercel deployment 與正式管理頁 smoke test 已完成。Request 與 final Decision 分離；四種初始假別只分類，不計算額度、扣薪、加班費或補休。
+**請假／加班申請中心第一版 DONE；第二版 code completed、待 production migration 與真實員工驗收**。`017` 已加入待審申請撤回、年度假別分鐘額度，以及核准請假／加班與 Attendance calculation snapshot 的銜接；請假只計入與排班班段重疊的分鐘。本機 TypeScript、103 項測試、ESLint 與 production build 通過，並備妥 rollback-only V2 database test；依使用者指示尚未套用 production，不得標示正式上線。
 
 ## Next Recommended Task (P0)
 
@@ -12,7 +12,7 @@ Last Updated: 2026-08-25
 
 1. 由使用者指定一位真實 Employee 並確認是否建立／連結登入帳號，完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 E2E；不得自行建立永久帳號。
 2. 與使用者確認遲到／早退寬限、未排班打卡、跨日與多餘卡的正式規則，再建立 Rule Set V2，不覆寫 V1。
-3. 使用同一已連結 Employee 提出請假及加班，由管理員核准／拒絕並確認員工狀態更新；不得使用未經授權的永久測試帳號或申請。
+3. 由使用者指定真實 Employee 與帳號處置（沿用／建立），套用並驗證 `017` 後，使用同一帳號提出請假及加班，由管理員核准／拒絕並確認員工狀態、審核備註、撤回與額度更新；不得使用未經授權的永久測試帳號或申請。
 
 ## Pending Priorities
 
@@ -26,7 +26,7 @@ Last Updated: 2026-08-25
 
 ### P1 — Phase 1 completion
 
-- 請假／加班撤回、附件／證明、假別額度、核准後 Attendance 銜接，以及可配置多層 Approval；基本送單與單層審核已完成。
+- 請假／加班附件／證明與可配置多層 Approval；待審撤回、年度假別額度與核准後 Attendance snapshot 銜接已完成程式碼，待 production 驗證。
 - Holiday Calendar 與排班發布前完整性警示。
 - Password recovery、invitation、MFA 與非 Email 帳號綁定政策。
 - 建立 Company／Location 管理後才設定 geofence；目前無需門市且不得宣稱到店驗證。

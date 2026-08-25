@@ -57,3 +57,7 @@ select
 ## Navigation aggregate RPCs
 
 `navigation_performance.sql` 驗證工作區身份只回傳一列、個人班表與出勤聚合 RPC 可執行且出勤結果具有固定 JSON 結構，並確認匿名角色無法呼叫身份查詢。測試只讀取既有 production identity，最後仍會執行 `ROLLBACK`。
+
+## Request Center V2
+
+`request_center_v2.sql` 需在 `017` migration 之後執行，使用既有已連結且有管理權限的員工身份，在 transaction 中驗證待審申請撤回、撤回後禁止審核，以及年度假別額度 upsert。成功時回傳三個 `true`，最後 `ROLLBACK`，不留下申請或額度資料。

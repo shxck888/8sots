@@ -31,6 +31,8 @@ export type Database = {
         tenant_id: string
       }>
       attendance_days: SimpleTable<{
+        approved_leave_minutes: number
+        approved_overtime_minutes: number
         actual_minutes: number
         calculation_run_id: string
         created_at: string
@@ -42,6 +44,17 @@ export type Database = {
         status: Database["public"]["Enums"]["attendance_day_status"]
         tenant_id: string
         work_date: string
+      }>
+      leave_entitlements: SimpleTable<{
+        entitlement_year: number
+        entitled_minutes: number
+        employee_id: string
+        id: string
+        leave_type_id: string
+        note: string | null
+        tenant_id: string
+        updated_at: string
+        updated_by: string
       }>
       attendance_exceptions: SimpleTable<{
         attendance_day_id: string
@@ -868,6 +881,13 @@ export type Database = {
         tenant_id: string
         work_request_id: string
       }>
+      work_request_withdrawals: SimpleTable<{
+        id: string
+        tenant_id: string
+        work_request_id: string
+        withdrawn_at: string
+        withdrawn_by: string
+      }>
       work_requests: SimpleTable<{
         employee_id: string
         ends_at: string
@@ -1245,6 +1265,10 @@ export type Database = {
         Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
         Returns: string
       }
+      calculate_attendance_v1: {
+        Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
+        Returns: string
+      }
       assign_schedule_shift: {
         Args: {
           p_employee_id: string
@@ -1377,6 +1401,21 @@ export type Database = {
         }
         Returns: string
       }
+      upsert_leave_entitlement: {
+        Args: {
+          p_employee_id: string
+          p_entitled_minutes: number
+          p_entitlement_year: number
+          p_leave_type_id: string
+          p_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      withdraw_work_request: {
+        Args: { p_request_id: string; p_tenant_id: string }
+        Returns: string
+      }
       link_employee_auth_account: {
         Args: {
           p_auth_user_id: string
@@ -1498,7 +1537,7 @@ export type Database = {
       }
     }
     Enums: {
-      attendance_day_status: "complete" | "exception" | "unscheduled"
+      attendance_day_status: "complete" | "exception" | "unscheduled" | "leave"
       attendance_exception_type:
         | "missing_clock_in"
         | "missing_clock_out"
@@ -1656,7 +1695,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      attendance_day_status: ["complete", "exception", "unscheduled"],
+      attendance_day_status: ["complete", "exception", "unscheduled", "leave"],
       attendance_exception_type: [
         "missing_clock_in",
         "missing_clock_out",

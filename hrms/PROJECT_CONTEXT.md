@@ -46,6 +46,7 @@ Last Updated: 2026-08-25
 ### IN PROGRESS
 
 - 使用真實且經授權連結的 Employee 帳號完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 operational acceptance。
+- Request Center V2 已完成本機程式碼：待審撤回、年度假別額度、核准請假／加班依排班重疊分鐘寫入 Attendance snapshot，並備妥 rollback-only database test；`017` 依使用者指示尚未套用 production 或做真實員工驗收。
 
 ### PLANNED
 
