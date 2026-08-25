@@ -42,6 +42,7 @@ export function WorkspaceShell({
         {children}
         <nav className="mobile-nav" aria-label="行動版導覽">
           {nav.map(({ label, icon: Icon, href }) => <Link className={activePath === href ? "active" : ""} href={href} key={label}><Icon size={21} /><span>{label}</span></Link>)}
+          {canManage ? <Link href="/admin"><Settings size={21} /><span>管理後台</span></Link> : null}
         </nav>
       </section>
     </main>

@@ -42,6 +42,12 @@ export async function getWorkspaceContext(): Promise<WorkspaceContext | null> {
         p_permission_code: "schedule.manage",
       })
     : { data: false };
+  const { data: canManageAttendance } = membership?.tenant_id
+    ? await supabase.rpc("current_user_has_permission", {
+        p_tenant_id: membership.tenant_id,
+        p_permission_code: "attendance.manage",
+      })
+    : { data: false };
 
   return {
     userId: authData.user.id,
@@ -49,6 +55,9 @@ export async function getWorkspaceContext(): Promise<WorkspaceContext | null> {
     displayName: getUserDisplayName(authData.user),
     tenantId: membership?.tenant_id ?? null,
     tenantName: tenant?.name ?? "尚未加入組織",
-    canManage: canManageEmployees === true || canManageSchedules === true,
+    canManage:
+      canManageEmployees === true ||
+      canManageSchedules === true ||
+      canManageAttendance === true,
   };
 }

@@ -25,3 +25,19 @@ export function formatScheduledHours(totalMinutes: number): string {
   const hours = totalMinutes / 60;
   return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
 }
+
+export function formatTaipeiDateTime(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "時間資料異常";
+
+  return new Intl.DateTimeFormat("zh-TW", {
+    day: "numeric",
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    month: "numeric",
+    second: "2-digit",
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+  }).format(date);
+}

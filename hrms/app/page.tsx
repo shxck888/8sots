@@ -1,6 +1,7 @@
 import {
-  Bell, CalendarDays, CheckCircle2, Clock3, Coffee, MapPin, UsersRound,
+  Bell, CalendarDays, CheckCircle2, Clock3, Coffee, MapPin, Settings, UsersRound,
 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { PunchPanel } from "@/app/punch/punch-panel";
@@ -50,7 +51,10 @@ export default async function Home() {
     >
       <header className="topbar">
         <div><span className="date-label">{todayLabel}</span><h1>你好，{workspace.displayName}</h1></div>
-        <button className="icon-button" aria-label="通知功能尚未上線" disabled><Bell size={21} /></button>
+        <div className="topbar-actions">
+          {workspace.canManage ? <Link className="admin-entry" href="/admin"><Settings size={17} /> 進入管理後台</Link> : null}
+          <button className="icon-button" aria-label="通知功能尚未上線" disabled><Bell size={21} /></button>
+        </div>
       </header>
 
       <div className="dashboard-grid">

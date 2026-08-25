@@ -7,6 +7,7 @@ import {
   usernameToAuthEmail,
   type LoginFormState,
 } from "@/lib/auth";
+import { getAdminShellContext } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function login(
@@ -39,7 +40,13 @@ export async function login(
     return { message: "帳號或密碼不正確，請重新確認。" };
   }
 
-  redirect(sanitizeNextPath(parsed.data.next));
+  const nextPath = sanitizeNextPath(parsed.data.next);
+  if (nextPath === "/") {
+    const admin = await getAdminShellContext();
+    if (admin) redirect("/admin");
+  }
+
+  redirect(nextPath);
 }
 
 export async function logout() {
