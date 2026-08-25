@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。Migrations `001`–`013` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Migrations `001`–`014` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -53,6 +53,8 @@ Supabase Auth + PostgreSQL with RLS
 
 Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010`–`012` 建立版本化排班與員工本人 published-only 讀取。`013` 建立 Punch Record：正式時間由 PostgreSQL `statement_timestamp()` 產生，client time、timezone、GPS 與同意時間保存為 evidence；同員工使用 transaction advisory lock 與 idempotency key 防止競態／重送，原始紀錄由 trigger 禁止 update/delete。
 
+`014` 將 Attendance 計算建模為 immutable-by-version snapshot：每次 `calculate_attendance` 建立 Calculation Run，再產生 Day、Segment 與 Exception rows，綁定當時 Rule Set、published Assignment、原始 Punch 及已核准 Correction。更正 Request 與 Decision 分表且決策只新增一次；核准不修改 Punch，只會在下一次重算時加入 effective event stream。
+
 ## Multi-Tenant Strategy
 
 Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 沒有業務表直接 write privilege；Schedule Assignment 限制一般員工只能讀自己的 published rows，Punch Record 限制本人或具 `attendance.manage` 者讀取。Punch mutation 採 Server Action → identity-checked security-definer RPC → Punch/Audit Log 同步寫入。Supabase Auth Admin 操作只能由 server-only service-role client 執行。
@@ -72,6 +74,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - 重要歷史狀態使用 immutable record、effective dating 或 snapshot，使重算可追溯。
 - 一般主檔傾向 soft delete；依法或業務要求不可刪除的交易紀錄採保留／封存。
 - Punch 的 `occurred_at` 為正式 server time；`client_occurred_at` 只接受 server 前 10 分鐘至後 5 分鐘，GPS 誤差上限 1000 m。未建立 Location/geofence 時一律保存為 `not_configured`，不能視為到店驗證。
+- Attendance Rule V1 的遲到／早退寬限均為 0 分鐘，只標記相對排班差異，不自動扣薪、不認列加班。每個 Shift Segment 依序配對第 N 筆有效上／下班事件；缺卡、多餘卡與未排班打卡建立 Exception。
 
 ## Infrastructure
 
@@ -97,6 +100,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - `GET /` 與 `GET /my-schedule?week=YYYY-MM-DD`：server-rendered 員工工作台與個人週班表；以登入者 `auth_user_id` 對應 Employee，application 僅查 published versions，RLS 再限制 Assignment 為本人 published rows（管理員例外）。
 - GPS Punch Server Action：只接受完整且已同意的 browser geolocation evidence，tenant 與 user 從 server session 解析後呼叫 `record_gps_punch`；不是公開 JSON API。
 - `GET /attendance` 與 `GET /admin/attendance`：員工本人紀錄及 `attendance.manage` tenant 原始證據唯讀頁。
+- Attendance Server Actions：員工呼叫 `request_punch_correction` 提出 62 天內補卡；管理員呼叫 `decide_punch_correction` 審核，並以 `calculate_attendance` 建立最多 32 天的新快照。所有 Action 都重新解析 server session 與權限。
 - `createServerClient<Database>` 與 `createClient<Database>`：所有 `.from()`／`.rpc()` 從 production schema 取得 table、view、enum、relationship 與 function argument inference。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。

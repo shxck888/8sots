@@ -38,6 +38,9 @@
 - 新增 GPS 原始上／下班打卡、每次定位同意、伺服器正式時間、定位精度提示與明確未設定店址圍欄狀態。
 - 新增員工 `/attendance` 個人打卡紀錄與管理員 `/admin/attendance` tenant 原始證據唯讀頁。
 - 新增 ADR-019，記錄 server-authoritative、append-only、idempotent Punch evidence 決策。
+- 新增版本化 Attendance Calculation Run、Day、Segment、Exception 與 Rule Set V1。
+- 新增員工補打卡申請、管理員核准／拒絕及核准後重算流程；原始 Punch 與舊計算批次均不覆寫。
+- 新增 ADR-020，記錄版本化出勤快照與 additive correction 決策。
 
 ### Changed
 
@@ -64,6 +67,7 @@
 - 新增並套用 `202608250011_schedule_batch_save.sql`：同期間單一 draft index、published → draft assignment copy 與 `save_schedule_assignments` 原子批次 RPC。
 - 新增並套用 `202608250012_employee_schedule_visibility.sql`：一般員工只能 SELECT 自己的 published schedule assignments，`schedule.manage` 管理員保留 tenant-scoped 管理讀取；無 schema 或資料 breaking change。
 - 新增並套用 `202608250013_punch_foundation.sql`：Punch enums、append-only `punch_records`、`attendance.manage`、本人／管理員 RLS、immutable trigger 與 audited/idempotent `record_gps_punch` RPC。新增 schema，不破壞既有資料。
+- 新增並套用 `202608250014_attendance_calculation_and_corrections.sql`：7 個 Attendance／Correction tables、3 個 enums、Rule V1 seed、RLS、最小 grants 與 `calculate_attendance`／`request_punch_correction`／`decide_punch_correction` RPC。新增 schema，無既有資料 breaking change。
 
 ### API
 
@@ -75,6 +79,7 @@
 - 新增 `/admin/schedules` Server Actions：建立草稿、整週儲存與發布；既有公開 JSON API 無 breaking change。
 - 新增 server-rendered `GET /my-schedule` 與首頁 published schedule read；既有公開 JSON API 無變更。
 - 新增內部 GPS Punch Server Action、`record_gps_punch` database RPC 與 server-rendered `/attendance`、`/admin/attendance`；既有公開 JSON API 無 breaking change。
+- `/attendance` 新增 Correction Server Action；`/admin/attendance` 新增 Calculate／Decision Server Actions。皆為內部 POST boundary，公開 JSON API 無 breaking change。
 
 ### Breaking Changes
 
@@ -110,6 +115,8 @@
 - ESLint、TypeScript、81 個 Vitest tests 與包含 `/attendance`、`/admin/attendance` 的 Next.js production build 通過。
 - GitHub commit `5ffa76b` 首次自動部署因單一 blob 的 UTF-8 傳輸錯誤失敗；forward-fix `22c4681` 還原原始 UTF-8 內容後，Vercel production deployment 為 Ready。
 - `hrms.8sots.com.tw/`、`/attendance`、`/admin/attendance` 使用既有登入 session smoke test 通過；管理員未連結 Employee 時正確顯示不可打卡／空紀錄狀態。
+- `202608250014` 先通過完整 transaction/rollback，再正式套用並記錄 migration history；Attendance integration test 四項全為 `true`，Auth／Employee／Run fixtures 殘留均為 0。
+- ESLint、TypeScript、86 個 Vitest tests 與 Next.js production build 通過。
 
 ## 2026-08-24
 

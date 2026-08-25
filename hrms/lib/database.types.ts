@@ -6,6 +6,13 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+type SimpleTable<Row extends Record<string, unknown>> = {
+  Row: Row
+  Insert: Partial<Row>
+  Update: Partial<Row>
+  Relationships: []
+}
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -14,6 +21,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_calculation_runs: SimpleTable<{
+        calculated_at: string
+        calculated_by: string
+        date_from: string
+        date_to: string
+        id: string
+        rule_set_id: string
+        tenant_id: string
+      }>
+      attendance_days: SimpleTable<{
+        actual_minutes: number
+        calculation_run_id: string
+        created_at: string
+        employee_id: string
+        exception_count: number
+        id: string
+        schedule_assignment_id: string | null
+        scheduled_minutes: number
+        status: Database["public"]["Enums"]["attendance_day_status"]
+        tenant_id: string
+        work_date: string
+      }>
+      attendance_exceptions: SimpleTable<{
+        attendance_day_id: string
+        attendance_segment_id: string | null
+        created_at: string
+        detail: Json
+        exception_type: Database["public"]["Enums"]["attendance_exception_type"]
+        id: string
+        minutes: number | null
+        tenant_id: string
+      }>
+      attendance_rule_sets: SimpleTable<{
+        created_at: string
+        created_by: string | null
+        early_leave_grace_minutes: number
+        effective_from: string
+        id: string
+        late_grace_minutes: number
+        tenant_id: string
+        version: number
+      }>
+      attendance_segments: SimpleTable<{
+        actual_minutes: number
+        attendance_day_id: string
+        clock_in_correction_id: string | null
+        clock_in_punch_id: string | null
+        clock_out_correction_id: string | null
+        clock_out_punch_id: string | null
+        created_at: string
+        early_leave_minutes: number
+        effective_clock_in_at: string | null
+        effective_clock_out_at: string | null
+        id: string
+        late_minutes: number
+        scheduled_end_at: string
+        scheduled_start_at: string
+        segment_order: number
+        tenant_id: string
+      }>
       audit_logs: {
         Row: {
           action: string
@@ -761,6 +828,28 @@ export type Database = {
           },
         ]
       }
+      punch_correction_decisions: SimpleTable<{
+        correction_request_id: string
+        decided_at: string
+        decided_by: string
+        decision: Database["public"]["Enums"]["punch_correction_decision_type"]
+        id: string
+        review_note: string | null
+        tenant_id: string
+      }>
+      punch_correction_requests: SimpleTable<{
+        employee_id: string
+        id: string
+        idempotency_key: string
+        proposed_event_type: Database["public"]["Enums"]["punch_event_type"]
+        proposed_occurred_at: string
+        reason: string
+        requested_at: string
+        requested_by: string
+        tenant_id: string
+        timezone: string
+        work_date: string
+      }>
       roles: {
         Row: {
           code: string
@@ -1119,6 +1208,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_attendance: {
+        Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
+        Returns: string
+      }
       assign_schedule_shift: {
         Args: {
           p_employee_id: string
@@ -1185,6 +1278,15 @@ export type Database = {
         Returns: boolean
       }
       current_user_tenant_ids: { Args: never; Returns: string[] }
+      decide_punch_correction: {
+        Args: {
+          p_decision: Database["public"]["Enums"]["punch_correction_decision_type"]
+          p_request_id: string
+          p_review_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       link_employee_auth_account: {
         Args: {
           p_auth_user_id: string
@@ -1208,6 +1310,18 @@ export type Database = {
           p_longitude: number
           p_tenant_id: string
           p_timezone: string
+        }
+        Returns: string
+      }
+      request_punch_correction: {
+        Args: {
+          p_event_type: Database["public"]["Enums"]["punch_event_type"]
+          p_idempotency_key: string
+          p_proposed_occurred_at: string
+          p_reason: string
+          p_tenant_id: string
+          p_timezone: string
+          p_work_date: string
         }
         Returns: string
       }
@@ -1294,6 +1408,14 @@ export type Database = {
       }
     }
     Enums: {
+      attendance_day_status: "complete" | "exception" | "unscheduled"
+      attendance_exception_type:
+        | "missing_clock_in"
+        | "missing_clock_out"
+        | "late"
+        | "early_leave"
+        | "unmatched_punch"
+        | "unscheduled_punch"
       employee_auth_status: "active" | "suspended"
       employee_status: "active" | "on_leave" | "terminated"
       employment_type:
@@ -1312,6 +1434,7 @@ export type Database = {
         | "outside_geofence"
         | "unavailable"
       punch_source: "web_gps" | "qr"
+      punch_correction_decision_type: "approved" | "rejected"
       role_scope_type: "tenant" | "company" | "location" | "department" | "self"
       schedule_version_status: "draft" | "published" | "superseded"
     }
@@ -1441,6 +1564,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      attendance_day_status: ["complete", "exception", "unscheduled"],
+      attendance_exception_type: [
+        "missing_clock_in",
+        "missing_clock_out",
+        "late",
+        "early_leave",
+        "unmatched_punch",
+        "unscheduled_punch",
+      ],
       employee_auth_status: ["active", "suspended"],
       employee_status: ["active", "on_leave", "terminated"],
       employment_type: [
@@ -1461,6 +1593,7 @@ export const Constants = {
         "unavailable",
       ],
       punch_source: ["web_gps", "qr"],
+      punch_correction_decision_type: ["approved", "rejected"],
       role_scope_type: ["tenant", "company", "location", "department", "self"],
       schedule_version_status: ["draft", "published", "superseded"],
     },

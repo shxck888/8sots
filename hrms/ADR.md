@@ -197,3 +197,14 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Alternatives:** 信任瀏覽器時間；每天固定只有一次上下班；允許管理員直接修改原紀錄；沒有 geofence 仍標示 GPS 通過。
 - **Consequences:** 目前 `location_verification` 固定為 `not_configured`，QR 尚未啟用；每日出勤、遲到／早退與更正需由後續可版本化計算／修正資料產生，不能反向改 Punch Record。定位誤差超過 1000 m 或 client time 超出允許窗口會被拒絕。
 - **Implementation:** Migration `202608250013_punch_foundation.sql`、`record_gps_punch`、`/attendance`、`/admin/attendance` 與首頁 `PunchPanel`。
+
+## ADR-020: Versioned attendance snapshots and additive punch corrections
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 出勤結果會因排班、規則與補卡核准而重算。若直接覆寫每日工時或原始 Punch，之後無法說明某次薪資計算使用了哪一版資料。
+- **Decision:** 每次計算建立新的 Attendance Calculation Run，並在其下保存 Day、Segment 與 Exception snapshot；Run 綁定 Rule Set 版本。補卡採 immutable Request + 單一 append-only Decision，核准只加入後續計算的 effective event stream，不修改原始 Punch 或舊 Run。一般員工只讀自己的結果／申請，`attendance.manage` 才能計算、審核與讀 tenant 資料。
+- **Reason:** 保留每次計算的輸入關係與歷史結果，使兩段班缺卡、遲到／早退與未排班打卡可追溯，也為未來 Payroll snapshot 提供穩定來源。
+- **Alternatives:** 每日單一 mutable attendance row；管理員直接新增／修改 Punch；核准補卡後覆寫上一次計算；只在前端即時計算。
+- **Consequences:** 核准更正後需重新計算受影響日期；舊 Run 會持續保存。V1 寬限為 0 分鐘且只標記差異，不代表扣薪或加班認列。計算範圍限制最多 32 天，補卡工作日限制最近 62 天。
+- **Implementation:** Migration `202608250014_attendance_calculation_and_corrections.sql`、employee Correction Form、admin Calculation／Review UI 與 rollback-only integration test。

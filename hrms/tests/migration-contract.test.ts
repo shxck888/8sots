@@ -67,6 +67,11 @@ const punchFoundationMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const attendanceCalculationMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250014_attendance_calculation_and_corrections.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -89,6 +94,11 @@ const employeeScheduleVisibilityTest = readFileSync(
 
 const punchFoundationTest = readFileSync(
   join(process.cwd(), "supabase/tests/punch_foundation.sql"),
+  "utf8",
+).toLowerCase();
+
+const attendanceCalculationTest = readFileSync(
+  join(process.cwd(), "supabase/tests/attendance_calculation.sql"),
   "utf8",
 ).toLowerCase();
 
@@ -333,6 +343,29 @@ describe("foundation migration contract", () => {
     expect(punchFoundationTest).toContain("idempotent punch duplicated");
     expect(punchFoundationTest).toContain("direct punch insert unexpectedly succeeded");
     expect(punchFoundationTest).toContain("punch mutation unexpectedly succeeded");
+  });
+
+  it("versions attendance calculation snapshots and independent corrections", () => {
+    for (const table of ["attendance_rule_sets", "attendance_calculation_runs", "attendance_days", "attendance_segments", "attendance_exceptions", "punch_correction_requests", "punch_correction_decisions"]) {
+      expect(attendanceCalculationMigration).toContain(`create table public.${table}`);
+      expect(attendanceCalculationMigration).toContain(`alter table public.${table} enable row level security`);
+    }
+    expect(attendanceCalculationMigration).toContain("request_punch_correction");
+    expect(attendanceCalculationMigration).toContain("decide_punch_correction");
+    expect(attendanceCalculationMigration).toContain("calculate_attendance");
+    expect(attendanceCalculationMigration).toContain("statement_timestamp()");
+    expect(attendanceCalculationMigration).toContain("'attendance.calculated'");
+    expect(attendanceCalculationMigration).not.toMatch(/grant\s+(insert|update|delete|all)[\s\S]*?public\.attendance_days[\s\S]*?to authenticated/);
+  });
+
+  it("keeps attendance integration fixtures rollback-only", () => {
+    expect(attendanceCalculationTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(attendanceCalculationTest.trim()).toMatch(/rollback;$/);
+    expect(attendanceCalculationTest).not.toContain("commit;");
+    expect(attendanceCalculationTest).toContain("missing clock out was not detected");
+    expect(attendanceCalculationTest).toContain("approved correction was not included in recalculation");
+    expect(attendanceCalculationTest).toContain("attendance calculation history was overwritten");
+    expect(attendanceCalculationTest).toContain("direct attendance write unexpectedly succeeded");
   });
 
   it("keeps schedule integration fixtures rollback-only and covers critical boundaries", () => {

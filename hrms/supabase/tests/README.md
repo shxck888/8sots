@@ -49,3 +49,7 @@ select
 ## GPS punch foundation
 
 `punch_foundation.sql` 以 rollback-only fixture 驗證：第一、第二次打卡依序為上班與下班；重送相同 idempotency key 不會新增資料；authenticated client 無法直接寫入；原始打卡紀錄無法修改。成功時回傳四個 `true`，所有測試資料最後都會回滾。
+
+## Attendance calculation and correction
+
+`attendance_calculation.sql` 建立一位連結 Auth 的測試員工、當日兩段班與三筆原始打卡，驗證缺下班卡、員工本人更正申請、管理員核准、核准後重算為 530 分鐘、舊計算批次仍保留，以及 authenticated client 無法直接寫 Attendance Day。成功時回傳四個 `true` 並 `ROLLBACK` 全部 fixture。

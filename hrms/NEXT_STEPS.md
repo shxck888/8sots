@@ -4,54 +4,52 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1 的登入、Employee Master、版本化排班與 GPS 原始打卡第一版 DONE**。Punch Record 使用伺服器時間、明確定位同意、idempotency 與 append-only 保護；員工只看自己，`attendance.manage` 管理員可看 tenant 原始證據。海之星尚未建立門市，因此 geofence 顯示 `not_configured`，QR 尚未啟用。
+**Attendance calculation 與 Punch Correction Database foundation DONE，UI 待 production deployment**。每次計算建立新 Run，保留 Day／Segment／Exception snapshot；補卡 Request／Decision 與原始 Punch 分離。Rule V1 的遲到、早退寬限均為 0 分鐘，只表示排班差異，不自動扣薪或核准加班。
 
 ## Next Recommended Task (P0)
 
-建立可重現的 Attendance Day 計算與 Punch Correction foundation：
+完成 Attendance operational acceptance：
 
-1. 由 published Schedule + immutable Punch Records 產生每日出勤明細，不修改原始 Punch。
-2. 定義兩段班的配對、跨日 work date、缺卡、遲到、早退、超時與未排班打卡規則；計算規則必須版本化。
-3. 建立獨立 Punch Correction 申請／核准／套用紀錄，保留原值、建議值、原因、操作者與 audit evidence。
-4. 先完成 migration、permission/RLS、rollback-only production integration tests 與管理員唯讀異常清單，再製作員工申請 UI。
+1. 部署並 smoke test 員工補卡、管理員審核、日期範圍計算與異常列表。
+2. 建立一個使用者確認的真實 Employee 登入帳號，完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 E2E；不得自行建立永久帳號。
+3. 與使用者確認遲到／早退寬限、未排班打卡、跨日與多餘卡的正式規則，再建立 Rule Set V2，不覆寫 V1。
+4. 補上 Segment 明細頁、特定日期重算入口與核准後「需要重算」提示／通知。
 
 ## Pending Priorities
 
-### P0 — Attendance correctness and security
+### P0 — Attendance correctness and operations
 
-- Attendance Day／Detail／Exception 可重現計算與規則版本。
-- Punch Correction 獨立紀錄與基本簽核邊界。
+- Production UI deployment、正式網域 smoke test 與真實已連結員工驗收。
+- Rule Set V2 業務參數與生效日；不得把 Attendance 差異直接當成薪資扣款。
+- Correction 審核後的受影響日期重算提醒，以及管理端 Segment evidence 明細。
 - GPS consent 保存政策、mock-location 風險、CSP/security headers、rate limit 與 audit writer 強化。
-- 每次 GitHub commit 的 Vercel production、custom-domain TLS 與 migration ownership/backup/restore 驗證。
 
 ### P1 — Phase 1 completion
 
-- 建立 Company／Location 管理後，再設定店址座標、半徑與 geofence；在此之前不得標示到店驗證通過。
-- QR 短效 token、防重放與裝置／離線補送規則。
-- Holiday Calendar 與排班發布前完整性警示。
+- Holiday Calendar、排班發布前完整性警示、Leave、Overtime 與通用 Approval。
 - Password recovery、invitation、MFA 與非 Email 帳號綁定政策。
-- Organization CRUD、Phase 1 permission matrix 與完整 audit trail。
+- 建立 Company／Location 管理後才設定 geofence；目前無需門市且不得宣稱到店驗證。
+- QR 短效 token、防重放與裝置／離線補送規則。
 
 ### P2 — Subsequent phases
 
-- Leave、Overtime、Approval、Comp Time。
 - Salary、Payroll、Insurance、Payslip 與背景 job。
 - Notification、Report、Labor Cost、Revenue integration 與進階 rule engine。
 
 ## Decisions Needed
 
-- 兩段班中間休息與缺卡配對的容錯窗口，以及未排班打卡的處理規則。
-- Punch Correction 的核准層級、可追溯套用方式與員工可見範圍。
-- Vercel function region 及 preview/production 環境拓撲。
-- PostgreSQL 金額表示、background job/queue、cache、observability 與公開 API conventions。
+- 遲到／早退寬限分鐘、缺卡配對容錯、未排班打卡與多餘卡處理方式。
+- 補卡是否只允許最近 62 天、核准層級與是否需要員工撤回功能。
+- Vercel function region、preview/production 拓撲與 secret rotation。
+- 金額表示、background job/queue、cache、observability 與公開 API conventions。
 
 ## Known Issues / Risks
 
-- Production 目前沒有可供正式 GPS 打卡驗收的已連結 Employee 帳號；database RPC 已用 rollback-only Auth/Employee fixture 驗證，正式網域已完成未連結狀態 smoke test。
-- 尚無 Location/geofence；GPS 座標目前只保存為 evidence，不能判定是否到店。
-- 打卡交替可支援兩段班，但尚未計算工時、遲到、早退、缺卡或加班。
-- Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端 transaction 中執行。
-- Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。
+- Production 尚無經使用者授權的已連結 Employee 驗收帳號；Database 流程已用 rollback-only fixture 驗證。
+- Rule V1 寬限為 0 分鐘，屬技術基線而非確認過的海之星人事政策。
+- Attendance 計算配對第 N 筆上班與第 N 筆下班；極端亂序／誤打仍需人工更正與後續規則強化。
+- 尚無 Location/geofence；GPS 只保存 evidence。
+- Docker/Supabase local stack 不可用；真實 database integration tests 在受控遠端 transaction 執行。
 
 ## Definition of Done
 
