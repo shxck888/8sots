@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getLinkedEmployeeId } from "@/lib/linked-employee";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export { formatScheduledHours, getMonthBounds, taipeiDateKey } from "@/lib/schedule-display";
@@ -36,17 +37,10 @@ export async function getMyPublishedSchedule({
   tenantId: string;
   userId: string;
 }): Promise<{ employeeId: string | null; entries: MyScheduleEntry[] }> {
+  const employeeId = await getLinkedEmployeeId(tenantId, userId);
+  if (!employeeId) return { employeeId: null, entries: [] };
+
   const supabase = await createSupabaseServerClient();
-  const { data: employee, error: employeeError } = await supabase
-    .from("employees")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .eq("auth_user_id", userId)
-    .maybeSingle();
-
-  if (employeeError) throw employeeError;
-  if (!employee) return { employeeId: null, entries: [] };
-
   const { data: versions, error: versionError } = await supabase
     .from("schedule_versions")
     .select("id, published_at, version")
@@ -55,19 +49,19 @@ export async function getMyPublishedSchedule({
     .lte("period_start", dateTo)
     .gte("period_end", dateFrom);
   if (versionError) throw versionError;
-  if (!versions?.length) return { employeeId: employee.id, entries: [] };
+  if (!versions?.length) return { employeeId, entries: [] };
 
   const versionIds = versions.map((version) => version.id);
   const { data: assignments, error: assignmentError } = await supabase
     .from("schedule_assignments")
     .select("schedule_version_id, shift_id, work_date")
     .eq("tenant_id", tenantId)
-    .eq("employee_id", employee.id)
+    .eq("employee_id", employeeId)
     .gte("work_date", dateFrom)
     .lte("work_date", dateTo)
     .in("schedule_version_id", versionIds);
   if (assignmentError) throw assignmentError;
-  if (!assignments?.length) return { employeeId: employee.id, entries: [] };
+  if (!assignments?.length) return { employeeId, entries: [] };
 
   const shiftIds = [...new Set(assignments.map((assignment) => assignment.shift_id))];
   const [{ data: shifts, error: shiftError }, { data: segments, error: segmentError }] = await Promise.all([
@@ -126,5 +120,5 @@ export async function getMyPublishedSchedule({
     }];
   }).sort((left, right) => left.workDate.localeCompare(right.workDate));
 
-  return { employeeId: employee.id, entries };
+  return { employeeId, entries };
 }

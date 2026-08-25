@@ -45,6 +45,7 @@
 
 ### Changed
 
+- 優化動態頁面切換：新增 employee/admin `loading.tsx` 與高可讀性載入狀態，使動態 route 可部分預取並立即回應；session、membership、管理權限及 Auth-linked Employee lookup 改為 request-scoped React cache 去重，三項權限 RPC 改為平行執行。無 Database Migration、API 或 breaking change。
 - 提高手機版全站可讀性：內文與輔助資訊以 15–16px 為主要下限，重要出勤資料提高至 17–18px，表單維持至少 16px 並放大按鈕、導覽與點擊區域；新增 mobile typography regression test。Vercel production commit `2b0804f` 已 Ready，正式頁面確認載入新版 CSS 且無 browser error。
 - 管理後台週排班在沒有草稿但已有發布版本時，改為顯示完整唯讀員工 × 七日班表，並保留「建立新版草稿」入口；Vercel production commit `17a50ae` 已 Ready，正式頁面載入無 browser error。
 - 未登入存取 `/` 現在會 `307` 導向 `/login`；已登入存取 `/login` 會導向 `/`。

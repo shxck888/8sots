@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { getUserDisplayName } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,7 +18,13 @@ export type WorkspaceContext = {
   canManage: boolean;
 };
 
-export async function getWorkspaceContext(): Promise<WorkspaceContext | null> {
+const workspacePermissionCodes = [
+  "employee.manage",
+  "schedule.manage",
+  "attendance.manage",
+] as const;
+
+export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | null> => {
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) return null;
@@ -30,24 +37,14 @@ export async function getWorkspaceContext(): Promise<WorkspaceContext | null> {
     .limit(1);
   const membership = (membershipRows?.[0] ?? null) as MembershipWithTenant | null;
   const tenant = Array.isArray(membership?.tenants) ? membership.tenants[0] : membership?.tenants;
-  const { data: canManageEmployees } = membership?.tenant_id
-    ? await supabase.rpc("current_user_has_permission", {
-        p_tenant_id: membership.tenant_id,
-        p_permission_code: "employee.manage",
-      })
-    : { data: false };
-  const { data: canManageSchedules } = membership?.tenant_id
-    ? await supabase.rpc("current_user_has_permission", {
-        p_tenant_id: membership.tenant_id,
-        p_permission_code: "schedule.manage",
-      })
-    : { data: false };
-  const { data: canManageAttendance } = membership?.tenant_id
-    ? await supabase.rpc("current_user_has_permission", {
-        p_tenant_id: membership.tenant_id,
-        p_permission_code: "attendance.manage",
-      })
-    : { data: false };
+  const permissionResults = membership?.tenant_id
+    ? await Promise.all(workspacePermissionCodes.map((permissionCode) => (
+        supabase.rpc("current_user_has_permission", {
+          p_tenant_id: membership.tenant_id,
+          p_permission_code: permissionCode,
+        })
+      )))
+    : [];
 
   return {
     userId: authData.user.id,
@@ -55,9 +52,6 @@ export async function getWorkspaceContext(): Promise<WorkspaceContext | null> {
     displayName: getUserDisplayName(authData.user),
     tenantId: membership?.tenant_id ?? null,
     tenantName: tenant?.name ?? "尚未加入組織",
-    canManage:
-      canManageEmployees === true ||
-      canManageSchedules === true ||
-      canManageAttendance === true,
+    canManage: permissionResults.some(({ data, error }) => !error && data === true),
   };
-}
+});

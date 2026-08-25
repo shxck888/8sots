@@ -1,3 +1,6 @@
+import "server-only";
+
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type MembershipRow = {
@@ -12,10 +15,17 @@ export type AdminContext = {
   tenantName: string;
 };
 
-async function getMembershipContext(): Promise<{
+const adminPermissionCodes = [
+  "employee.manage",
+  "schedule.manage",
+  "attendance.manage",
+] as const;
+type AdminPermissionCode = typeof adminPermissionCodes[number];
+
+const getMembershipContext = cache(async (): Promise<{
   context: AdminContext;
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
-} | null> {
+} | null> => {
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
@@ -40,36 +50,32 @@ async function getMembershipContext(): Promise<{
       tenantName: tenant?.name ?? "未命名組織",
     },
   };
-}
+});
 
-export async function getAdminContext(
-  permissionCode = "employee.manage",
-): Promise<AdminContext | null> {
+const getAdminPermissionContext = cache(async () => {
   const membership = await getMembershipContext();
   if (!membership) return null;
+  const checks = await Promise.all(adminPermissionCodes.map(async (permissionCode) => {
+    const { data, error } = await membership.supabase.rpc("current_user_has_permission", {
+      p_tenant_id: membership.context.tenantId,
+      p_permission_code: permissionCode,
+    });
+    return { allowed: !error && data === true, permissionCode };
+  }));
+  return {
+    context: membership.context,
+    permissions: new Set(checks.filter(({ allowed }) => allowed).map(({ permissionCode }) => permissionCode)),
+  };
+});
 
-  const { data: allowed, error: permissionError } = await membership.supabase.rpc(
-    "current_user_has_permission",
-    { p_tenant_id: membership.context.tenantId, p_permission_code: permissionCode },
-  );
-
-  if (permissionError || allowed !== true) return null;
-  return membership.context;
+export async function getAdminContext(
+  permissionCode: AdminPermissionCode = "employee.manage",
+): Promise<AdminContext | null> {
+  const admin = await getAdminPermissionContext();
+  return admin?.permissions.has(permissionCode) ? admin.context : null;
 }
 
 export async function getAdminShellContext(): Promise<AdminContext | null> {
-  const membership = await getMembershipContext();
-  if (!membership) return null;
-  const checks = await Promise.all([
-    membership.supabase.rpc("current_user_has_permission", {
-      p_tenant_id: membership.context.tenantId, p_permission_code: "employee.manage",
-    }),
-    membership.supabase.rpc("current_user_has_permission", {
-      p_tenant_id: membership.context.tenantId, p_permission_code: "schedule.manage",
-    }),
-    membership.supabase.rpc("current_user_has_permission", {
-      p_tenant_id: membership.context.tenantId, p_permission_code: "attendance.manage",
-    }),
-  ]);
-  return checks.some(({ data, error }) => !error && data === true) ? membership.context : null;
+  const admin = await getAdminPermissionContext();
+  return admin && admin.permissions.size > 0 ? admin.context : null;
 }
