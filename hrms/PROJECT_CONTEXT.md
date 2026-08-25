@@ -36,7 +36,8 @@ Last Updated: 2026-08-25
 - Production rollback-only Punch 測試四項通過：上下班交替、idempotency 防重、禁止 authenticated 直接新增、禁止修改原始紀錄；Auth／Employee／Punch fixtures 均為 0。
 - Attendance rollback-only production test 四項通過：缺下班卡辨識、更正核准後納入重算、舊計算批次保留、authenticated client 不可直接寫入；fixtures 均為 0。
 - Attendance／Correction UI 已正式上線：員工可提出補卡申請並查看自己的計算快照／申請狀態；具 `attendance.manage` 權限的管理員可依日期範圍產生新快照、查看異常並核准或拒絕更正。
-- 目前程式通過 ESLint、TypeScript、87 項 Vitest 與 Next.js production build。
+- 手機版已套用高可讀性字級與觸控規範：主要小字至少約 15px、表單控制 16px、重要出勤時間 18px，並以 regression test 防止縮回過小字級。
+- 目前程式通過 ESLint、TypeScript、88 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
@@ -58,7 +59,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（87 tests）、Next production build；Database types drift contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
+| Quality | ESLint、TypeScript strict、Vitest（88 tests）、Next production build；Database types drift contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
 
 ## Core Modules
 
