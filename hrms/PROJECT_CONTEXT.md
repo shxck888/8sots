@@ -27,7 +27,7 @@ Last Updated: 2026-08-25
 - 排班 foundation 已上線：班別由有序 minute-offset segments 組成，可表達兩段班與跨日班；班表採 draft/published/superseded versions，一位員工同日一個班別，發布後 Assignment 與已使用 Shift Segment 不可覆寫。
 - 海之星正式班別已建立：平日班 `10:00–14:00`、`16:00–21:00`（540 分鐘）；假日班 `10:00–21:00`（660 分鐘）。日期要使用哪一種班別由排班者指定，系統目前不自行把週末判定為假日。
 - Production rollback-only 排班測試 8 項全數通過：兩種正式工時、跨日、重疊拒絕、跨租戶拒絕、發布、發布後班表與班別不可變；Shift／Tenant／Employee fixtures 殘留皆為 0。
-- 管理後台 `/admin/schedules` 週排班第一版：週切換、版本／狀態摘要、在職員工 × 七日表格、平日／假日班選擇、未排班、建立／複製草稿、整週原子儲存、發布確認及 responsive navigation。
+- 管理後台 `/admin/schedules` 週排班第一版：週切換、版本／狀態摘要、在職員工 × 七日表格、已發布版本唯讀檢視、平日／假日班選擇、未排班、建立／複製草稿、整週原子儲存、發布確認及 responsive navigation。
 - 員工端 `/my-schedule` 週班表第一版：週切換、兩段／連續／跨日班段、週工時與未排班狀態；僅顯示自己的 published assignments，未排班不被誤標為休假。
 - `lib/database.types.ts` 已同步 production 已驗證的 `014` schema，server session 與 Auth Admin clients 均使用 application `Database` generic；migration-to-types drift contract 已建立。
 - Employee Schedule RLS rollback-only production test 三項通過：本人 published 可讀、他人 published 與本人 draft 不可讀；全部 fixtures 已 rollback。
@@ -36,7 +36,7 @@ Last Updated: 2026-08-25
 - Production rollback-only Punch 測試四項通過：上下班交替、idempotency 防重、禁止 authenticated 直接新增、禁止修改原始紀錄；Auth／Employee／Punch fixtures 均為 0。
 - Attendance rollback-only production test 四項通過：缺下班卡辨識、更正核准後納入重算、舊計算批次保留、authenticated client 不可直接寫入；fixtures 均為 0。
 - Attendance／Correction UI 已正式上線：員工可提出補卡申請並查看自己的計算快照／申請狀態；具 `attendance.manage` 權限的管理員可依日期範圍產生新快照、查看異常並核准或拒絕更正。
-- 目前程式通過 ESLint、TypeScript、86 項 Vitest 與 Next.js production build。
+- 目前程式通過 ESLint、TypeScript、87 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
@@ -58,7 +58,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（86 tests）、Next production build；Database types drift contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
+| Quality | ESLint、TypeScript strict、Vitest（87 tests）、Next production build；Database types drift contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
 
 ## Core Modules
 

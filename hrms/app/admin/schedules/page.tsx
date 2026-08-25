@@ -114,23 +114,57 @@ export default async function SchedulesPage({ searchParams }: {
         <section className="admin-panel admin-empty"><strong>尚未建立班別</strong><p>請先建立平日班與假日班。</p></section>
       ) : employees.length === 0 ? (
         <section className="admin-panel admin-empty"><strong>沒有可排班的在職員工</strong><p>請先在員工管理建立在職員工。</p></section>
-      ) : !draft ? (
+      ) : !draft && !published ? (
         <section className="admin-panel schedule-empty">
-          <CalendarDays size={34} /><strong>{published ? "本週已有已發布班表" : "本週尚未建立排班"}</strong>
-          <p>{published ? "建立新版草稿後即可調整；舊版會保留至新版發布。" : "先建立草稿，再為每位員工選擇每日班別。"}</p>
+          <CalendarDays size={34} /><strong>本週尚未建立排班</strong>
+          <p>先建立草稿，再為每位員工選擇每日班別。</p>
           <form action={createScheduleDraft}>
             <input name="periodStart" type="hidden" value={weekStart} />
             <input name="periodEnd" type="hidden" value={weekEnd} />
-            <button className="admin-button primary" type="submit"><Plus size={16} /> {published ? "建立新版草稿" : "建立本週草稿"}</button>
+            <button className="admin-button primary" type="submit"><Plus size={16} /> 建立本週草稿</button>
           </form>
+        </section>
+      ) : !draft && published ? (
+        <section className="admin-panel schedule-panel">
+          <div className="schedule-toolbar">
+            <div>
+              <strong>已發布班表 V{published.version}</strong>
+              <span>此版本為唯讀；需要調整時請建立新版草稿，舊版會保留至新版發布。</span>
+            </div>
+            <form action={createScheduleDraft}>
+              <input name="periodStart" type="hidden" value={weekStart} />
+              <input name="periodEnd" type="hidden" value={weekEnd} />
+              <button className="admin-button primary" type="submit"><Plus size={16} /> 建立新版草稿</button>
+            </form>
+          </div>
+          <div className="schedule-grid-wrap">
+            <table className="schedule-grid schedule-grid-readonly">
+              <thead><tr><th>員工</th>{weekDates.map((date) => <th key={date}>{dateLabel(date)}</th>)}</tr></thead>
+              <tbody>{employees.map((employee) => (
+                <tr key={employee.id}>
+                  <th><strong>{employee.full_name}</strong><small>{employee.employee_no}</small></th>
+                  {weekDates.map((date) => {
+                    const shiftId = assignmentMap.get(`${employee.id}:${date}`);
+                    return (
+                      <td key={date}>
+                        <div className={shiftId ? "schedule-readonly-shift" : "schedule-readonly-empty"}>
+                          {shiftId ? shiftLabels.get(shiftId) ?? "班別資料不存在" : "未排班"}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
         </section>
       ) : (
         <>
           <form action={saveScheduleDraft} className="admin-panel schedule-panel">
-            <input name="scheduleVersionId" type="hidden" value={draft.id} />
+            <input name="scheduleVersionId" type="hidden" value={draft!.id} />
             <input name="weekStart" type="hidden" value={weekStart} />
             <div className="schedule-toolbar">
-              <div><strong>草稿 V{draft.version}</strong><span>未排班不等於休假；假別將由後續假勤模組處理。</span></div>
+              <div><strong>草稿 V{draft!.version}</strong><span>未排班不等於休假；假別將由後續假勤模組處理。</span></div>
               <button className="admin-button primary" type="submit"><Save size={16} /> 儲存草稿</button>
             </div>
             <div className="schedule-grid-wrap">
@@ -159,7 +193,7 @@ export default async function SchedulesPage({ searchParams }: {
           <div className="schedule-publish-bar">
             <div><strong>發布本週班表</strong><span>{assignmentMap.size === 0 ? "至少安排一個班別並儲存後才能發布。" : "請先儲存草稿。發布後本版本不可直接修改。"}</span></div>
             <form action={publishSchedule}>
-              <input name="scheduleVersionId" type="hidden" value={draft.id} />
+              <input name="scheduleVersionId" type="hidden" value={draft!.id} />
               <input name="weekStart" type="hidden" value={weekStart} />
               <PublishButton disabled={assignmentMap.size === 0} />
             </form>
