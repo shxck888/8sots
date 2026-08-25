@@ -850,6 +850,39 @@ export type Database = {
         timezone: string
         work_date: string
       }>
+      leave_types: SimpleTable<{
+        code: string
+        created_at: string
+        description: string | null
+        id: string
+        is_active: boolean
+        name: string
+        tenant_id: string
+      }>
+      work_request_decisions: SimpleTable<{
+        decided_at: string
+        decided_by: string
+        decision: Database["public"]["Enums"]["work_request_decision_type"]
+        id: string
+        review_note: string | null
+        tenant_id: string
+        work_request_id: string
+      }>
+      work_requests: SimpleTable<{
+        employee_id: string
+        ends_at: string
+        id: string
+        idempotency_key: string
+        leave_type_id: string | null
+        reason: string
+        request_type: Database["public"]["Enums"]["work_request_type"]
+        requested_at: string
+        requested_by: string
+        requested_minutes: number
+        starts_at: string
+        tenant_id: string
+        timezone: string
+      }>
       roles: {
         Row: {
           code: string
@@ -1273,6 +1306,18 @@ export type Database = {
         }
         Returns: string
       }
+      create_work_request: {
+        Args: {
+          p_ends_local: string
+          p_idempotency_key: string
+          p_leave_type_id: string | null
+          p_reason: string
+          p_request_type: Database["public"]["Enums"]["work_request_type"]
+          p_starts_local: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       current_user_has_permission: {
         Args: { p_permission_code: string; p_tenant_id: string }
         Returns: boolean
@@ -1283,6 +1328,7 @@ export type Database = {
         Returns: {
           can_manage_attendance: boolean
           can_manage_employee: boolean
+          can_manage_request: boolean
           can_manage_schedule: boolean
           email: string
           employee_id: string | null
@@ -1316,6 +1362,15 @@ export type Database = {
       decide_punch_correction: {
         Args: {
           p_decision: Database["public"]["Enums"]["punch_correction_decision_type"]
+          p_request_id: string
+          p_review_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      decide_work_request: {
+        Args: {
+          p_decision: Database["public"]["Enums"]["work_request_decision_type"]
           p_request_id: string
           p_review_note: string
           p_tenant_id: string
@@ -1472,6 +1527,8 @@ export type Database = {
       punch_correction_decision_type: "approved" | "rejected"
       role_scope_type: "tenant" | "company" | "location" | "department" | "self"
       schedule_version_status: "draft" | "published" | "superseded"
+      work_request_decision_type: "approved" | "rejected"
+      work_request_type: "leave" | "overtime"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1631,6 +1688,8 @@ export const Constants = {
       punch_correction_decision_type: ["approved", "rejected"],
       role_scope_type: ["tenant", "company", "location", "department", "self"],
       schedule_version_status: ["draft", "published", "superseded"],
+      work_request_decision_type: ["approved", "rejected"],
+      work_request_type: ["leave", "overtime"],
     },
   },
 } as const

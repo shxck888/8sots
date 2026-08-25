@@ -8,13 +8,13 @@ const nav = [
   { label: "工作台", icon: LayoutDashboard, href: "/" },
   { label: "我的班表", icon: CalendarDays, href: "/my-schedule" },
   { label: "出勤紀錄", icon: Clock3, href: "/attendance" },
-  { label: "申請中心", icon: ReceiptText, href: "#" },
+  { label: "申請中心", icon: ReceiptText, href: "/requests" },
 ];
 
 export function WorkspaceShell({
   activePath, canManage, children, displayName, email, tenantName,
 }: Readonly<{
-  activePath: "/" | "/my-schedule" | "/attendance";
+  activePath: "/" | "/my-schedule" | "/attendance" | "/requests";
   canManage: boolean;
   children: React.ReactNode;
   displayName: string;

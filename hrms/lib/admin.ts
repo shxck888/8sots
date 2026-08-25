@@ -12,6 +12,7 @@ const permissionFields = {
   "employee.manage": "canManageEmployees",
   "schedule.manage": "canManageSchedules",
   "attendance.manage": "canManageAttendance",
+  "request.manage": "canManageRequests",
 } as const;
 type AdminPermissionCode = keyof typeof permissionFields;
 

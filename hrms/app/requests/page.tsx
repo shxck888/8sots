@@ -1,0 +1,49 @@
+import { ClipboardList } from "lucide-react";
+import { redirect } from "next/navigation";
+import { WorkspaceShell } from "@/app/workspace-shell";
+import { formatTaipeiDateTime } from "@/lib/schedule-display";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getWorkspaceContext } from "@/lib/workspace";
+import { formatRequestedMinutes, workRequestDecisionLabels, workRequestTypeLabels } from "@/lib/work-request-contract";
+import { RequestForm } from "./request-form";
+
+export const dynamic = "force-dynamic";
+
+export default async function RequestsPage() {
+  const workspace = await getWorkspaceContext();
+  if (!workspace) redirect("/login");
+  const supabase = await createSupabaseServerClient();
+  const [{ data: leaveTypes }, { data: requests }] = workspace.employeeId && workspace.tenantId
+    ? await Promise.all([
+      supabase.from("leave_types").select("*").eq("tenant_id", workspace.tenantId).eq("is_active", true).order("code"),
+      supabase.from("work_requests").select("*").eq("tenant_id", workspace.tenantId).eq("employee_id", workspace.employeeId).order("requested_at", { ascending: false }).limit(50),
+    ])
+    : [{ data: [] }, { data: [] }];
+  const requestIds = (requests ?? []).map((item) => item.id);
+  const { data: decisions } = requestIds.length
+    ? await supabase.from("work_request_decisions").select("*").in("work_request_id", requestIds)
+    : { data: [] };
+  const decisionByRequest = new Map((decisions ?? []).map((item) => [item.work_request_id, item]));
+  const leaveTypeById = new Map((leaveTypes ?? []).map((item) => [item.id, item]));
+
+  return (
+    <WorkspaceShell activePath="/requests" canManage={workspace.canManage} displayName={workspace.displayName} email={workspace.email} tenantName={workspace.tenantName}>
+      <header className="my-schedule-header"><div><span className="date-label">REQUEST CENTER</span><h1>申請中心</h1><p>提出請假或加班申請，審核結果與原始內容都會保留。</p></div></header>
+      {!workspace.employeeId ? <section className="my-schedule-empty"><ClipboardList size={30} /><strong>此帳號尚未連結在職員工資料</strong><p>請聯絡管理員完成員工登入帳號連結後再提出申請。</p></section> : <>
+        <section className="work-request-form-grid">
+          <RequestForm enabled leaveTypes={leaveTypes ?? []} requestType="leave" />
+          <RequestForm enabled leaveTypes={leaveTypes ?? []} requestType="overtime" />
+        </section>
+        <section className="attendance-summary-list work-request-history"><header><div><span className="eyebrow">MY REQUESTS</span><h2>我的申請紀錄</h2></div><small>最近 50 筆</small></header>
+          {!requests?.length ? <div className="admin-empty"><ClipboardList size={28} /><strong>目前沒有申請紀錄</strong><p>送出第一筆請假或加班申請後會顯示在這裡。</p></div> : requests.map((request) => { const decision = decisionByRequest.get(request.id); const leaveType = request.leave_type_id ? leaveTypeById.get(request.leave_type_id) : null; return <article key={request.id}>
+            <strong>{workRequestTypeLabels[request.request_type]}{leaveType ? ` · ${leaveType.name}` : ""}</strong>
+            <span>{formatTaipeiDateTime(request.starts_at)}<br />至 {formatTaipeiDateTime(request.ends_at)}</span>
+            <span>{formatRequestedMinutes(request.requested_minutes)}</span>
+            <span className={`correction-status ${decision?.decision ?? "pending"}`}>{decision ? workRequestDecisionLabels[decision.decision] : "待審核"}</span>
+            <em title={request.reason}>{request.reason}{decision?.review_note ? `｜審核：${decision.review_note}` : ""}</em>
+          </article>; })}
+        </section>
+      </>}
+    </WorkspaceShell>
+  );
+}
