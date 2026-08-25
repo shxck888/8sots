@@ -6,6 +6,8 @@
 
 ### Added
 
+- 新增員工 `/requests` 請假／加班申請與最近 50 筆狀態紀錄；未連結 Employee 的帳號顯示受保護空狀態。
+- 新增管理員 `/admin/requests` 待審優先列表、核准／拒絕與審核備註；新增 ADR-022 記錄 additive Request/Decision 決策。
 - 新增管理員 `/admin/attendance/[dayId]` 出勤日明細：班段排班／有效打卡時間、實際分鐘、遲到早退、異常、原始 GPS evidence 與當日補卡申請。
 - 新增 Supabase email/password 登入頁、表單 validation 與安全的站內 `next` redirect。
 - 新增登入／登出 Server Actions、PKCE Auth callback 與 Next.js Proxy session refresh。
@@ -60,6 +62,7 @@
 
 ### Database
 
+- 新增並套用 `202608250016_request_center.sql`：`leave_types`、`work_requests`、`work_request_decisions`、兩個 enums、`request.manage`、RLS、最小 SELECT grants、audited create/decide RPC，並將 workspace bootstrap 擴充為四項管理權限。為 additive schema，無既有資料 breaking change。
 - 新增並套用 `202608250015_navigation_performance_rpcs.sql`：新增 authenticated-only `get_current_workspace_context`、`get_my_published_schedule`、`get_my_attendance_overview` 三個 identity-bound aggregate read RPC；不新增 table、不修改既有資料，無 schema breaking change。
 - 新增 idempotent reference-data migration `202608250003_platform_admin_permission.sql`；無 table/schema breaking change。
 - Production 已建立 `8sots` tenant、管理員 membership/RBAC 關聯及 audit record；不將環境特定 Auth user UUID 寫入 migration。
@@ -80,6 +83,7 @@
 
 ### API
 
+- 新增內部 `create_work_request`／`decide_work_request` RPC 與對應 Server Actions；既有公開 JSON API 無變更或 breaking change。
 - 新增三個內部 Supabase read RPC；既有公開 JSON API 無變更或 breaking change。
 - 新增 `GET /auth/callback`；既有 JSON API contract 無 breaking change。
 - 新增員工管理 Server Actions 與 database RPC；既有 JSON API 無變更。
@@ -98,6 +102,7 @@
 
 ### Validation
 
+- ESLint、TypeScript、100 個 Vitest tests 與包含 `/requests`、`/admin/requests` 的 Next.js production build 通過。Vercel commit `1f46dc1` 已 Ready；正式 `/admin/requests` 以 `request.manage` 成功顯示 0 筆待審，驗證 migration、workspace 權限與申請查詢生效。未建立永久測試員工／申請資料。
 - ESLint、TypeScript、95 個 Vitest tests 與包含 `/admin/attendance/[dayId]` 的 Next.js production build 通過；本次沒有 Database Migration、公開 API 或 Breaking Change。
 - ESLint、TypeScript、94 個 Vitest tests 與 Next.js production build 通過；migration history 已顯示 `202608250015 navigation_performance_rpcs`。Vercel production commit `9982787` 為 Ready，Deployment Resources 確認動態 routes 均部署於 `HND1`，正式網址登入 smoke test 與主要頁面 `200` 通過。
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。

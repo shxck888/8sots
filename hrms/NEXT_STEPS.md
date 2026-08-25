@@ -4,15 +4,15 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Attendance calculation 與 Punch Correction production slice DONE**。Database migration、rollback-only integration test、employee/admin UI、Vercel deployment 與正式網域 smoke test 均已完成。每次計算建立新 Run，保留 Day／Segment／Exception snapshot；補卡 Request／Decision 與原始 Punch 分離。Rule V1 的遲到、早退寬限均為 0 分鐘，只表示排班差異，不自動扣薪或核准加班。
+**請假／加班申請中心第一版 DONE**。`016` migration、employee/admin UI、100 項測試、Vercel deployment 與正式管理頁 smoke test 已完成。Request 與 final Decision 分離；四種初始假別只分類，不計算額度、扣薪、加班費或補休。
 
 ## Next Recommended Task (P0)
 
-完成 Attendance operational acceptance：
+完成真實 Employee operational acceptance：
 
 1. 由使用者指定一位真實 Employee 並確認是否建立／連結登入帳號，完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 E2E；不得自行建立永久帳號。
 2. 與使用者確認遲到／早退寬限、未排班打卡、跨日與多餘卡的正式規則，再建立 Rule Set V2，不覆寫 V1。
-3. 以新的 Attendance Day 明細完成真實班段證據驗收；特定日期重算與核准後「需要重算」提示已完成，通知仍待後續 Notification 模組。
+3. 使用同一已連結 Employee 提出請假及加班，由管理員核准／拒絕並確認員工狀態更新；不得使用未經授權的永久測試帳號或申請。
 
 ## Pending Priorities
 
@@ -26,7 +26,8 @@ Last Updated: 2026-08-25
 
 ### P1 — Phase 1 completion
 
-- Holiday Calendar、排班發布前完整性警示、Leave、Overtime 與通用 Approval。
+- 請假／加班撤回、附件／證明、假別額度、核准後 Attendance 銜接，以及可配置多層 Approval；基本送單與單層審核已完成。
+- Holiday Calendar 與排班發布前完整性警示。
 - Password recovery、invitation、MFA 與非 Email 帳號綁定政策。
 - 建立 Company／Location 管理後才設定 geofence；目前無需門市且不得宣稱到店驗證。
 - QR 短效 token、防重放與裝置／離線補送規則。
@@ -40,12 +41,14 @@ Last Updated: 2026-08-25
 
 - 遲到／早退寬限分鐘、缺卡配對容錯、未排班打卡與多餘卡處理方式。
 - 補卡是否只允許最近 62 天、核准層級與是否需要員工撤回功能。
+- 各假別額度、生效日、證明要求、最小申請單位、跨日計算、加班認列與補休／加班費政策；目前不得從單層核准直接推導薪資結果。
 - Preview/production 拓撲、Tokyo region failover 與 secret rotation。
 - 金額表示、background job/queue、cache、observability 與公開 API conventions。
 
 ## Known Issues / Risks
 
 - Production 尚無經使用者授權的已連結 Employee 驗收帳號；Database 流程已用 rollback-only fixture 驗證。
+- `admin` 沒有連結 Employee，因此 production 只完成管理員申請頁 smoke test；員工送單與審核 E2E 仍待使用者指定真實員工帳號。
 - Rule V1 寬限為 0 分鐘，屬技術基線而非確認過的海之星人事政策。
 - Attendance 計算配對第 N 筆上班與第 N 筆下班；極端亂序／誤打仍需人工更正與後續規則強化。
 - 尚無 Location/geofence；GPS 只保存 evidence。

@@ -220,3 +220,14 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Alternatives:** 只保留載入動畫；跨請求快取使用者授權；搬移資料庫 region；在每個頁面繼續用多次 Data API query。
 - **Consequences:** Aggregate RPC 與 TypeScript Database types 必須同步版本化並做 anonymous/identity integration test；read model 欄位變更屬內部 contract，公開 JSON API 不變。後續仍需以 production Server Timing／p95 驗證 Vercel 執行 region 與剩餘管理頁查詢。
 - **Implementation:** Migration `202608250015_navigation_performance_rpcs.sql`、`lib/workspace.ts`、`lib/my-schedule.ts`、`lib/attendance-overview.ts` 與 navigation performance contracts。
+
+## ADR-022: Additive work requests with a single immutable final decision
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 請假與加班需要先提供可正式使用的送單／審核流程，但假別額度、扣薪、加班費、補休與多層簽核規則尚未確認。若先把這些結果寫死在申請狀態，後續政策會污染原始申請與歷史判斷。
+- **Decision:** 第一版使用 tenant-scoped `work_requests` 保存請假／加班原始申請，請假另連結 `leave_types`；審核結果保存於獨立 `work_request_decisions`，每筆 Request 最多一個 approved/rejected final Decision。Authenticated client 只有受 RLS 限制的 SELECT，建立與審核分別經 identity-bound 與 `request.manage` permission-checked audited RPC。初始假別只作分類，不代表額度、扣薪或薪資認列。
+- **Reason:** 先交付可追溯的核心流程，同時保留日後新增額度、證明、撤回、代理及多層 Approval 的空間，不反向改寫原始申請。
+- **Alternatives:** 直接在 Request row 覆寫 mutable status；立即建立通用 polymorphic workflow engine；把請假與加班費率寫死在第一版。
+- **Consequences:** 目前拒絕或核准後不能再次決定，也尚無撤回；管理員只做單層決策。未來若導入多層流程，須以新 migration 新增 Approval aggregate／actions 或版本，不可覆蓋既有 Decision；薪資與假期額度只能消費明確版本化的認列結果。
+- **Implementation:** Migration `202608250016_request_center.sql`、`/requests`、`/admin/requests`、`lib/work-request-contract.ts` 與 request center contracts。
