@@ -85,6 +85,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - **Request data boundary**：Next.js Proxy 使用 `getClaims()` 驗證本地 JWT（必要時由 Supabase client 處理 refresh），不在每次 route navigation 額外呼叫遠端 `getUser()`。server-only DAL 以 `get_current_workspace_context` 集中解析 session、active membership、三項管理權限與 Auth-linked Employee；React `cache()` 僅在單次 render/request 去除 Layout 與 Page 重複查詢，不跨使用者或跨請求保存授權結果。
 - **Navigation feedback**：動態 employee/admin route 以 `loading.tsx` 建立 Suspense 邊界，提供可預取的即時載入狀態；Shared Layout 保持可互動，實際資料仍由 server-authoritative 查詢完成後替換。
 - **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL；Supabase primary region 為 Tokyo (`ap-northeast-1`)。
+- **Compute locality**：`vercel.json` 將 Vercel Functions 固定於 Tokyo `hnd1`，使 server-rendered page、Server Action 與 Supabase PostgreSQL 位於同一 AWS region；靜態 asset 仍由 Vercel CDN 就近提供。
 - **Selected**：Supabase Storage 私人 bucket 保存員工照片，3 MB，僅 JPEG/PNG/WebP；由短效 signed URL 顯示。
 - **Selected**：Vercel Sensitive `SUPABASE_SERVICE_ROLE_KEY` 僅供 server-only Auth Admin client 使用，不得使用 `NEXT_PUBLIC_` 前綴或傳入 client bundle。
 - **Not yet selected**：queue、cache、observability、preview/production environment topology。

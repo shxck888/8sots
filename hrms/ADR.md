@@ -124,6 +124,7 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Reason:** 鄰近台灣且提供明確資料位置，project 已依此建立。
 - **Alternatives:** Southeast Asia (Singapore)；一般 Asia-Pacific region。
 - **Consequences:** Vercel server functions 應盡量選擇鄰近 Tokyo 的執行 region，並以實測延遲確認；跨區備援與資料落地需求仍需另行評估。
+- **Implementation:** 2026-08-25 以 `vercel.json` 將 Functions 設為 Tokyo `hnd1`，與 Supabase `ap-northeast-1` 同區；這不改變全球 CDN 的靜態資產供應。
 
 ## ADR-013: Custom usernames backed by internal Supabase email identifiers
 

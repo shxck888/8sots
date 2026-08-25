@@ -38,7 +38,8 @@ Last Updated: 2026-08-25
 - Attendance／Correction UI 已正式上線：員工可提出補卡申請並查看自己的計算快照／申請狀態；具 `attendance.manage` 權限的管理員可依日期範圍產生新快照、查看異常並核准或拒絕更正。
 - 手機版已套用高可讀性字級與觸控規範：主要小字至少約 15px、表單控制 16px、重要出勤時間 18px，並以 regression test 防止縮回過小字級。
 - 動態頁面已加入 employee/admin `loading.tsx` 即時回饋與部分預取；Proxy 使用本地 JWT claims，工作區身份／租戶／三項權限／Employee link 合併成單一 RPC，個人班表及出勤各自合併成單一 RPC，並由 React request-scoped cache 去重。
-- 目前程式通過 ESLint、TypeScript、93 項 Vitest 與 Next.js production build。
+- Vercel Functions 明確部署於東京 `hnd1`，與 Supabase `ap-northeast-1` 同區，避免每個動態頁面由預設華盛頓 region 跨太平洋查詢資料庫。
+- 目前程式通過 ESLint、TypeScript、94 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
@@ -56,11 +57,11 @@ Last Updated: 2026-08-25
 | Area | Current decision |
 | --- | --- |
 | Client | Next.js 16 App Router、React 19、TypeScript、responsive Web / PWA |
-| Hosting / delivery | GitHub → Vercel；custom domain `hrms.8sots.com.tw` |
+| Hosting / delivery | GitHub → Vercel Tokyo `hnd1`；custom domain `hrms.8sots.com.tw` |
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（93 tests）、Next production build；Database types drift contract；navigation performance contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
+| Quality | ESLint、TypeScript strict、Vitest（94 tests）、Next production build；Database types drift contract；navigation performance contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
 
 ## Core Modules
 

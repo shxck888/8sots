@@ -29,4 +29,9 @@ describe("navigation performance contract", () => {
     expect(proxy).toContain("auth.getClaims()");
     expect(proxy).not.toContain("auth.getUser()");
   });
+
+  it("runs Vercel Functions beside the Tokyo Supabase database", () => {
+    const vercel = JSON.parse(read("vercel.json")) as { regions?: string[] };
+    expect(vercel.regions).toEqual(["hnd1"]);
+  });
 });

@@ -40,7 +40,7 @@ Last Updated: 2026-08-25
 
 - 遲到／早退寬限分鐘、缺卡配對容錯、未排班打卡與多餘卡處理方式。
 - 補卡是否只允許最近 62 天、核准層級與是否需要員工撤回功能。
-- Vercel function region、preview/production 拓撲與 secret rotation。
+- Preview/production 拓撲、Tokyo region failover 與 secret rotation。
 - 金額表示、background job/queue、cache、observability 與公開 API conventions。
 
 ## Known Issues / Risks
