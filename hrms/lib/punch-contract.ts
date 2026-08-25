@@ -1,1 +1,36 @@
-m«ëˆ§½©buªàºg§¶X›ş›§r(ÚÚrÛlRÆ y¶¬{®vçºh¢ø¥zŠ.µø¥y¶ëy©­æ¤zw(uçl¶¸§‚)í¢{¦r«iË^®X§zÀİuç(uç^r‡^²)éºØazZ]ŠÊek+aŠÉ²Æ z(§¦ëb›­~)^uçÚº[_¢»-v)è¢ëiºÚ.¶›­~)^uçÚº[_¢»-v‹­
+import { z } from "zod";
+
+export const punchInputSchema = z.object({
+  idempotencyKey: z.uuid(),
+  clientOccurredAt: z.iso.datetime({ offset: true }),
+  timezone: z.string().trim().min(1).max(64)
+    .regex(/^[A-Za-z_]+\/[A-Za-z0-9_+/-]+(?:\/[A-Za-z0-9_+/-]+)*$/),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  accuracyM: z.number().positive().max(1000),
+  locationConsent: z.literal(true),
+});
+
+export type PunchEventType = "clock_in" | "clock_out";
+export type PunchInput = z.infer<typeof punchInputSchema>;
+
+export type PunchActionState =
+  | { ok: true; eventType: PunchEventType; occurredAt: string; workDate: string }
+  | { ok: false; message: string };
+
+export const punchEventLabels: Record<PunchEventType, string> = {
+  clock_in: "ä¸Šç­",
+  clock_out: "ä¸‹ç­",
+};
+
+export const punchSourceLabels = { web_gps: "ç¶²é  GPS", qr: "QR Code" } as const;
+export const locationVerificationLabels = {
+  not_configured: "å°šæœªè¨­å®šåº—å€åœæ¬„",
+  inside_geofence: "åœæ¬„å…§",
+  outside_geofence: "åœæ¬„å¤–",
+  unavailable: "ç„¡æ³•é©—è­‰",
+} as const;
+
+export function nextPunchLabel(lastEventType: PunchEventType | null): string {
+  return lastEventType === "clock_in" ? "ä¸‹ç­æ‰“å¡" : "ä¸Šç­æ‰“å¡";
+}
