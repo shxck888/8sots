@@ -208,3 +208,14 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Alternatives:** 每日單一 mutable attendance row；管理員直接新增／修改 Punch；核准補卡後覆寫上一次計算；只在前端即時計算。
 - **Consequences:** 核准更正後需重新計算受影響日期；舊 Run 會持續保存。V1 寬限為 0 分鐘且只標記差異，不代表扣薪或加班認列。計算範圍限制最多 32 天，補卡工作日限制最近 62 天。
 - **Implementation:** Migration `202608250014_attendance_calculation_and_corrections.sql`、employee Correction Form、admin Calculation／Review UI 與 rollback-only integration test。
+
+## ADR-021: Identity-bound aggregate read models for dynamic navigation
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 台灣使用者連到 Vercel 與 Tokyo Supabase 時，原本每次切頁會依序執行遠端 Auth user 驗證、Membership、三項 Permission、Employee link 及多段頁面查詢，實際體感達 3–5 秒；加入 loading UI 只能改善回饋，不能縮短資料等待。
+- **Decision:** Proxy 改以 `getClaims()` 驗證 JWT；server-only DAL 以 `get_current_workspace_context` 一次取得 identity、tenant、Employee link 與管理權限。個人 published schedule 與 attendance overview 各以單一、`auth.uid()` 綁定、`authenticated`-only security-definer RPC 回傳頁面 read model。React `cache()` 仍只作 request-scoped 去重。
+- **Reason:** 把常用員工頁面的跨區往返由多段串行查詢降為固定兩段，同時把授權條件留在資料庫邊界，不建立跨使用者快取。
+- **Alternatives:** 只保留載入動畫；跨請求快取使用者授權；搬移資料庫 region；在每個頁面繼續用多次 Data API query。
+- **Consequences:** Aggregate RPC 與 TypeScript Database types 必須同步版本化並做 anonymous/identity integration test；read model 欄位變更屬內部 contract，公開 JSON API 不變。後續仍需以 production Server Timing／p95 驗證 Vercel 執行 region 與剩餘管理頁查詢。
+- **Implementation:** Migration `202608250015_navigation_performance_rpcs.sql`、`lib/workspace.ts`、`lib/my-schedule.ts`、`lib/attendance-overview.ts` 與 navigation performance contracts。

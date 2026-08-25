@@ -72,6 +72,11 @@ const attendanceCalculationMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const navigationPerformanceMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250015_navigation_performance_rpcs.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -99,6 +104,11 @@ const punchFoundationTest = readFileSync(
 
 const attendanceCalculationTest = readFileSync(
   join(process.cwd(), "supabase/tests/attendance_calculation.sql"),
+  "utf8",
+).toLowerCase();
+
+const navigationPerformanceTest = readFileSync(
+  join(process.cwd(), "supabase/tests/navigation_performance.sql"),
   "utf8",
 ).toLowerCase();
 
@@ -366,6 +376,23 @@ describe("foundation migration contract", () => {
     expect(attendanceCalculationTest).toContain("approved correction was not included in recalculation");
     expect(attendanceCalculationTest).toContain("attendance calculation history was overwritten");
     expect(attendanceCalculationTest).toContain("direct attendance write unexpectedly succeeded");
+  });
+
+  it("aggregates navigation identity, schedule and attendance reads into bounded RPCs", () => {
+    expect(navigationPerformanceMigration).toContain("get_current_workspace_context");
+    expect(navigationPerformanceMigration).toContain("get_my_published_schedule");
+    expect(navigationPerformanceMigration).toContain("get_my_attendance_overview");
+    expect(navigationPerformanceMigration.match(/security definer/g)).toHaveLength(3);
+    expect(navigationPerformanceMigration).toContain("from public, anon");
+    expect(navigationPerformanceMigration).toContain("to authenticated");
+  });
+
+  it("keeps navigation RPC integration checks rollback-only", () => {
+    expect(navigationPerformanceTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(navigationPerformanceTest.trim()).toMatch(/rollback;$/);
+    expect(navigationPerformanceTest).not.toContain("commit;");
+    expect(navigationPerformanceTest).toContain("workspace bootstrap did not return exactly one row");
+    expect(navigationPerformanceTest).toContain("anonymous workspace bootstrap unexpectedly succeeded");
   });
 
   it("keeps schedule integration fixtures rollback-only and covers critical boundaries", () => {

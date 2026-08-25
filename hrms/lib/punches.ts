@@ -1,21 +1,19 @@
 import "server-only";
 
 import type { Database } from "@/lib/database";
-import { getLinkedEmployeeId } from "@/lib/linked-employee";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PunchRecord = Database["public"]["Tables"]["punch_records"]["Row"];
 
 export async function getEmployeePunchContext({
   limit = 20,
+  employeeId,
   tenantId,
-  userId,
 }: {
   limit?: number;
+  employeeId: string | null;
   tenantId: string;
-  userId: string;
 }): Promise<{ employeeId: string | null; records: PunchRecord[] }> {
-  const employeeId = await getLinkedEmployeeId(tenantId, userId);
   if (!employeeId) return { employeeId: null, records: [] };
 
   const supabase = await createSupabaseServerClient();

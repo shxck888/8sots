@@ -11,15 +11,22 @@ describe("navigation performance contract", () => {
     expect(read("app/loading-state.tsx")).toContain('role="status"');
   });
 
-  it("deduplicates request-scoped identity lookups and parallelizes permission checks", () => {
+  it("deduplicates request-scoped identity lookups and uses aggregate database reads", () => {
     const workspace = read("lib/workspace.ts");
     const admin = read("lib/admin.ts");
-    const linkedEmployee = read("lib/linked-employee.ts");
+    const schedule = read("lib/my-schedule.ts");
+    const attendance = read("lib/attendance-overview.ts");
 
     expect(workspace).toContain("export const getWorkspaceContext = cache(");
-    expect(workspace).toContain("await Promise.all(workspacePermissionCodes.map");
-    expect(admin).toContain("const getMembershipContext = cache(");
-    expect(admin).toContain("const getAdminPermissionContext = cache(");
-    expect(linkedEmployee).toContain("export const getLinkedEmployeeId = cache(");
+    expect(workspace).toContain('rpc("get_current_workspace_context")');
+    expect(admin).toContain("getWorkspaceContext()");
+    expect(schedule).toContain('rpc("get_my_published_schedule"');
+    expect(attendance).toContain('rpc("get_my_attendance_overview"');
+  });
+
+  it("uses local JWT claims in the request proxy instead of a remote user lookup", () => {
+    const proxy = read("proxy.ts");
+    expect(proxy).toContain("auth.getClaims()");
+    expect(proxy).not.toContain("auth.getUser()");
   });
 });

@@ -25,11 +25,10 @@ export default async function Home() {
   const now = new Date();
   const today = taipeiDateKey(now);
   const [schedule, punches] = workspace.tenantId
-    ? await Promise.all([getMyPublishedSchedule({
+      ? await Promise.all([getMyPublishedSchedule({
         ...getMonthBounds(today),
-        tenantId: workspace.tenantId,
-        userId: workspace.userId,
-      }), getEmployeePunchContext({ tenantId: workspace.tenantId, userId: workspace.userId })])
+        employeeId: workspace.employeeId,
+      }), getEmployeePunchContext({ employeeId: workspace.employeeId, tenantId: workspace.tenantId })])
     : [{ employeeId: null, entries: [] }, { employeeId: null, records: [] }];
   const todaySchedule = schedule.entries.find((entry) => entry.workDate === today);
   const scheduledMinutes = schedule.entries.reduce((total, entry) => total + entry.totalMinutes, 0);

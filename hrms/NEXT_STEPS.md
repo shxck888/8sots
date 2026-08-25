@@ -22,6 +22,7 @@ Last Updated: 2026-08-25
 - Rule Set V2 業務參數與生效日；不得把 Attendance 差異直接當成薪資扣款。
 - Correction 審核後的受影響日期重算提醒，以及管理端 Segment evidence 明細。
 - GPS consent 保存政策、mock-location 風險、CSP/security headers、rate limit 與 audit writer 強化。
+- 建立 production Server Timing／p95 navigation 監測，量測 `015` aggregate RPC 上線後的實際手機切頁時間；若管理頁仍超標，再針對員工列表、週排班與管理出勤建立獨立 read model。
 
 ### P1 — Phase 1 completion
 
@@ -49,6 +50,7 @@ Last Updated: 2026-08-25
 - Attendance 計算配對第 N 筆上班與第 N 筆下班；極端亂序／誤打仍需人工更正與後續規則強化。
 - 尚無 Location/geofence；GPS 只保存 evidence。
 - Docker/Supabase local stack 不可用；真實 database integration tests 在受控遠端 transaction 執行。
+- 一般員工頁已移除主要串行查詢，但尚無正式 p50/p95 telemetry；不能只用單一手機體感宣稱效能目標完成。
 
 ## Definition of Done
 

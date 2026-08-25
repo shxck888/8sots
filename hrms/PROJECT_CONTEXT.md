@@ -16,7 +16,7 @@ Last Updated: 2026-08-25
 - Responsive 員工今日工作台已讀取真實 published schedule，並提供明確同意後的 GPS 上／下班打卡；休假與通知仍標示未上線。
 - `GET /api/health` 與 `GET /api/v1/me` 基線。
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
-- Supabase production 已套用並在 migration history 確認 `202608240001` 至 `202608250014`；`014` 新增版本化 Attendance 計算、班段異常、獨立更正申請與 append-only 決策。
+- Supabase production 已套用並在 migration history 確認 `202608240001` 至 `202608250015`；`015` 將常用導覽的工作區、個人班表與出勤讀取整併為三個身份綁定的 aggregate RPC。
 - GitHub `shxck888/8sots/hrms`、Vercel `8sots-hrms`、Supabase public credentials 與 `hrms.8sots.com.tw`。
 - 自訂帳號規則為 3–32 位英文字母、數字或底線；密碼為 6–64 位英數混合。
 - Production 管理員登入、tenant membership 顯示與登出 smoke test 已通過；Supabase bootstrap query 同時驗證 active membership、role 與 permission。
@@ -31,14 +31,14 @@ Last Updated: 2026-08-25
 - 員工端 `/my-schedule` 週班表第一版：週切換、兩段／連續／跨日班段、週工時與未排班狀態；僅顯示自己的 published assignments，未排班不被誤標為休假。
 - `lib/database.types.ts` 已同步 production 已驗證的 `014` schema，server session 與 Auth Admin clients 均使用 application `Database` generic；migration-to-types drift contract 已建立。
 - Employee Schedule RLS rollback-only production test 三項通過：本人 published 可讀、他人 published 與本人 draft 不可讀；全部 fixtures 已 rollback。
-- Vercel production code commit `2b0804f` 已 Ready；正式網域 `/attendance`、`/admin/attendance` 與 `/admin/schedules` 已完成登入 session smoke test。管理員排班／出勤區塊與新版手機可讀性 CSS 正常載入且無 browser error；未連結 Employee 的 `admin` 在員工頁顯示安全保護狀態。
+- Vercel production code commit `3c0f9af` 已 Ready；正式網域 `/attendance`、`/admin/attendance` 與 `/admin/schedules` 保有登入 session smoke baseline。動態 route loading、request-scoped identity/permission cache 與手機可讀性均有 automated contract；未連結 Employee 的 `admin` 在員工頁顯示安全保護狀態。
 - GPS 原始打卡 foundation 已完成：`/` 要求每次定位同意後才可打卡，`/attendance` 顯示個人紀錄，`/admin/attendance` 以 `attendance.manage` 顯示 tenant 原始證據。正式時間採 server timestamp；同工作日依序交替上／下班以支援兩段班；原始資料不可更新或刪除。
 - Production rollback-only Punch 測試四項通過：上下班交替、idempotency 防重、禁止 authenticated 直接新增、禁止修改原始紀錄；Auth／Employee／Punch fixtures 均為 0。
 - Attendance rollback-only production test 四項通過：缺下班卡辨識、更正核准後納入重算、舊計算批次保留、authenticated client 不可直接寫入；fixtures 均為 0。
 - Attendance／Correction UI 已正式上線：員工可提出補卡申請並查看自己的計算快照／申請狀態；具 `attendance.manage` 權限的管理員可依日期範圍產生新快照、查看異常並核准或拒絕更正。
 - 手機版已套用高可讀性字級與觸控規範：主要小字至少約 15px、表單控制 16px、重要出勤時間 18px，並以 regression test 防止縮回過小字級。
-- 動態頁面已加入 employee/admin `loading.tsx` 即時回饋與部分預取；登入、membership、三項管理權限及已連結 Employee 查詢使用 React request-scoped cache 去重，權限 RPC 改為平行執行。
-- 目前程式通過 ESLint、TypeScript、90 項 Vitest 與 Next.js production build。
+- 動態頁面已加入 employee/admin `loading.tsx` 即時回饋與部分預取；Proxy 使用本地 JWT claims，工作區身份／租戶／三項權限／Employee link 合併成單一 RPC，個人班表及出勤各自合併成單一 RPC，並由 React request-scoped cache 去重。
+- 目前程式通過 ESLint、TypeScript、93 項 Vitest 與 Next.js production build。
 
 ### IN PROGRESS
 
@@ -60,7 +60,7 @@ Last Updated: 2026-08-25
 | Database | Supabase PostgreSQL，Tokyo (`ap-northeast-1`) |
 | Backend/API | Next.js Route Handlers、Server Actions、REST-style JSON |
 | Data / validation / auth | Supabase JS/SSR（無 ORM）、Zod、Supabase Auth |
-| Quality | ESLint、TypeScript strict、Vitest（90 tests）、Next production build；Database types drift contract；navigation performance contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
+| Quality | ESLint、TypeScript strict、Vitest（93 tests）、Next production build；Database types drift contract；navigation performance contract；Supabase production rollback-only RLS／Schedule／Punch／Attendance integration tests |
 
 ## Core Modules
 
@@ -92,7 +92,7 @@ Last Updated: 2026-08-25
 - `app/login/`、`app/auth/callback/route.ts`、`proxy.ts`：登入、登出、callback 與 session refresh
 - `lib/auth.ts`：自訂帳號／密碼規則、Supabase 內部識別映射、安全 redirect 與顯示名稱規則
 - `app/page.tsx`、`app/my-schedule/`、`app/workspace-shell.tsx`：需要 session 的真實今日排班、員工週班表與共用導覽
-- `lib/my-schedule.ts`、`lib/schedule-display.ts`：已發布個人班表資料服務與台北日期／工時顯示 helpers
+- `lib/workspace.ts`、`lib/my-schedule.ts`、`lib/attendance-overview.ts`：工作區 bootstrap、已發布個人班表與個人出勤聚合資料服務
 - `app/api/health/route.ts`、`app/api/v1/me/route.ts`：目前 API
 - `lib/supabase/server.ts`、`lib/supabase/admin.ts`：一般 server session client 與 server-only Auth Admin client
 - `lib/database.types.ts`、`lib/database.ts`：production-generated Schema types 與 PostgreSQL function nullable-argument application overlay

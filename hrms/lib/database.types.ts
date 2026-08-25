@@ -1278,6 +1278,41 @@ export type Database = {
         Returns: boolean
       }
       current_user_tenant_ids: { Args: never; Returns: string[] }
+      get_current_workspace_context: {
+        Args: never
+        Returns: {
+          can_manage_attendance: boolean
+          can_manage_employee: boolean
+          can_manage_schedule: boolean
+          email: string
+          employee_id: string | null
+          tenant_id: string | null
+          tenant_name: string | null
+          user_id: string
+          user_metadata: Json
+        }[]
+      }
+      get_my_attendance_overview: {
+        Args: {
+          p_day_limit?: number
+          p_punch_limit?: number
+          p_request_limit?: number
+        }
+        Returns: Json
+      }
+      get_my_published_schedule: {
+        Args: { p_date_from: string; p_date_to: string }
+        Returns: {
+          employee_id: string
+          end_minute: number
+          segment_order: number
+          shift_code: string
+          shift_id: string
+          shift_name: string
+          start_minute: number
+          work_date: string
+        }[]
+      }
       decide_punch_correction: {
         Args: {
           p_decision: Database["public"]["Enums"]["punch_correction_decision_type"]

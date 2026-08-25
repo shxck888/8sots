@@ -53,3 +53,7 @@ select
 ## Attendance calculation and correction
 
 `attendance_calculation.sql` 建立一位連結 Auth 的測試員工、當日兩段班與三筆原始打卡，驗證缺下班卡、員工本人更正申請、管理員核准、核准後重算為 530 分鐘、舊計算批次仍保留，以及 authenticated client 無法直接寫 Attendance Day。成功時回傳四個 `true` 並 `ROLLBACK` 全部 fixture。
+
+## Navigation aggregate RPCs
+
+`navigation_performance.sql` 驗證工作區身份只回傳一列、個人班表與出勤聚合 RPC 可執行且出勤結果具有固定 JSON 結構，並確認匿名角色無法呼叫身份查詢。測試只讀取既有 production identity，最後仍會執行 `ROLLBACK`。

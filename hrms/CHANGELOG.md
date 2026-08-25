@@ -45,7 +45,8 @@
 
 ### Changed
 
-- 優化動態頁面切換：新增 employee/admin `loading.tsx` 與高可讀性載入狀態，使動態 route 可部分預取並立即回應；session、membership、管理權限及 Auth-linked Employee lookup 改為 request-scoped React cache 去重，三項權限 RPC 改為平行執行。無 Database Migration、API 或 breaking change。
+- 第二階段導覽效能優化：Proxy 由遠端 `getUser()` 改為 JWT `getClaims()`；一般／管理頁共用單一 workspace bootstrap；個人班表由版本、指派、班別與班段的多段查詢改為一個 aggregate RPC；出勤頁由 Punch、Day、Correction、Decision 多段查詢改為一個 aggregate RPC。公開 JSON API 無 breaking change。
+- 優化動態頁面切換：新增 employee/admin `loading.tsx` 與高可讀性載入狀態，使動態 route 可部分預取並立即回應；session、membership、管理權限及 Auth-linked Employee lookup 改為 request-scoped React cache 去重，三項權限 RPC 改為平行執行。Vercel production commit `3c0f9af` 已 Ready；無 Database Migration、API 或 breaking change。
 - 提高手機版全站可讀性：內文與輔助資訊以 15–16px 為主要下限，重要出勤資料提高至 17–18px，表單維持至少 16px 並放大按鈕、導覽與點擊區域；新增 mobile typography regression test。Vercel production commit `2b0804f` 已 Ready，正式頁面確認載入新版 CSS 且無 browser error。
 - 管理後台週排班在沒有草稿但已有發布版本時，改為顯示完整唯讀員工 × 七日班表，並保留「建立新版草稿」入口；Vercel production commit `17a50ae` 已 Ready，正式頁面載入無 browser error。
 - 未登入存取 `/` 現在會 `307` 導向 `/login`；已登入存取 `/login` 會導向 `/`。
@@ -56,6 +57,7 @@
 
 ### Database
 
+- 新增並套用 `202608250015_navigation_performance_rpcs.sql`：新增 authenticated-only `get_current_workspace_context`、`get_my_published_schedule`、`get_my_attendance_overview` 三個 identity-bound aggregate read RPC；不新增 table、不修改既有資料，無 schema breaking change。
 - 新增 idempotent reference-data migration `202608250003_platform_admin_permission.sql`；無 table/schema breaking change。
 - Production 已建立 `8sots` tenant、管理員 membership/RBAC 關聯及 audit record；不將環境特定 Auth user UUID 寫入 migration。
 - 新增並套用 `202608250004_employee_management.sql`：Employee table、`employee_status`、`employee.manage` permission、permission evaluator、audited create/update RPC 與 tenant RLS。
@@ -75,6 +77,7 @@
 
 ### API
 
+- 新增三個內部 Supabase read RPC；既有公開 JSON API 無變更或 breaking change。
 - 新增 `GET /auth/callback`；既有 JSON API contract 無 breaking change。
 - 新增員工管理 Server Actions 與 database RPC；既有 JSON API 無變更。
 - Employee Server Action/RPC contract 擴充為完整 Employee Master；舊的內部簡版表單 contract 被取代，公開 JSON API 無 breaking change。
@@ -92,6 +95,7 @@
 
 ### Validation
 
+- ESLint、TypeScript、93 個 Vitest tests 與 Next.js production build 通過；migration history 已顯示 `202608250015 navigation_performance_rpcs`。
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
 - Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。
 - ESLint、TypeScript、51 個 Vitest tests 與 Next.js production build 通過。

@@ -22,7 +22,7 @@ export async function proxy(request: NextRequest) {
       },
     );
 
-    await supabase.auth.getUser();
+    await supabase.auth.getClaims();
   } catch {
     // Routes display a controlled configuration error when Supabase is unavailable.
   }

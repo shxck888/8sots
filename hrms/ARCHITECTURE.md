@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。Migrations `001`–`014` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Migrations `001`–`015` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -55,6 +55,8 @@ Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location�
 
 `014` 將 Attendance 計算建模為 immutable-by-version snapshot：每次 `calculate_attendance` 建立 Calculation Run，再產生 Day、Segment 與 Exception rows，綁定當時 Rule Set、published Assignment、原始 Punch 及已核准 Correction。更正 Request 與 Decision 分表且決策只新增一次；核准不修改 Punch，只會在下一次重算時加入 effective event stream。
 
+`015` 建立 navigation read model：`get_current_workspace_context` 一次解析 Auth identity、active tenant、Employee link 與三項管理權限；`get_my_published_schedule` 一次回傳指定期間最新版 published assignment 與 segments；`get_my_attendance_overview` 一次回傳個人 Punch、Attendance Day 與 Correction/Decision。三者均由 `auth.uid()` 綁定本人、只 grant `authenticated`，避免頁面以多次跨區 HTTP round trip 組裝相同 read model。
+
 ## Multi-Tenant Strategy
 
 Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 沒有業務表直接 write privilege；Schedule Assignment 限制一般員工只能讀自己的 published rows，Punch Record 限制本人或具 `attendance.manage` 者讀取。Punch mutation 採 Server Action → identity-checked security-definer RPC → Punch/Audit Log 同步寫入。Supabase Auth Admin 操作只能由 server-only service-role client 執行。
@@ -80,7 +82,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 
 - **Implemented locally**：Next.js 16、React 19、TypeScript、Supabase JS/SSR、Zod、ESLint、Vitest、PWA manifest、environment template。
 - **Typed data boundary**：`lib/database.types.ts` 以 production schema 為基線並同步已驗證的 `014` schema；`lib/database.ts` 只覆蓋 generator 無法推斷的 Employee Master nullable function arguments。Migration contract test 會檢查所有 PostgREST-visible versioned table/function/enum；trigger functions 不屬 Data API surface。
-- **Request data boundary**：session、active membership、管理權限與 Auth-linked Employee lookup 由 server-only DAL 集中處理；React `cache()` 僅在單次 render/request 去除 Layout、Page 與並行資料服務的重複查詢，不跨使用者或跨請求保存授權結果。三項管理權限以平行 RPC 讀取。
+- **Request data boundary**：Next.js Proxy 使用 `getClaims()` 驗證本地 JWT（必要時由 Supabase client 處理 refresh），不在每次 route navigation 額外呼叫遠端 `getUser()`。server-only DAL 以 `get_current_workspace_context` 集中解析 session、active membership、三項管理權限與 Auth-linked Employee；React `cache()` 僅在單次 render/request 去除 Layout 與 Page 重複查詢，不跨使用者或跨請求保存授權結果。
 - **Navigation feedback**：動態 employee/admin route 以 `loading.tsx` 建立 Suspense 邊界，提供可預取的即時載入狀態；Shared Layout 保持可互動，實際資料仍由 server-authoritative 查詢完成後替換。
 - **Accepted hosting/data**：GitHub、Vercel、Supabase Auth/PostgreSQL；Supabase primary region 為 Tokyo (`ap-northeast-1`)。
 - **Selected**：Supabase Storage 私人 bucket 保存員工照片，3 MB，僅 JPEG/PNG/WebP；由短效 signed URL 顯示。

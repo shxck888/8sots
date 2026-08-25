@@ -34,11 +34,10 @@ export default async function MySchedulePage({
   const weekStart = getWeekStart(params.week, new Date(`${taipeiDateKey()}T12:00:00.000Z`));
   const dates = buildWeekDates(weekStart);
   const result = workspace.tenantId
-    ? await getMyPublishedSchedule({
+      ? await getMyPublishedSchedule({
         dateFrom: dates[0],
         dateTo: dates[6],
-        tenantId: workspace.tenantId,
-        userId: workspace.userId,
+        employeeId: workspace.employeeId,
       })
     : { employeeId: null, entries: [] };
   const entryByDate = new Map(result.entries.map((entry) => [entry.workDate, entry]));
