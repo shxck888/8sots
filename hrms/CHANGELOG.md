@@ -32,6 +32,9 @@
 - 新增 ADR-017，記錄版本化班表與已發布班別／指派不可變決策。
 - 新增管理後台週排班頁：週切換、版本摘要、員工七日班別表格、建立／複製草稿、儲存與發布。
 - 新增 `lib/schedules.ts` 日期、跨日時間顯示與 assignment 表單 parser，以及 7 項 unit tests。
+- 新增員工端 `/my-schedule` 週班表、週切換、班段／週工時、未排班與未連結員工空狀態。
+- 新增共用員工 Workspace Shell 與 published schedule server data service；首頁今日班表與本月排班時數改讀真實資料。
+- 新增 ADR-018，記錄員工只能讀自己的已發布班表。
 
 ### Changed
 
@@ -39,6 +42,7 @@
 - 專案文件同步為已完成 Supabase migrations、Vercel environment/custom domain 的實際狀態。
 - 登入欄位由 Email 改為 3–32 位英數／底線帳號；密碼規則改為 6–64 位英數混合。
 - 修正 Vercel Supabase environment variables 的空值與被截短 publishable key，重新部署 production。
+- 員工首頁移除代表性班表、GPS、出勤與休假假資料；尚未上線的功能改為 disabled／明確狀態。
 
 ### Database
 
@@ -55,6 +59,7 @@
 - 新增並套用 `202608250010_schedule_foundation.sql`：`shifts`、`shift_segments`、`schedule_versions`、`schedule_assignments`、`schedule_version_status`、`schedule.manage`、tenant RLS、composite tenant FKs、immutable triggers 與 audited RPC。
 - 新增 environment seed `8sots_schedule_templates.sql`；正式資料為 `WEEKDAY_SPLIT` 540 分鐘與 `HOLIDAY_CONTINUOUS` 660 分鐘。
 - 新增並套用 `202608250011_schedule_batch_save.sql`：同期間單一 draft index、published → draft assignment copy 與 `save_schedule_assignments` 原子批次 RPC。
+- 新增並套用 `202608250012_employee_schedule_visibility.sql`：一般員工只能 SELECT 自己的 published schedule assignments，`schedule.manage` 管理員保留 tenant-scoped 管理讀取；無 schema 或資料 breaking change。
 
 ### API
 
@@ -64,6 +69,7 @@
 - 新增內部 Employee Account Server Actions；既有公開 JSON API 無新增、變更或 breaking change。
 - 新增內部 Schedule database RPC：班別 upsert、建立草稿、指派員工班別及發布；尚未建立 UI，既有公開 JSON API 無 breaking change。
 - 新增 `/admin/schedules` Server Actions：建立草稿、整週儲存與發布；既有公開 JSON API 無 breaking change。
+- 新增 server-rendered `GET /my-schedule` 與首頁 published schedule read；既有公開 JSON API 無變更。
 
 ### Breaking Changes
 
@@ -91,6 +97,9 @@
 - 排班 production integration test 擴充為 published version clone 與 batch assignment save；所有 assertion 通過並 rollback。
 - ESLint、TypeScript、68 個 Vitest tests 與包含 `/admin/schedules` 的 Next.js production build 通過。
 - Production `/admin/schedules` 以管理員 session 成功載入；班別、在職員工及週期資料正常，console 無 warning/error。390px viewport 導覽可見、摘要為雙欄且頁面沒有水平溢出。
+- `202608250012` 已套用 Supabase production；catalog 驗證新 policy、舊 policy 移除與 migration history 三項皆為 `true`。
+- Employee Schedule RLS rollback-only production test 三項全數通過：本人 published 可讀、他人 published 與本人 draft 不可讀；測試 Auth／Membership／Employee／Schedule fixtures 全部 rollback。
+- ESLint、TypeScript、73 個 Vitest tests 與包含 `/my-schedule` 的 Next.js production build 通過。
 
 ## 2026-08-24
 

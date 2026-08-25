@@ -35,3 +35,13 @@ select
 ```
 
 三個結果都必須為 `0`。任何 assertion failure 都會中止 transaction；若 SQL client 未自動結束失敗的 transaction，手動執行 `ROLLBACK`。
+
+## Employee published schedule RLS
+
+`employee_schedule_visibility.sql` 會在 transaction 中建立兩位 Employee、一個無管理角色的 Auth fixture、published／draft Schedule 與三筆 Assignment，接著模擬該員工 JWT，驗證：
+
+1. 自己的 published assignment 可讀。
+2. 同 tenant 另一位員工的 published assignment 不可讀。
+3. 自己的 draft assignment 不可讀。
+
+成功時回傳三個 `true`，最後執行 `ROLLBACK`；所有 Auth、Employee、Membership 與 Schedule fixtures 都不會保留。

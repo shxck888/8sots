@@ -57,6 +57,11 @@ const scheduleBatchMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const employeeScheduleVisibilityMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250012_employee_schedule_visibility.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -69,6 +74,11 @@ const crossTenantRlsTest = readFileSync(
 
 const scheduleFoundationTest = readFileSync(
   join(process.cwd(), "supabase/tests/schedule_foundation.sql"),
+  "utf8",
+).toLowerCase();
+
+const employeeScheduleVisibilityTest = readFileSync(
+  join(process.cwd(), "supabase/tests/employee_schedule_visibility.sql"),
   "utf8",
 ).toLowerCase();
 
@@ -254,6 +264,28 @@ describe("foundation migration contract", () => {
     expect(scheduleSeed).toContain("(v_tenant_id, v_shift_id, 2, 960, 1260)");
     expect(scheduleSeed).toContain("'holiday_continuous', '假日班'");
     expect(scheduleSeed).toContain("(v_tenant_id, v_shift_id, 1, 600, 1260)");
+  });
+
+  it("limits employee schedule reads to self and published versions", () => {
+    expect(employeeScheduleVisibilityMigration).toContain(
+      "schedule_assignments_select_manager_or_self_published",
+    );
+    expect(employeeScheduleVisibilityMigration).toContain("current_user_has_permission");
+    expect(employeeScheduleVisibilityMigration).toContain("'schedule.manage'");
+    expect(employeeScheduleVisibilityMigration).toContain("e.auth_user_id = (select auth.uid())");
+    expect(employeeScheduleVisibilityMigration).toContain("sv.status = 'published'");
+    expect(employeeScheduleVisibilityMigration).not.toMatch(
+      /create policy[\s\S]*?for (insert|update|delete|all) to authenticated/,
+    );
+  });
+
+  it("tests employee schedule visibility with rollback-only production fixtures", () => {
+    expect(employeeScheduleVisibilityTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(employeeScheduleVisibilityTest.trim()).toMatch(/rollback;$/);
+    expect(employeeScheduleVisibilityTest).not.toContain("commit;");
+    expect(employeeScheduleVisibilityTest).toContain("employee published schedule read failed");
+    expect(employeeScheduleVisibilityTest).toContain("other employee schedule leaked");
+    expect(employeeScheduleVisibilityTest).toContain("draft employee schedule leaked");
   });
 
   it("keeps schedule integration fixtures rollback-only and covers critical boundaries", () => {

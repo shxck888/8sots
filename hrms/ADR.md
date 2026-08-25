@@ -175,3 +175,14 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Alternatives:** 單一開始／結束時間加固定休息分鐘；直接覆寫已發布班表；每個班段建立一筆獨立排班；強制先建立門市。
 - **Consequences:** 班別一旦被正式班表使用，如需調整必須建立新班別；發布新版本會將同期間舊版本標為 superseded。假日判定目前由排班者選擇班別，後續 Holiday Calendar 必須以獨立版本化規則接入。
 - **Implementation:** `010` 建立版本與 immutable guards；`011` 限制同期間單一 draft、從 published 版本複製 assignments，並以一個 audited RPC 原子儲存整週表格變更。
+
+## ADR-018: Employee schedule reads are self-only and published-only
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Context:** 管理員需要在發布前反覆編輯整個組織班表，但一般員工不應提前看到草稿，也不應讀到同租戶其他員工的排班。只靠頁面 query filter 無法防止未來其他 Data API client 擴大讀取。
+- **Decision:** `schedule_assignments` 的 authenticated SELECT policy 分為兩條能力：具 `schedule.manage` 者可在自己的 tenant 讀取管理資料；一般員工只能讀取 `employees.auth_user_id = auth.uid()` 且所屬 Schedule Version 為 `published` 的 Assignment。員工頁面的 data service 仍明確查 published versions，形成 application + RLS defense in depth。
+- **Reason:** 同時保護排班草稿與同事個資，並讓管理後台維持完整排班能力。
+- **Alternatives:** 沿用同 tenant 全員可讀；只在 Next.js server filter；為每位員工複製一份公開班表。
+- **Consequences:** 員工帳號必須先連結 Employee 才能看到班表；未連結時 UI 顯示明確空狀態。未來主管範圍讀取需新增 scope-aware policy/RPC，不得放寬為同 tenant 全讀。
+- **Implementation:** `012` 取代原 Assignment 同 tenant read policy；`lib/my-schedule.ts`、`/my-schedule` 與首頁只讀 published schedule。

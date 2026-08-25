@@ -1,182 +1,104 @@
 import {
-  Bell,
-  CalendarDays,
-  CheckCircle2,
-  ChevronRight,
-  Clock3,
-  Coffee,
-  LayoutDashboard,
-  MapPin,
-  QrCode,
-  ReceiptText,
-  Settings,
-  LogOut,
-  Sparkles,
-  UsersRound,
+  Bell, CalendarDays, CheckCircle2, Clock3, Coffee, MapPin, QrCode, UsersRound,
 } from "lucide-react";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { getUserDisplayName } from "@/lib/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { logout } from "@/app/login/actions";
-
-const schedule = [
-  { time: "10:30", title: "營業準備", detail: "外場 · A 區", state: "即將開始" },
-  { time: "11:00", title: "午餐班", detail: "11:00–15:00", state: "今日班別" },
-  { time: "17:00", title: "晚餐班", detail: "17:00–22:00", state: "兩段班" },
-];
-
-const nav = [
-  { label: "工作台", icon: LayoutDashboard, active: true, href: "/" },
-  { label: "我的班表", icon: CalendarDays, href: "#" },
-  { label: "出勤紀錄", icon: Clock3, href: "#" },
-  { label: "申請中心", icon: ReceiptText, href: "#" },
-];
-
-type MembershipWithTenant = {
-  tenant_id: string;
-  tenants: { name: string } | { name: string }[] | null;
-};
+import { WorkspaceShell } from "@/app/workspace-shell";
+import { getMyPublishedSchedule } from "@/lib/my-schedule";
+import { formatScheduledHours, getMonthBounds, taipeiDateKey } from "@/lib/schedule-display";
+import { shiftMinuteLabel } from "@/lib/schedules";
+import { getWorkspaceContext } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  let supabase;
+  let workspace;
   try {
-    supabase = await createSupabaseServerClient();
+    workspace = await getWorkspaceContext();
   } catch {
     redirect("/login");
   }
+  if (!workspace) redirect("/login");
 
-  const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError || !authData.user) {
-    redirect("/login");
-  }
-
-  const { data: membershipRows } = await supabase
-    .from("tenant_memberships")
-    .select("tenant_id, tenants(name)")
-    .eq("user_id", authData.user.id)
-    .eq("status", "active")
-    .limit(1);
-
-  const membership = (membershipRows?.[0] ?? null) as MembershipWithTenant | null;
-  const tenant = Array.isArray(membership?.tenants) ? membership?.tenants[0] : membership?.tenants;
-  const tenantName = tenant?.name ?? "尚未加入組織";
-  const { data: canManageEmployees } = membership?.tenant_id
-    ? await supabase.rpc("current_user_has_permission", {
-        p_tenant_id: membership.tenant_id,
-        p_permission_code: "employee.manage",
+  const now = new Date();
+  const today = taipeiDateKey(now);
+  const schedule = workspace.tenantId
+    ? await getMyPublishedSchedule({
+        ...getMonthBounds(today),
+        tenantId: workspace.tenantId,
+        userId: workspace.userId,
       })
-    : { data: false };
-  const displayName = getUserDisplayName(authData.user);
-  const avatarText = displayName.slice(0, 1).toUpperCase();
+    : { employeeId: null, entries: [] };
+  const todaySchedule = schedule.entries.find((entry) => entry.workDate === today);
+  const scheduledMinutes = schedule.entries.reduce((total, entry) => total + entry.totalMinutes, 0);
   const todayLabel = new Intl.DateTimeFormat("zh-TW", {
-    month: "numeric",
-    day: "numeric",
-    weekday: "long",
-    timeZone: "Asia/Taipei",
-  }).format(new Date());
+    day: "numeric", month: "numeric", timeZone: "Asia/Taipei", weekday: "long",
+  }).format(now);
+  const timeLabel = new Intl.DateTimeFormat("zh-TW", {
+    hour: "2-digit", hour12: false, minute: "2-digit", timeZone: "Asia/Taipei",
+  }).format(now);
+  const shortDate = `${Number(today.slice(5, 7))}/${Number(today.slice(8, 10))}`;
 
   return (
-    <main className="app-shell">
-      <aside className="sidebar" aria-label="主要導覽">
-        <div className="brand">
-          <span className="brand-mark"><Sparkles size={20} /></span>
-          <span>餐飲 <strong>eHR</strong></span>
-        </div>
+    <WorkspaceShell
+      activePath="/"
+      canManage={workspace.canManage}
+      displayName={workspace.displayName}
+      email={workspace.email}
+      tenantName={workspace.tenantName}
+    >
+      <header className="topbar">
+        <div><span className="date-label">{todayLabel}</span><h1>你好，{workspace.displayName}</h1></div>
+        <button className="icon-button" aria-label="通知功能尚未上線" disabled><Bell size={21} /></button>
+      </header>
 
-        <nav className="side-nav">
-          {nav.map(({ label, icon: Icon, active, href }) => (
-            <a className={active ? "nav-item active" : "nav-item"} href={href} key={label}>
-              <Icon size={19} />
-              <span>{label}</span>
-            </a>
-          ))}
-          {canManageEmployees ? <Link className="nav-item" href="/admin/employees"><Settings size={19} /><span>管理後台</span></Link> : null}
-        </nav>
-
-        <div className="store-card">
-          <span className="eyebrow">目前所屬組織</span>
-          <strong>{tenantName}</strong>
-          <span><MapPin size={14} /> 門市資料尚待建立</span>
-        </div>
-
-        <div className="profile-mini">
-          <div className="avatar">{avatarText}</div>
-          <div><strong>{displayName}</strong><span>{authData.user.email}</span></div>
-          <form action={logout}>
-            <button className="logout-icon" title="登出" type="submit"><LogOut size={17} /><span className="sr-only">登出</span></button>
-          </form>
-        </div>
-      </aside>
-
-      <section className="content">
-        <header className="topbar">
-          <div>
-            <span className="date-label">{todayLabel}</span>
-            <h1>你好，{displayName}</h1>
+      <div className="dashboard-grid">
+        <section className="clock-card">
+          <div className="clock-copy">
+            <span className="status-pill"><span /> 已同步發布班表</span>
+            <p className="time">{timeLabel}</p>
+            <p className="shift-note">{todaySchedule ? `今日班別：${todaySchedule.shiftName}` : "今日沒有已發布的排班"}</p>
+            <button className="clock-button" disabled><Clock3 size={22} /> 打卡功能建構中</button>
+            <button className="qr-button" disabled><QrCode size={18} /> QR Code 尚未啟用</button>
           </div>
-          <button className="icon-button" aria-label="通知"><Bell size={21} /><i>3</i></button>
-        </header>
+          <div className="location-orbit" aria-hidden="true">
+            <div className="orbit outer" /><div className="orbit inner" />
+            <div className="pin"><MapPin size={25} /></div>
+            <span className="location-label">定位服務尚未啟用</span>
+          </div>
+        </section>
 
-        <div className="dashboard-grid">
-          <section className="clock-card">
-            <div className="clock-copy">
-              <span className="status-pill"><span /> GPS 定位完成</span>
-              <p className="time">10:26</p>
-              <p className="shift-note">距離今日班別還有 34 分鐘</p>
-              <button className="clock-button"><Clock3 size={22} /> 上班打卡</button>
-              <button className="qr-button"><QrCode size={18} /> 改用 QR Code</button>
-            </div>
-            <div className="location-orbit" aria-hidden="true">
-              <div className="orbit outer" />
-              <div className="orbit inner" />
-              <div className="pin"><MapPin size={25} /></div>
-              <span className="location-label">距店鋪 18 公尺</span>
-            </div>
-          </section>
+        <section className="summary-card">
+          <div className="section-heading"><div><span className="eyebrow">本月摘要</span><h2>排班狀況</h2></div></div>
+          <div className="stat-grid">
+            <article><span className="stat-icon mint"><Clock3 size={20} /></span><strong>{formatScheduledHours(scheduledMinutes)}</strong><small>已發布排班時數</small></article>
+            <article><span className="stat-icon sand"><Coffee size={20} /></span><strong>—</strong><small>休假功能尚未上線</small></article>
+            <article><span className="stat-icon blue"><CheckCircle2 size={20} /></span><strong>—</strong><small>出勤統計尚未上線</small></article>
+          </div>
+        </section>
 
-          <section className="summary-card">
-            <div className="section-heading"><div><span className="eyebrow">本月摘要</span><h2>出勤狀況</h2></div><a href="#">查看明細 <ChevronRight size={16} /></a></div>
-            <div className="stat-grid">
-              <article><span className="stat-icon mint"><Clock3 size={20} /></span><strong>128.5</strong><small>已排工時</small></article>
-              <article><span className="stat-icon sand"><Coffee size={20} /></span><strong>2</strong><small>剩餘特休</small></article>
-              <article><span className="stat-icon blue"><CheckCircle2 size={20} /></span><strong>100%</strong><small>準時出勤</small></article>
-            </div>
-          </section>
-
-          <section className="schedule-card">
-            <div className="section-heading"><div><span className="eyebrow">TODAY</span><h2>今日班表</h2></div><button className="date-chip"><CalendarDays size={16} /> 8/24</button></div>
+        <section className="schedule-card">
+          <div className="section-heading"><div><span className="eyebrow">TODAY</span><h2>今日班表</h2></div><span className="date-chip"><CalendarDays size={16} /> {shortDate}</span></div>
+          {todaySchedule?.segments.length ? (
             <div className="timeline">
-              {schedule.map((item, index) => (
-                <article className="timeline-row" key={item.time}>
-                  <time>{item.time}</time>
-                  <div className={index === 1 ? "timeline-dot current" : "timeline-dot"} />
-                  <div className="schedule-detail"><div><strong>{item.title}</strong><span>{item.detail}</span></div><em>{item.state}</em></div>
+              {todaySchedule.segments.map((segment, index) => (
+                <article className="timeline-row" key={segment.order}>
+                  <time>{shiftMinuteLabel(segment.startMinute)}</time>
+                  <div className={index === 0 ? "timeline-dot current" : "timeline-dot"} />
+                  <div className="schedule-detail"><div><strong>{todaySchedule.shiftName} · 第 {segment.order} 段</strong><span>{shiftMinuteLabel(segment.startMinute)}–{shiftMinuteLabel(segment.endMinute)}</span></div><em>已發布</em></div>
                 </article>
               ))}
             </div>
-          </section>
+          ) : (
+            <div className="dashboard-empty"><CalendarDays size={24} /><strong>{schedule.employeeId ? "今日未排班" : "尚未連結員工資料"}</strong><p>{schedule.employeeId ? "這表示目前沒有已發布排班，不代表已核准休假。" : "請由管理員在員工資料中建立或連結登入帳號。"}</p></div>
+          )}
+        </section>
 
-          <section className="team-card">
-            <div className="section-heading"><div><span className="eyebrow">STORE</span><h2>店內動態</h2></div><span className="team-count"><UsersRound size={16} /> 8 人上班中</span></div>
-            <div className="notice">
-              <div className="notice-icon">店</div>
-              <div><strong>今日訂位較多</strong><p>晚餐時段預計 82 位，請於 16:45 前完成備餐。</p></div>
-              <ChevronRight size={18} />
-            </div>
-            <div className="avatars" aria-label="今日工作夥伴">
-              {["陳", "王", "吳", "張", "李"].map((name, i) => <span style={{ zIndex: 6 - i }} key={name}>{name}</span>)}
-              <small>和另外 3 位夥伴</small>
-            </div>
-          </section>
-        </div>
-
-        <nav className="mobile-nav" aria-label="行動版導覽">
-          {nav.slice(0, 4).map(({ label, icon: Icon, active, href }) => <a className={active ? "active" : ""} href={href} key={label}><Icon size={21} /><span>{label}</span></a>)}
-        </nav>
-      </section>
-    </main>
+        <section className="team-card">
+          <div className="section-heading"><div><span className="eyebrow">SYSTEM</span><h2>功能進度</h2></div><span className="team-count"><UsersRound size={16} /> 員工端</span></div>
+          <div className="notice"><div className="notice-icon">班</div><div><strong>我的班表已連線</strong><p>只顯示管理員已發布的個人排班；草稿不會提前曝光。</p></div></div>
+          <div className="feature-status"><span><i className="online" /> 登入與個人班表</span><span><i /> 打卡、出勤與申請中心建構中</span></div>
+        </section>
+      </div>
+    </WorkspaceShell>
   );
 }

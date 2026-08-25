@@ -4,18 +4,18 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Build 1、Schedule foundation 與管理員週排班第一版 DONE**。草稿建立／複製、整週原子儲存與發布已完成；目前不要求門市。
+**Build 1、管理員週排班與員工 published schedule 第一版 DONE**。草稿建立／複製、整週原子儲存、發布、員工個人週表與真實今日班表已完成；目前不要求門市。
 
 ## Next Recommended Task (P0)
 
-開始員工端真實班表：
+開始 GPS／QR Punch foundation：
 
-1. 建立 `/my-schedule` 或工作台班表區塊，只讀取包含自己的 published schedule。
-2. 顯示平日兩段班、假日連續班、未排班及跨日時間，清楚標示 work date。
-3. 將首頁「今日班表」與剩餘時間由真實 Assignment/Shift Segment 計算，移除假資料。
-4. 補上員工只能讀自己班表的 application/RLS boundary 與 production negative test。
+1. 建立 append-only Punch Record，保存 tenant、employee、work date、server/client timestamp、timezone、來源、裝置與 evidence。
+2. 定義 GPS 同意、座標精度、geofence、定位失敗、mock location／重送與離線補送規則；QR token 必須短效且防重放。
+3. 打卡 mutation 採 permission／身份檢查、idempotency key、database constraint 與 audit evidence，不允許直接 client table write。
+4. 先完成 migration、rollback-only production integration test 與管理員可檢視的原始紀錄，再啟用首頁打卡按鈕。
 
-排班 schema、正式班別與管理後台週表已完成；rollback-only production tests 已涵蓋 clone、batch save、publish 與 immutable boundaries，fixtures 殘留為 0。
+排班 schema、正式班別、管理後台週表、員工個人週表與 RLS boundary 已完成；`012` production catalog 與 rollback-only 員工負向 RLS 三項驗證皆通過。
 Production Database types、client generics 與 migration drift checks 已完成；重新產生使用 `npm run db:types`，執行時需要 read-only `SUPABASE_ACCESS_TOKEN`。
 
 ## Pending Priorities
@@ -33,7 +33,7 @@ Production Database types、client generics 與 migration drift checks 已完成
 
 - Organization CRUD 與其他模組的 permission-checked server mutation。
 - Password recovery、invitation 與 MFA（Employee 帳號建立／重設／停用／恢復已完成）。
-- 員工端真實班表與管理後台發布前完整性警示。
+- 管理後台發布前完整性警示與 Holiday Calendar。
 - GPS Punch（同意、精度、geofence、反作弊）與 immutable punch evidence。
 - Attendance 計算、異常與可重現版本關聯。
 - Phase 1 permission matrix 與完整 audit trail。
@@ -56,7 +56,7 @@ Production Database types、client generics 與 migration drift checks 已完成
 
 - Production 維持單一正式 tenant；第二 tenant 僅在 rollback-only integration test transaction 中建立，不是常駐測試資料。
 - Docker/Supabase local stack 不可用；真實 database integration tests 必須在受控遠端環境執行。
-- 工作台班表、統計與打卡仍是代表性假資料；Schedule schema 已有真實資料，但尚未串接 UI。
+- 首頁班表與已排工時已是真實 published data；休假、出勤、打卡與通知目前尚未上線，UI 已明確標示，不能視為可操作功能。
 - Payroll、保險、稅務、GPS 與 PII 屬高風險領域，需要專項驗收與法規審查。
 
 ## Definition of Done

@@ -2,7 +2,7 @@
 
 Last Updated: 2026-08-25
 
-本文件描述目前程式碼與已採用方向。Migrations `001`–`011` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
+本文件描述目前程式碼與已採用方向。Migrations `001`–`012` 已套用 Supabase production；未出現在 migration 的領域實體仍只是規劃。
 
 ## System Architecture
 
@@ -51,11 +51,11 @@ Supabase Auth + PostgreSQL with RLS
 - Compliance：Insurance/Tax Rule Version、Enrollment、Holiday/Calendar
 - Platform：Announcement、Notification、Attachment、Audit Log、System Setting
 
-Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010` 建立 Schedule domain；`011` 保證同 tenant／期間只有一份 draft，建立新版會複製 published assignments，`save_schedule_assignments` 在單一 transaction 驗證並儲存整週變更。Authenticated client 仍只有同 tenant SELECT。
+Foundation migrations 已定義 Tenant、Tenant Membership、Company、Location、Role、Permission、Role Permission、Membership Role 與 Audit Log。`004`–`009` 建立 Employee Master、私人照片及受控帳號生命週期。`010` 建立 Schedule domain；`011` 保證同 tenant／期間只有一份 draft，建立新版會複製 published assignments，`save_schedule_assignments` 在單一 transaction 驗證並儲存整週變更。`012` 將 Assignment read policy 分為具 `schedule.manage` 的租戶管理讀取，以及員工本人只讀 published assignments；草稿不向一般員工曝光。
 
 ## Multi-Tenant Strategy
 
-Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 只有同 tenant read policies，沒有業務表直接 write privilege。員工 mutation 已採 Server Action → permission-checked security-definer RPC → Employee/Audit Log 同步寫入；其他模組仍須沿用相同原則。Supabase Auth Admin 操作是例外的跨系統流程，只能由 server-only service-role client 執行，且 database RPC 仍重新驗證 tenant 與 `employee.manage`。
+Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 foreign key 同時包含 tenant key 以阻擋跨租戶關聯。Authenticated client 沒有業務表直接 write privilege；一般租戶主檔採同 tenant read，而 Schedule Assignment 額外限制一般員工只能讀取自己的 published rows，管理員須具 `schedule.manage`。員工 mutation 已採 Server Action → permission-checked security-definer RPC → Employee/Audit Log 同步寫入；其他模組仍須沿用相同原則。Supabase Auth Admin 操作是例外的跨系統流程，只能由 server-only service-role client 執行，且 database RPC 仍重新驗證 tenant 與 `employee.manage`。
 
 ## Authentication and Authorization
 
@@ -93,6 +93,7 @@ Tenant 是最高資料隔離邊界。業務資料攜帶 `tenant_id`，下層 for
 - Employee Account Server Actions：以 server-only Auth Admin API 建立帳號／重設密碼／ban 或 unban，並呼叫 `link_employee_auth_account`、`set_employee_auth_account_status`、`record_employee_password_reset` 同步資料與 audit；不是公開 JSON API。
 - Schedule database RPC：`upsert_shift_template`、`create_schedule_draft`、`assign_schedule_shift`、`save_schedule_assignments`、`publish_schedule`。皆要求 `schedule.manage`、驗證 tenant 並寫入 Audit Log；不是公開 JSON API。
 - `POST` Server Actions under `/admin/schedules`：建立草稿、呼叫 `save_schedule_assignments` 儲存整週、發布班表；每個 action 都重新取得 `schedule.manage` admin context，亦非公開 JSON API。
+- `GET /` 與 `GET /my-schedule?week=YYYY-MM-DD`：server-rendered 員工工作台與個人週班表；以登入者 `auth_user_id` 對應 Employee，application 僅查 published versions，RLS 再限制 Assignment 為本人 published rows（管理員例外）。
 - `createServerClient<Database>` 與 `createClient<Database>`：所有 `.from()`／`.rpc()` 從 production schema 取得 table、view、enum、relationship 與 function argument inference。
 - `GET /auth/callback?code=...`：交換 Supabase PKCE code，並限制 `next` 只能是站內路徑。
 - API error 採 `{ error: { code, message } }` 基線。業務 API 尚未建立。
