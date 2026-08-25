@@ -31,7 +31,7 @@ Last Updated: 2026-08-25
 - 員工端 `/my-schedule` 週班表第一版：週切換、兩段／連續／跨日班段、週工時與未排班狀態；僅顯示自己的 published assignments，未排班不被誤標為休假。
 - `lib/database.types.ts` 已同步 production 已驗證的 `014` schema，server session 與 Auth Admin clients 均使用 application `Database` generic；migration-to-types drift contract 已建立。
 - Employee Schedule RLS rollback-only production test 三項通過：本人 published 可讀、他人 published 與本人 draft 不可讀；全部 fixtures 已 rollback。
-- Vercel production code commit `c4dfff0` 已 Ready；正式網域 `/attendance` 與 `/admin/attendance` 已完成登入 session smoke test。管理員計算／更正審核區塊正常載入且無 browser error；未連結 Employee 的 `admin` 在員工頁顯示安全保護狀態。
+- Vercel production code commit `17a50ae` 已 Ready；正式網域 `/attendance`、`/admin/attendance` 與 `/admin/schedules` 已完成登入 session smoke test。管理員排班／出勤區塊正常載入且無 browser error；未連結 Employee 的 `admin` 在員工頁顯示安全保護狀態。
 - GPS 原始打卡 foundation 已完成：`/` 要求每次定位同意後才可打卡，`/attendance` 顯示個人紀錄，`/admin/attendance` 以 `attendance.manage` 顯示 tenant 原始證據。正式時間採 server timestamp；同工作日依序交替上／下班以支援兩段班；原始資料不可更新或刪除。
 - Production rollback-only Punch 測試四項通過：上下班交替、idempotency 防重、禁止 authenticated 直接新增、禁止修改原始紀錄；Auth／Employee／Punch fixtures 均為 0。
 - Attendance rollback-only production test 四項通過：缺下班卡辨識、更正核准後納入重算、舊計算批次保留、authenticated client 不可直接寫入；fixtures 均為 0。

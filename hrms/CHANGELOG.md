@@ -45,7 +45,7 @@
 
 ### Changed
 
-- 管理後台週排班在沒有草稿但已有發布版本時，改為顯示完整唯讀員工 × 七日班表，並保留「建立新版草稿」入口。
+- 管理後台週排班在沒有草稿但已有發布版本時，改為顯示完整唯讀員工 × 七日班表，並保留「建立新版草稿」入口；Vercel production commit `17a50ae` 已 Ready，正式頁面載入無 browser error。
 - 未登入存取 `/` 現在會 `307` 導向 `/login`；已登入存取 `/login` 會導向 `/`。
 - 專案文件同步為已完成 Supabase migrations、Vercel environment/custom domain 的實際狀態。
 - 登入欄位由 Email 改為 3–32 位英數／底線帳號；密碼規則改為 6–64 位英數混合。
