@@ -6,6 +6,7 @@
 
 ### Added
 
+- 新增管理員 `/admin/attendance/[dayId]` 出勤日明細：班段排班／有效打卡時間、實際分鐘、遲到早退、異常、原始 GPS evidence 與當日補卡申請。
 - 新增 Supabase email/password 登入頁、表單 validation 與安全的站內 `next` redirect。
 - 新增登入／登出 Server Actions、PKCE Auth callback 與 Next.js Proxy session refresh。
 - 首頁改為需要有效 session，並顯示真實使用者 email、顯示名稱及第一筆 active tenant membership。
@@ -45,6 +46,7 @@
 
 ### Changed
 
+- 補卡核准若晚於最新 Attendance Calculation Run，管理頁會持續顯示需要重新計算，並將受影響日期自動帶入計算表單；重新計算建立新快照，不覆寫舊 Run。
 - Vercel Functions 由平台預設 region 明確改為 Tokyo `hnd1`，與 Tokyo Supabase 同區，移除動態頁面查詢資料庫的跨太平洋固定延遲；靜態資產 CDN 行為不變。
 - 第二階段導覽效能優化：Proxy 由遠端 `getUser()` 改為 JWT `getClaims()`；一般／管理頁共用單一 workspace bootstrap；個人班表由版本、指派、班別與班段的多段查詢改為一個 aggregate RPC；出勤頁由 Punch、Day、Correction、Decision 多段查詢改為一個 aggregate RPC。公開 JSON API 無 breaking change。
 - 優化動態頁面切換：新增 employee/admin `loading.tsx` 與高可讀性載入狀態，使動態 route 可部分預取並立即回應；session、membership、管理權限及 Auth-linked Employee lookup 改為 request-scoped React cache 去重，三項權限 RPC 改為平行執行。Vercel production commit `3c0f9af` 已 Ready；無 Database Migration、API 或 breaking change。
@@ -96,6 +98,7 @@
 
 ### Validation
 
+- ESLint、TypeScript、95 個 Vitest tests 與包含 `/admin/attendance/[dayId]` 的 Next.js production build 通過；本次沒有 Database Migration、公開 API 或 Breaking Change。
 - ESLint、TypeScript、94 個 Vitest tests 與 Next.js production build 通過；migration history 已顯示 `202608250015 navigation_performance_rpcs`。Vercel production commit `9982787` 為 Ready，Deployment Resources 確認動態 routes 均部署於 `HND1`，正式網址登入 smoke test 與主要頁面 `200` 通過。
 - 本機 production HTTP smoke test：`/` 回傳 `307` 至 `/login`、`/login` 回傳 `200`、`/api/health` 回傳 `200`。
 - Production `admin` 登入、tenant 顯示、登出與 RBAC bootstrap 查詢通過；跨租戶負向 RLS 測試仍未完成。

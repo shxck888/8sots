@@ -12,7 +12,7 @@ Last Updated: 2026-08-25
 
 1. 由使用者指定一位真實 Employee 並確認是否建立／連結登入帳號，完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 E2E；不得自行建立永久帳號。
 2. 與使用者確認遲到／早退寬限、未排班打卡、跨日與多餘卡的正式規則，再建立 Rule Set V2，不覆寫 V1。
-3. 補上 Segment 明細頁、特定日期重算入口與核准後「需要重算」提示／通知。
+3. 以新的 Attendance Day 明細完成真實班段證據驗收；特定日期重算與核准後「需要重算」提示已完成，通知仍待後續 Notification 模組。
 
 ## Pending Priorities
 
@@ -20,7 +20,7 @@ Last Updated: 2026-08-25
 
 - 真實已連結員工的手機 operational acceptance；production UI deployment 與管理員 smoke test 已完成。
 - Rule Set V2 業務參數與生效日；不得把 Attendance 差異直接當成薪資扣款。
-- Correction 審核後的受影響日期重算提醒，以及管理端 Segment evidence 明細。
+- Correction 審核後通知與批次重算操作權限；受影響日期提醒及管理端 Segment evidence 明細已完成。
 - GPS consent 保存政策、mock-location 風險、CSP/security headers、rate limit 與 audit writer 強化。
 - 建立 production Server Timing／p95 navigation 監測，量測 `015` aggregate RPC 上線後的實際手機切頁時間；若管理頁仍超標，再針對員工列表、週排班與管理出勤建立獨立 read model。
 

@@ -1,4 +1,5 @@
-import { AlertTriangle, Calculator, Check, Clock3, MapPin, X } from "lucide-react";
+import { AlertTriangle, Calculator, Check, ChevronRight, Clock3, MapPin, RefreshCw, X } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/admin";
 import { attendanceExceptionLabels, attendanceStatusLabels } from "@/lib/attendance-contract";
@@ -52,22 +53,30 @@ export default async function AdminAttendancePage({ searchParams }: {
     ? await supabase.from("punch_correction_decisions").select("*").in("correction_request_id", correctionIds)
     : { data: [], error: null };
   const decisionByRequest = new Map((decisionResult.data ?? []).map((decision) => [decision.correction_request_id, decision]));
+  const today = taipeiDateKey();
+  const staleApprovedDates = (correctionRequests ?? []).flatMap((request) => {
+    const decision = decisionByRequest.get(request.id);
+    return decision?.decision === "approved" && (!latestRun || decision.decided_at > latestRun.calculated_at)
+      ? [request.work_date]
+      : [];
+  }).sort();
+  const recalculateFrom = staleApprovedDates[0] ?? addDays(today, -6);
+  const recalculateTo = staleApprovedDates.at(-1) ?? today;
   const correctionEmployeeIds = [...new Set((correctionRequests ?? []).map((request) => request.employee_id))];
   if (correctionEmployeeIds.length) {
     const { data: correctionEmployees } = await supabase.from("employees").select("id, employee_no, full_name")
       .eq("tenant_id", admin.tenantId).in("id", correctionEmployeeIds);
     for (const employee of correctionEmployees ?? []) employees.set(employee.id, employee);
   }
-  const today = taipeiDateKey();
-
   return (
     <>
       <header className="admin-page-header"><div><span className="admin-eyebrow">ATTENDANCE</span><h1>出勤與打卡</h1><p>計算結果採獨立快照；原始打卡只讀且不可變更。</p></div></header>
       {params.calculated ? <div className="admin-success">每日出勤已建立新的計算快照。</div> : null}
       {params.decided ? <div className="admin-success">更正申請已完成審核；請重新計算受影響日期。</div> : null}
       {params.error ? <div className="admin-form-error">操作失敗，請確認日期範圍、權限與資料狀態。</div> : null}
-      <section className="attendance-calculate admin-panel"><div><Calculator size={24} /><div><strong>產生出勤快照</strong><p>以已發布班表、原始 Punch、已核准更正及規則 V1（寬限 0 分鐘）重算。</p></div></div><form action={calculateAttendance}><label>開始<input defaultValue={addDays(today, -6)} name="dateFrom" required type="date" /></label><label>結束<input defaultValue={today} name="dateTo" required type="date" /></label><button className="admin-button" type="submit"><Calculator size={15} /> 計算</button></form></section>
-      {latestRun ? <section className="admin-panel attendance-results"><header><div><span className="admin-eyebrow">LATEST SNAPSHOT</span><h2>{latestRun.date_from} — {latestRun.date_to}</h2></div><small>{formatTaipeiDateTime(latestRun.calculated_at)}</small></header><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>工作日</th><th>員工</th><th>狀態</th><th>排班</th><th>實際</th><th>異常</th></tr></thead><tbody>{(daysResult.data ?? []).map((day) => { const employee = employees.get(day.employee_id); const dayExceptions = exceptionsByDay.get(day.id) ?? []; return <tr key={day.id}><td>{day.work_date}</td><td>{employee?.full_name ?? "未知員工"}<br /><code>{employee?.employee_no ?? day.employee_id.slice(0, 8)}</code></td><td><span className={`attendance-day-status ${day.status}`}>{attendanceStatusLabels[day.status]}</span></td><td>{day.scheduled_minutes} 分</td><td>{day.actual_minutes} 分</td><td>{dayExceptions.length ? dayExceptions.map((item) => <span className="exception-chip" key={item.id}>{attendanceExceptionLabels[item.exception_type]}{item.minutes ? ` ${item.minutes} 分` : ""}</span>) : "—"}</td></tr>; })}</tbody></table></div></section> : null}
+      {staleApprovedDates.length ? <div className="attendance-recalc-alert"><RefreshCw size={20} /><div><strong>有 {staleApprovedDates.length} 個工作日需要重新計算</strong><p>已核准的補卡晚於目前快照；重新計算前，畫面仍是舊結果。</p></div></div> : null}
+      <section className="attendance-calculate admin-panel"><div><Calculator size={24} /><div><strong>產生出勤快照</strong><p>以已發布班表、原始 Punch、已核准更正及規則 V1（寬限 0 分鐘）重算。</p></div></div><form action={calculateAttendance}><label>開始<input defaultValue={recalculateFrom} name="dateFrom" required type="date" /></label><label>結束<input defaultValue={recalculateTo} name="dateTo" required type="date" /></label><button className="admin-button" type="submit"><Calculator size={15} /> 計算</button></form></section>
+      {latestRun ? <section className="admin-panel attendance-results"><header><div><span className="admin-eyebrow">LATEST SNAPSHOT</span><h2>{latestRun.date_from} — {latestRun.date_to}</h2></div><small>{formatTaipeiDateTime(latestRun.calculated_at)}</small></header><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>工作日</th><th>員工</th><th>狀態</th><th>排班</th><th>實際</th><th>異常</th><th aria-label="操作" /></tr></thead><tbody>{(daysResult.data ?? []).map((day) => { const employee = employees.get(day.employee_id); const dayExceptions = exceptionsByDay.get(day.id) ?? []; return <tr key={day.id}><td><Link className="attendance-detail-link" href={`/admin/attendance/${day.id}`}>{day.work_date}</Link></td><td>{employee?.full_name ?? "未知員工"}<br /><code>{employee?.employee_no ?? day.employee_id.slice(0, 8)}</code></td><td><span className={`attendance-day-status ${day.status}`}>{attendanceStatusLabels[day.status]}</span></td><td>{day.scheduled_minutes} 分</td><td>{day.actual_minutes} 分</td><td>{dayExceptions.length ? dayExceptions.map((item) => <span className="exception-chip" key={item.id}>{attendanceExceptionLabels[item.exception_type]}{item.minutes ? ` ${item.minutes} 分` : ""}</span>) : "—"}</td><td><Link aria-label={`查看 ${day.work_date} 明細`} className="attendance-detail-arrow" href={`/admin/attendance/${day.id}`}><ChevronRight size={17} /></Link></td></tr>; })}</tbody></table></div></section> : null}
       <section className="admin-panel correction-review"><header><div><span className="admin-eyebrow">CORRECTIONS</span><h2>打卡更正審核</h2></div></header>{!correctionRequests?.length ? <div className="admin-empty"><Check size={28} /><strong>目前沒有更正申請</strong></div> : <div className="correction-review-list">{correctionRequests.map((request) => { const employee = employees.get(request.employee_id); const decision = decisionByRequest.get(request.id); return <article key={request.id}><div><strong>{employee?.full_name ?? "未知員工"} · {request.work_date}</strong><span>{punchEventLabels[request.proposed_event_type]} {formatTaipeiDateTime(request.proposed_occurred_at)}</span><p>{request.reason}</p></div>{decision ? <span className={`correction-status ${decision.decision}`}>{decision.decision === "approved" ? "已核准" : "已拒絕"}</span> : <form action={decideCorrection}><input name="requestId" type="hidden" value={request.id} /><input maxLength={500} name="reviewNote" placeholder="審核備註（選填）" /><button className="approve" name="decision" type="submit" value="approved"><Check size={14} /> 核准</button><button className="reject" name="decision" type="submit" value="rejected"><X size={14} /> 拒絕</button></form>}</article>; })}</div>}</section>
       <header className="admin-page-header compact"><div><span className="admin-eyebrow">RAW EVIDENCE</span><h1>原始打卡紀錄</h1><p><AlertTriangle size={13} /> 每筆時間與 GPS 證據由伺服器留存。</p></div></header>
       <section className="admin-panel">

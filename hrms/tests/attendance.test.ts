@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { attendanceRangeSchema, correctionDecisionSchema, correctionInputSchema } from "../lib/attendance-contract";
 
@@ -23,5 +25,15 @@ describe("attendance contracts", () => {
   it("limits correction decisions to approved or rejected", () => {
     expect(correctionDecisionSchema.safeParse({ requestId: crypto.randomUUID(), decision: "approved", reviewNote: "" }).success).toBe(true);
     expect(correctionDecisionSchema.safeParse({ requestId: crypto.randomUUID(), decision: "pending", reviewNote: "" }).success).toBe(false);
+  });
+
+  it("keeps attendance day evidence drill-down and recalculation warnings visible", () => {
+    const adminPage = readFileSync(join(process.cwd(), "app/admin/attendance/page.tsx"), "utf8");
+    const detailPage = readFileSync(join(process.cwd(), "app/admin/attendance/[dayId]/page.tsx"), "utf8");
+    expect(adminPage).toContain("需要重新計算");
+    expect(adminPage).toContain("/admin/attendance/${day.id}");
+    expect(detailPage).toContain("班段計算明細");
+    expect(detailPage).toContain("異常證據");
+    expect(detailPage).toContain("當日原始打卡");
   });
 });
