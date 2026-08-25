@@ -4,22 +4,21 @@ Last Updated: 2026-08-25
 
 ## Current Phase
 
-**Attendance calculation 與 Punch Correction Database foundation DONE，UI 待 production deployment**。每次計算建立新 Run，保留 Day／Segment／Exception snapshot；補卡 Request／Decision 與原始 Punch 分離。Rule V1 的遲到、早退寬限均為 0 分鐘，只表示排班差異，不自動扣薪或核准加班。
+**Attendance calculation 與 Punch Correction production slice DONE**。Database migration、rollback-only integration test、employee/admin UI、Vercel deployment 與正式網域 smoke test 均已完成。每次計算建立新 Run，保留 Day／Segment／Exception snapshot；補卡 Request／Decision 與原始 Punch 分離。Rule V1 的遲到、早退寬限均為 0 分鐘，只表示排班差異，不自動扣薪或核准加班。
 
 ## Next Recommended Task (P0)
 
 完成 Attendance operational acceptance：
 
-1. 部署並 smoke test 員工補卡、管理員審核、日期範圍計算與異常列表。
-2. 建立一個使用者確認的真實 Employee 登入帳號，完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 E2E；不得自行建立永久帳號。
-3. 與使用者確認遲到／早退寬限、未排班打卡、跨日與多餘卡的正式規則，再建立 Rule Set V2，不覆寫 V1。
-4. 補上 Segment 明細頁、特定日期重算入口與核准後「需要重算」提示／通知。
+1. 由使用者指定一位真實 Employee 並確認是否建立／連結登入帳號，完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 E2E；不得自行建立永久帳號。
+2. 與使用者確認遲到／早退寬限、未排班打卡、跨日與多餘卡的正式規則，再建立 Rule Set V2，不覆寫 V1。
+3. 補上 Segment 明細頁、特定日期重算入口與核准後「需要重算」提示／通知。
 
 ## Pending Priorities
 
 ### P0 — Attendance correctness and operations
 
-- Production UI deployment、正式網域 smoke test 與真實已連結員工驗收。
+- 真實已連結員工的手機 operational acceptance；production UI deployment 與管理員 smoke test 已完成。
 - Rule Set V2 業務參數與生效日；不得把 Attendance 差異直接當成薪資扣款。
 - Correction 審核後的受影響日期重算提醒，以及管理端 Segment evidence 明細。
 - GPS consent 保存政策、mock-location 風險、CSP/security headers、rate limit 與 audit writer 強化。

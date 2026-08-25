@@ -41,6 +41,7 @@
 - 新增版本化 Attendance Calculation Run、Day、Segment、Exception 與 Rule Set V1。
 - 新增員工補打卡申請、管理員核准／拒絕及核准後重算流程；原始 Punch 與舊計算批次均不覆寫。
 - 新增 ADR-020，記錄版本化出勤快照與 additive correction 決策。
+- Attendance／Correction UI 已由 GitHub code commit `c4dfff0` 部署至 Vercel production；正式網域員工補卡保護狀態、管理員日期範圍計算、異常列表與更正審核區塊 smoke test 通過，browser console 無 error／warning。
 
 ### Changed
 
