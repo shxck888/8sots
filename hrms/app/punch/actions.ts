@@ -10,6 +10,7 @@ function safeMessage(message: string): string {
   if (message.includes("client timestamp")) return "定位資料已逾時，請重新取得定位後打卡。";
   if (message.includes("invalid GPS")) return "定位資料或精度不符合要求，請移至訊號較好的位置再試。";
   if (message.includes("location consent")) return "必須同意本次使用裝置定位才能打卡。";
+  if (message.includes("punch cooldown")) return "剛剛已完成打卡，請等待 30 秒後再操作。";
   return "打卡未完成，請稍後再試。";
 }
 

@@ -107,6 +107,11 @@ const workRequestProofTest = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const attendanceCorrectionPrecedenceMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608270021_correction_precedence_and_punch_cooldown.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -152,6 +157,31 @@ const tenantTables = [
   "membership_roles",
   "audit_logs",
 ];
+
+describe("attendance correction precedence migration", () => {
+  it("prefers approved corrections in an overflowing final segment slot", () => {
+    expect(attendanceCorrectionPrecedenceMigration).toContain(
+      "case when correction_id is not null then 0 else 1 end as source_priority",
+    );
+    expect(attendanceCorrectionPrecedenceMigration).toContain(
+      "least(event_rank, v_segment_count::bigint)",
+    );
+    expect(attendanceCorrectionPrecedenceMigration).toContain(
+      "public.calculate_attendance_v1(uuid,date,date)",
+    );
+    expect(attendanceCorrectionPrecedenceMigration).toContain(
+      "least(v_out_at, v_scheduled_end) - greatest(v_in_at, v_scheduled_start)",
+    );
+  });
+
+  it("rejects rapid punches without weakening idempotent retries", () => {
+    expect(attendanceCorrectionPrecedenceMigration).toContain(
+      "if v_punch_id is not null then return v_punch_id; end if",
+    );
+    expect(attendanceCorrectionPrecedenceMigration).toContain("interval '30 seconds'");
+    expect(attendanceCorrectionPrecedenceMigration).toContain("punch cooldown active");
+  });
+});
 
 describe("foundation migration contract", () => {
   it.each(tenantTables)("enables RLS for %s", (table) => {

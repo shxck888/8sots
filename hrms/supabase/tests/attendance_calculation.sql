@@ -57,6 +57,9 @@ insert into public.punch_records (
    'Asia/Taipei', 'web_gps', 25, 121, 20, now(), gen_random_uuid(), current_setting('test.att_user')::uuid),
   (current_setting('test.att_tenant')::uuid, current_setting('test.att_employee')::uuid, current_date,
    'clock_in', (current_date::timestamp + time '16:00') at time zone 'Asia/Taipei', now(),
+   'Asia/Taipei', 'web_gps', 25, 121, 20, now(), gen_random_uuid(), current_setting('test.att_user')::uuid),
+  (current_setting('test.att_tenant')::uuid, current_setting('test.att_employee')::uuid, current_date,
+   'clock_out', (current_date::timestamp + time '16:01') at time zone 'Asia/Taipei', now(),
    'Asia/Taipei', 'web_gps', 25, 121, 20, now(), gen_random_uuid(), current_setting('test.att_user')::uuid);
 
 set local role authenticated;
@@ -105,13 +108,22 @@ select set_config('test.att_run_two', public.calculate_attendance(
   current_setting('test.att_tenant')::uuid, current_date, current_date
 )::text, true);
 
-do $$ declare v_count integer; v_actual integer; v_exceptions integer;
+do $$ declare v_count integer; v_actual integer; v_exceptions integer; v_used_correction uuid;
 begin
   select actual_minutes, exception_count into v_actual, v_exceptions
   from public.attendance_days where calculation_run_id = current_setting('test.att_run_two')::uuid
     and employee_id = current_setting('test.att_employee')::uuid;
   if v_actual <> 530 then raise exception 'approved correction was not included in recalculation'; end if;
   if v_exceptions <> 2 then raise exception 'late and early-leave exceptions mismatch'; end if;
+  select s.clock_out_correction_id into v_used_correction
+  from public.attendance_segments s
+  join public.attendance_days d on d.id = s.attendance_day_id
+  where d.calculation_run_id = current_setting('test.att_run_two')::uuid
+    and d.employee_id = current_setting('test.att_employee')::uuid
+    and s.segment_order = 2;
+  if v_used_correction is distinct from current_setting('test.att_correction')::uuid then
+    raise exception 'approved correction did not replace the extra raw clock-out';
+  end if;
   select count(*) into v_count from public.attendance_calculation_runs
   where id in (current_setting('test.att_run_one')::uuid, current_setting('test.att_run_two')::uuid);
   if v_count <> 2 then raise exception 'attendance calculation history was overwritten'; end if;
