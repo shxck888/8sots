@@ -127,6 +127,11 @@ const singleDateLeaveMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const taiwanHolidaySeedMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608270025_seed_2026_taiwan_holidays.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -216,6 +221,16 @@ describe("single-date leave migration", () => {
   it("rejects leave requests that cover multiple local dates", () => {
     expect(singleDateLeaveMigration).toContain("leave request must cover one local date");
     expect(singleDateLeaveMigration).toContain("p_starts_local::date <>");
+  });
+});
+
+describe("official 2026 Taiwan holiday seed", () => {
+  it("imports named official holidays without generic weekends and records provenance", () => {
+    expect(taiwanHolidaySeedMigration).toContain("date '2026-01-01', '開國紀念日'");
+    expect(taiwanHolidaySeedMigration).toContain("date '2026-12-25', '行憲紀念日'");
+    expect(taiwanHolidaySeedMigration).toContain("https://data.gov.tw/dataset/14718");
+    expect(taiwanHolidaySeedMigration).toContain("holiday.official_calendar_imported");
+    expect(taiwanHolidaySeedMigration).not.toContain("date '2026-01-03'");
   });
 });
 
