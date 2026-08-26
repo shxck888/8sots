@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { calculateLeaveBalance, formatRequestedMinutes, leaveEntitlementInputSchema, workRequestDecisionSchema, workRequestInputSchema, workRequestWithdrawalSchema } from "../lib/work-request-contract";
+import { calculateLeaveBalance, coveredLeaveDates, formatRequestedMinutes, leaveDatesUseAllowedWeekdays, leaveEntitlementInputSchema, workRequestDecisionSchema, workRequestInputSchema, workRequestWithdrawalSchema } from "../lib/work-request-contract";
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8").toLowerCase();
 
@@ -42,6 +42,14 @@ describe("work request center", () => {
     expect(workRequestInputSchema.safeParse({
       ...base, startsLocal: "2026-08-27T20:00", endsLocal: "2026-08-28T04:01",
     }).success).toBe(false);
+  });
+
+  it("allows leave only when every covered date is Tuesday through Friday", () => {
+    expect(coveredLeaveDates("2026-09-01T10:00", "2026-09-02T14:00")).toEqual(["2026-09-01", "2026-09-02"]);
+    expect(leaveDatesUseAllowedWeekdays("2026-09-01T10:00", "2026-09-04T14:00")).toBe(true);
+    expect(leaveDatesUseAllowedWeekdays("2026-09-04T10:00", "2026-09-05T00:00")).toBe(true);
+    expect(leaveDatesUseAllowedWeekdays("2026-09-04T10:00", "2026-09-05T00:01")).toBe(false);
+    expect(leaveDatesUseAllowedWeekdays("2026-09-07T10:00", "2026-09-07T14:00")).toBe(false);
   });
 
   it("validates withdrawal and annual leave entitlement inputs", () => {

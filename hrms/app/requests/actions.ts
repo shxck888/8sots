@@ -11,7 +11,8 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
   const parsed = workRequestInputSchema.safeParse(input);
   if (!parsed.success) {
     const overtimeLimit = parsed.error.issues.some((issue) => issue.message.includes("8 小時"));
-    return { ok: false, message: overtimeLimit ? "單筆加班最多 8 小時；跨日可以，但總時數不得超過 8 小時。" : "請確認類型、起訖時間及至少 5 個字的原因。" };
+    const leaveDay = parsed.error.issues.some((issue) => issue.message.includes("週二至週五"));
+    return { ok: false, message: overtimeLimit ? "單筆加班最多 8 小時；跨日可以，但總時數不得超過 8 小時。" : leaveDay ? "請假只能排週二至週五；週一公休，週末不可排休。" : "請確認類型、起訖時間及至少 5 個字的原因。" };
   }
 
   const workspace = await getWorkspaceContext();
@@ -38,6 +39,12 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
     }
     if (error.message.includes("overtime duration")) {
       return { ok: false, message: "單筆加班最多 8 小時；跨日可以，但總時數不得超過 8 小時。" };
+    }
+    if (error.message.includes("Tuesday through Friday")) {
+      return { ok: false, message: "請假只能排週二至週五；週一公休，週末不可排休。" };
+    }
+    if (error.message.includes("not allowed on holidays")) {
+      return { ok: false, message: "所選期間包含國定或公司假日，假日不可排休。" };
     }
     return { ok: false, message: "申請送出失敗，請稍後再試。" };
   }

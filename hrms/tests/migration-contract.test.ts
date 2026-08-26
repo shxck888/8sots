@@ -117,6 +117,11 @@ const overtimeLimitMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const leaveDayRestrictionsMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608270023_leave_day_restrictions.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -192,6 +197,13 @@ describe("overtime duration policy migration", () => {
   it("enforces the eight-hour limit inside the database RPC", () => {
     expect(overtimeLimitMigration).toContain("v_requested_minutes > 480");
     expect(overtimeLimitMigration).toContain("overtime duration must not exceed 480 minutes");
+  });
+});
+
+describe("leave-day policy migration", () => {
+  it("limits leave to Tuesday through Friday and blocks calendar holidays", () => {
+    expect(leaveDayRestrictionsMigration).toContain("extract(isodow from covered.day) not between 2 and 5");
+    expect(leaveDayRestrictionsMigration).toContain("holiday.kind in ('national', 'company')");
   });
 });
 

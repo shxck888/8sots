@@ -3,13 +3,15 @@
 import { CalendarPlus, Send, Timer } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { createWorkRequest } from "./actions";
+import { coveredLeaveDates, leaveDatesUseAllowedWeekdays } from "@/lib/work-request-contract";
 
 type LeaveType = { id: string; name: string; description: string | null };
 
-export function RequestForm({ enabled, leaveTypes, requestType }: {
+export function RequestForm({ blockedHolidayDates = [], enabled, leaveTypes, requestType }: {
   enabled: boolean;
   leaveTypes: LeaveType[];
   requestType: "leave" | "overtime";
+  blockedHolidayDates?: string[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState("");
@@ -17,9 +19,17 @@ export function RequestForm({ enabled, leaveTypes, requestType }: {
   const isLeave = requestType === "leave";
 
   function submit(formData: FormData) {
+    const startsLocal = String(formData.get("startsLocal") ?? "");
+    const endsLocal = String(formData.get("endsLocal") ?? "");
+    if (isLeave && !leaveDatesUseAllowedWeekdays(startsLocal, endsLocal)) {
+      setMessage("請假只能排週二至週五；週一公休，週末不可排休。");
+      return;
+    }
+    if (isLeave && coveredLeaveDates(startsLocal, endsLocal).some((date) => blockedHolidayDates.includes(date))) {
+      setMessage("所選期間包含國定或公司假日，假日不可排休。");
+      return;
+    }
     if (!isLeave) {
-      const startsLocal = String(formData.get("startsLocal") ?? "");
-      const endsLocal = String(formData.get("endsLocal") ?? "");
       const requestedMinutes = (Date.parse(endsLocal) - Date.parse(startsLocal)) / 60_000;
       if (requestedMinutes > 480) {
         setMessage("單筆加班最多 8 小時；跨日可以，但總時數不得超過 8 小時。");
@@ -53,6 +63,7 @@ export function RequestForm({ enabled, leaveTypes, requestType }: {
       </form>
       {!isLeave ? <p className="work-request-policy-note">單筆最多 8 小時；可跨日，但以起訖時間合計。</p> : null}
       <p aria-live="polite" className="correction-message">{message}</p>
+      {isLeave ? <p className="work-request-policy-note">僅週二至週五可排休；週一公休，國定／公司假日及週末禁休。</p> : null}
     </article>
   );
 }

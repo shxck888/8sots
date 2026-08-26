@@ -2,6 +2,27 @@ import { z } from "zod";
 
 const localDateTime = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "時間格式不正確");
 
+export function coveredLeaveDates(startsLocal: string, endsLocal: string): string[] {
+  const start = Date.parse(`${startsLocal}Z`);
+  const end = Date.parse(`${endsLocal}Z`);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return [];
+  const cursor = new Date(`${startsLocal.slice(0, 10)}T00:00:00Z`);
+  const finalDate = new Date(end - 1).toISOString().slice(0, 10);
+  const dates: string[] = [];
+  while (cursor.toISOString().slice(0, 10) <= finalDate) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+export function leaveDatesUseAllowedWeekdays(startsLocal: string, endsLocal: string): boolean {
+  return coveredLeaveDates(startsLocal, endsLocal).every((date) => {
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+    return weekday >= 2 && weekday <= 5;
+  });
+}
+
 export const workRequestInputSchema = z.object({
   requestType: z.enum(["leave", "overtime"]),
   leaveTypeId: z.union([z.uuid(), z.literal("")]).nullable(),
@@ -15,6 +36,9 @@ export const workRequestInputSchema = z.object({
   }
   if (value.endsLocal <= value.startsLocal) {
     context.addIssue({ code: "custom", message: "結束時間必須晚於開始時間", path: ["endsLocal"] });
+  }
+  if (value.requestType === "leave" && !leaveDatesUseAllowedWeekdays(value.startsLocal, value.endsLocal)) {
+    context.addIssue({ code: "custom", message: "請假日期只能選週二至週五", path: ["endsLocal"] });
   }
   if (value.requestType === "overtime") {
     const requestedMinutes = (Date.parse(value.endsLocal) - Date.parse(value.startsLocal)) / 60_000;

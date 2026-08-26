@@ -15,13 +15,14 @@ export default async function RequestsPage() {
   const workspace = await getWorkspaceContext();
   if (!workspace) redirect("/login");
   const supabase = await createSupabaseServerClient();
-  const [{ data: leaveTypes }, { data: requests }, { data: entitlements }] = workspace.employeeId && workspace.tenantId
+  const [{ data: leaveTypes }, { data: requests }, { data: entitlements }, { data: holidays }] = workspace.employeeId && workspace.tenantId
     ? await Promise.all([
       supabase.from("leave_types").select("*").eq("tenant_id", workspace.tenantId).eq("is_active", true).order("code"),
       supabase.from("work_requests").select("*").eq("tenant_id", workspace.tenantId).eq("employee_id", workspace.employeeId).order("requested_at", { ascending: false }).limit(50),
       supabase.from("leave_entitlements").select("*").eq("tenant_id", workspace.tenantId).eq("employee_id", workspace.employeeId).eq("entitlement_year", new Date().getFullYear()),
+      supabase.from("holiday_calendar_entries").select("holiday_date, kind").eq("tenant_id", workspace.tenantId).in("kind", ["national", "company"]),
     ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
   const requestIds = (requests ?? []).map((item) => item.id);
   const [{ data: decisions }, { data: withdrawals }, { data: attachments }] = requestIds.length ? await Promise.all([
     supabase.from("work_request_decisions").select("*").in("work_request_id", requestIds),
@@ -45,7 +46,7 @@ export default async function RequestsPage() {
       <header className="my-schedule-header"><div><span className="date-label">REQUEST CENTER</span><h1>申請中心</h1><p>提出請假或加班申請，審核結果與原始內容都會保留。</p></div></header>
       {!workspace.employeeId ? <section className="my-schedule-empty"><ClipboardList size={30} /><strong>此帳號尚未連結在職員工資料</strong><p>請聯絡管理員完成員工登入帳號連結後再提出申請。</p></section> : <>
         <section className="work-request-form-grid">
-          <RequestForm enabled leaveTypes={leaveTypes ?? []} requestType="leave" />
+          <RequestForm blockedHolidayDates={(holidays ?? []).map((item) => item.holiday_date)} enabled leaveTypes={leaveTypes ?? []} requestType="leave" />
           <RequestForm enabled leaveTypes={leaveTypes ?? []} requestType="overtime" />
         </section>
         <section className="leave-balance-grid" aria-label="本年度假別額度">
