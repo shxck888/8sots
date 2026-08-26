@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { calculateLeaveBalance, coveredLeaveDates, formatRequestedMinutes, leaveDatesUseAllowedWeekdays, leaveEntitlementInputSchema, workRequestDecisionSchema, workRequestInputSchema, workRequestWithdrawalSchema } from "../lib/work-request-contract";
+import { calculateLeaveBalance, coveredLeaveDates, formatRequestedMinutes, leaveDatesUseAllowedWeekdays, leaveEntitlementInputSchema, leaveRequestUsesSingleDate, workRequestDecisionSchema, workRequestInputSchema, workRequestWithdrawalSchema } from "../lib/work-request-contract";
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8").toLowerCase();
 
@@ -44,12 +44,21 @@ describe("work request center", () => {
     }).success).toBe(false);
   });
 
-  it("allows leave only when every covered date is Tuesday through Friday", () => {
+  it("allows leave only on one Tuesday-through-Friday date", () => {
     expect(coveredLeaveDates("2026-09-01T10:00", "2026-09-02T14:00")).toEqual(["2026-09-01", "2026-09-02"]);
-    expect(leaveDatesUseAllowedWeekdays("2026-09-01T10:00", "2026-09-04T14:00")).toBe(true);
+    expect(leaveRequestUsesSingleDate("2026-09-01T10:00", "2026-09-01T14:00")).toBe(true);
+    expect(leaveRequestUsesSingleDate("2026-09-01T10:00", "2026-09-02T14:00")).toBe(false);
     expect(leaveDatesUseAllowedWeekdays("2026-09-04T10:00", "2026-09-05T00:00")).toBe(true);
     expect(leaveDatesUseAllowedWeekdays("2026-09-04T10:00", "2026-09-05T00:01")).toBe(false);
     expect(leaveDatesUseAllowedWeekdays("2026-09-07T10:00", "2026-09-07T14:00")).toBe(false);
+  });
+
+  it("rejects a multi-date leave request in the shared server contract", () => {
+    expect(workRequestInputSchema.safeParse({
+      requestType: "leave", leaveTypeId: crypto.randomUUID(),
+      startsLocal: "2026-09-01T10:00", endsLocal: "2026-09-02T14:00",
+      reason: "連續兩日私人行程安排", idempotencyKey: crypto.randomUUID(),
+    }).success).toBe(false);
   });
 
   it("validates withdrawal and annual leave entitlement inputs", () => {

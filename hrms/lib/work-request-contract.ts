@@ -23,6 +23,11 @@ export function leaveDatesUseAllowedWeekdays(startsLocal: string, endsLocal: str
   });
 }
 
+export function leaveRequestUsesSingleDate(startsLocal: string, endsLocal: string): boolean {
+  const dates = coveredLeaveDates(startsLocal, endsLocal);
+  return dates.length === 1;
+}
+
 export const workRequestInputSchema = z.object({
   requestType: z.enum(["leave", "overtime"]),
   leaveTypeId: z.union([z.uuid(), z.literal("")]).nullable(),
@@ -39,6 +44,9 @@ export const workRequestInputSchema = z.object({
   }
   if (value.requestType === "leave" && !leaveDatesUseAllowedWeekdays(value.startsLocal, value.endsLocal)) {
     context.addIssue({ code: "custom", message: "請假日期只能選週二至週五", path: ["endsLocal"] });
+  }
+  if (value.requestType === "leave" && !leaveRequestUsesSingleDate(value.startsLocal, value.endsLocal)) {
+    context.addIssue({ code: "custom", message: "每筆請假只能選一個日期", path: ["endsLocal"] });
   }
   if (value.requestType === "overtime") {
     const requestedMinutes = (Date.parse(value.endsLocal) - Date.parse(value.startsLocal)) / 60_000;

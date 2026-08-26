@@ -122,6 +122,11 @@ const leaveDayRestrictionsMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const singleDateLeaveMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608270024_single_date_leave_requests.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -204,6 +209,13 @@ describe("leave-day policy migration", () => {
   it("limits leave to Tuesday through Friday and blocks calendar holidays", () => {
     expect(leaveDayRestrictionsMigration).toContain("extract(isodow from covered.day) not between 2 and 5");
     expect(leaveDayRestrictionsMigration).toContain("holiday.kind in ('national', 'company')");
+  });
+});
+
+describe("single-date leave migration", () => {
+  it("rejects leave requests that cover multiple local dates", () => {
+    expect(singleDateLeaveMigration).toContain("leave request must cover one local date");
+    expect(singleDateLeaveMigration).toContain("p_starts_local::date <>");
   });
 });
 
