@@ -17,6 +17,15 @@ export function RequestForm({ enabled, leaveTypes, requestType }: {
   const isLeave = requestType === "leave";
 
   function submit(formData: FormData) {
+    if (!isLeave) {
+      const startsLocal = String(formData.get("startsLocal") ?? "");
+      const endsLocal = String(formData.get("endsLocal") ?? "");
+      const requestedMinutes = (Date.parse(endsLocal) - Date.parse(startsLocal)) / 60_000;
+      if (requestedMinutes > 480) {
+        setMessage("單筆加班最多 8 小時；跨日可以，但總時數不得超過 8 小時。");
+        return;
+      }
+    }
     startTransition(async () => {
       const result = await createWorkRequest({
         requestType,
@@ -42,6 +51,7 @@ export function RequestForm({ enabled, leaveTypes, requestType }: {
         <label className="work-request-reason">原因<textarea disabled={!enabled || pending} maxLength={500} minLength={5} name="reason" placeholder="請簡要說明（至少 5 字）" required rows={3} /></label>
         <button className="admin-button" disabled={!enabled || pending} type="submit"><Send size={16} /> {pending ? "送出中…" : "送出申請"}</button>
       </form>
+      {!isLeave ? <p className="work-request-policy-note">單筆最多 8 小時；可跨日，但以起訖時間合計。</p> : null}
       <p aria-live="polite" className="correction-message">{message}</p>
     </article>
   );

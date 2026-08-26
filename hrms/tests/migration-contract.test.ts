@@ -112,6 +112,11 @@ const attendanceCorrectionPrecedenceMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const overtimeLimitMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608270022_overtime_eight_hour_limit.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -180,6 +185,13 @@ describe("attendance correction precedence migration", () => {
     );
     expect(attendanceCorrectionPrecedenceMigration).toContain("interval '30 seconds'");
     expect(attendanceCorrectionPrecedenceMigration).toContain("punch cooldown active");
+  });
+});
+
+describe("overtime duration policy migration", () => {
+  it("enforces the eight-hour limit inside the database RPC", () => {
+    expect(overtimeLimitMigration).toContain("v_requested_minutes > 480");
+    expect(overtimeLimitMigration).toContain("overtime duration must not exceed 480 minutes");
   });
 });
 

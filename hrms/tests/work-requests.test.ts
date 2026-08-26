@@ -29,6 +29,21 @@ describe("work request center", () => {
     expect(formatRequestedMinutes(1500)).toBe("1 天 1 小時");
   });
 
+  it("limits one overtime request to eight hours while allowing an overnight range", () => {
+    const base = {
+      requestType: "overtime" as const,
+      leaveTypeId: null,
+      reason: "晚間盤點支援作業",
+      idempotencyKey: crypto.randomUUID(),
+    };
+    expect(workRequestInputSchema.safeParse({
+      ...base, startsLocal: "2026-08-27T20:00", endsLocal: "2026-08-28T04:00",
+    }).success).toBe(true);
+    expect(workRequestInputSchema.safeParse({
+      ...base, startsLocal: "2026-08-27T20:00", endsLocal: "2026-08-28T04:01",
+    }).success).toBe(false);
+  });
+
   it("validates withdrawal and annual leave entitlement inputs", () => {
     expect(workRequestWithdrawalSchema.safeParse({ requestId: crypto.randomUUID() }).success).toBe(true);
     expect(leaveEntitlementInputSchema.safeParse({ employeeId: crypto.randomUUID(), leaveTypeId: crypto.randomUUID(), entitlementYear: 2026, entitledHours: 80, note: "年度特休" }).success).toBe(true);

@@ -16,6 +16,12 @@ export const workRequestInputSchema = z.object({
   if (value.endsLocal <= value.startsLocal) {
     context.addIssue({ code: "custom", message: "結束時間必須晚於開始時間", path: ["endsLocal"] });
   }
+  if (value.requestType === "overtime") {
+    const requestedMinutes = (Date.parse(value.endsLocal) - Date.parse(value.startsLocal)) / 60_000;
+    if (requestedMinutes > 480) {
+      context.addIssue({ code: "custom", message: "單筆加班不得超過 8 小時", path: ["endsLocal"] });
+    }
+  }
 });
 
 export const workRequestDecisionSchema = z.object({

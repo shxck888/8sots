@@ -9,7 +9,10 @@ import { proofObjectPath, validateProofFile } from "@/lib/work-request-proofs";
 
 export async function createWorkRequest(input: unknown): Promise<WorkRequestActionState> {
   const parsed = workRequestInputSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, message: "請確認類型、起訖時間及至少 5 個字的原因。" };
+  if (!parsed.success) {
+    const overtimeLimit = parsed.error.issues.some((issue) => issue.message.includes("8 小時"));
+    return { ok: false, message: overtimeLimit ? "單筆加班最多 8 小時；跨日可以，但總時數不得超過 8 小時。" : "請確認類型、起訖時間及至少 5 個字的原因。" };
+  }
 
   const workspace = await getWorkspaceContext();
   if (!workspace?.tenantId || !workspace.employeeId) {
@@ -32,6 +35,9 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
     }
     if (error.message.includes("active linked employee")) {
       return { ok: false, message: "此帳號尚未連結在職員工資料。" };
+    }
+    if (error.message.includes("overtime duration")) {
+      return { ok: false, message: "單筆加班最多 8 小時；跨日可以，但總時數不得超過 8 小時。" };
     }
     return { ok: false, message: "申請送出失敗，請稍後再試。" };
   }
