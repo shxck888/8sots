@@ -15,10 +15,11 @@
 ### Changed
 
 - 員工 `/attendance` 改為以工作日整合每日出勤結果與同日原始打卡，免除跨區塊比對；補打卡表單改由頁首右側按鈕開啟 drawer，手機版採上下排列與滿寬操作介面。
+- 員工 Workspace 手機底部導覽新增明確「登出」按鈕，並修正平板側欄登出圖示被 responsive CSS 隱藏的問題。
 
 ### Validation
 
-- 本機 17 個測試檔／129 項 Vitest、TypeScript、ESLint 與 Next.js 16.3.2 production build 全數通過。
+- 本機 17 個測試檔／130 項 Vitest、TypeScript、ESLint 與 Next.js 16.3.2 production build 全數通過。
 
 ## 2026-08-25
 

@@ -35,7 +35,7 @@ export function WorkspaceShell({
         <div className="store-card"><span className="eyebrow">目前所屬組織</span><strong>{tenantName}</strong><span><MapPin size={14} /> 門市資料尚待建立</span></div>
         <div className="profile-mini">
           <div className="avatar">{avatarText}</div><div><strong>{displayName}</strong><span>{email}</span></div>
-          <form action={logout}><button className="logout-icon" title="登出" type="submit"><LogOut size={17} /><span className="sr-only">登出</span></button></form>
+          <form action={logout}><button aria-label="登出" className="logout-icon" title="登出" type="submit"><LogOut size={17} /><span className="sr-only">登出</span></button></form>
         </div>
       </aside>
       <section className="content">
@@ -43,6 +43,7 @@ export function WorkspaceShell({
         <nav className="mobile-nav" aria-label="行動版導覽">
           {nav.map(({ label, icon: Icon, href }) => <Link className={activePath === href ? "active" : ""} href={href} key={label}><Icon size={21} /><span>{label}</span></Link>)}
           {canManage ? <Link href="/admin"><Settings size={21} /><span>管理後台</span></Link> : null}
+          <form action={logout}><button aria-label="登出" type="submit"><LogOut size={21} /><span>登出</span></button></form>
         </nav>
       </section>
     </main>
