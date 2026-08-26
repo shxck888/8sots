@@ -157,6 +157,32 @@ button { color: inherit; }
 .correction-form input, .correction-form select, .correction-form textarea, .attendance-calculate input, .correction-review form input { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid #d8dcd6; border-radius: 9px; outline: none; color: var(--ink); background: white; font-size: 10px; }
 .correction-form textarea { resize: vertical; }.correction-form .admin-button { min-height: 40px; }
 .correction-message { min-height: 14px; margin: 9px 0 0; color: #386a5d; font-size: 10px; }
+.attendance-page-header { align-items: center; }
+.attendance-correction-trigger { min-height: 46px; padding: 0 18px; border: 0; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: white; background: #286b59; box-shadow: 0 8px 20px rgba(34,92,76,.18); cursor: pointer; font-size: 14px; font-weight: 800; }
+.attendance-correction-trigger:disabled { opacity: .45; cursor: not-allowed; }
+.correction-drawer-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; justify-content: flex-end; background: rgba(18,34,30,.42); backdrop-filter: blur(3px); }
+.correction-drawer { width: min(520px, 100%); height: 100%; padding: 28px; overflow-y: auto; background: #fbfaf6; box-shadow: -18px 0 50px rgba(16,44,37,.2); animation: correction-drawer-in .2s ease-out; }
+.correction-drawer > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 22px; border-bottom: 1px solid #dedfd9; }
+.correction-drawer h2 { margin: 4px 0 0; font: 600 28px/1.25 Georgia, 'Noto Serif TC', serif; }
+.correction-drawer header p { margin: 8px 0 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.correction-drawer-close { width: 42px; height: 42px; flex: 0 0 auto; border: 1px solid #d8dcd6; border-radius: 50%; display: grid; place-items: center; color: #345e53; background: white; cursor: pointer; }
+.correction-drawer .correction-form { grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+.correction-drawer .correction-form label { gap: 8px; font-size: 15px; }
+.correction-drawer .correction-form input, .correction-drawer .correction-form select, .correction-drawer .correction-form textarea { min-height: 50px; padding: 11px 12px; font-size: 16px; }
+.correction-drawer .correction-form .correction-reason, .correction-drawer .correction-form .admin-button { grid-column: 1 / -1; }
+.correction-drawer .correction-form .admin-button { min-height: 50px; justify-content: center; font-size: 16px; }
+@keyframes correction-drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.attendance-daily-list { max-width: 1180px; margin: 0 auto; display: grid; gap: 12px; }
+.attendance-daily-card { display: grid; grid-template-columns: minmax(210px, .72fr) minmax(0, 1.8fr); border: 1px solid rgba(23,63,54,.1); border-radius: 16px; overflow: hidden; background: var(--paper); }
+.attendance-daily-result { padding: 20px; display: grid; align-content: start; gap: 11px; border-right: 1px solid #e6e7e2; background: #f7f6f1; }
+.attendance-daily-result > strong { font: 600 21px/1.25 Georgia, 'Noto Serif TC', serif; }
+.attendance-daily-result dl { margin: 2px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.attendance-daily-result dl div { display: grid; gap: 3px; }.attendance-daily-result dt { color: var(--muted); font-size: 13px; }.attendance-daily-result dd { margin: 0; font-size: 16px; font-weight: 800; }
+.attendance-daily-result em { color: var(--muted); font-size: 14px; font-style: normal; }
+.attendance-daily-punches { display: grid; align-content: center; }
+.attendance-daily-punch { min-height: 82px; padding: 15px 18px; display: grid; grid-template-columns: 72px minmax(180px, 1fr) auto; gap: 14px; align-items: center; border-top: 1px solid #ecebe5; }
+.attendance-daily-punch:first-child { border-top: 0; }.attendance-daily-punch > div { display: grid; gap: 5px; }.attendance-daily-punch strong { font-size: 16px; }.attendance-daily-punch small { color: var(--muted); font-size: 14px; }
+.attendance-no-punch { margin: 0; padding: 24px; color: var(--muted); font-size: 15px; }
 .attendance-summary-list { max-width: 1180px; margin: 0 auto 16px; padding: 20px; border: 1px solid rgba(23,63,54,.1); border-radius: 18px; background: var(--paper); }
 .attendance-summary-list > header, .attendance-results > header, .correction-review > header { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 14px; border-bottom: 1px solid #ecebe5; }
 .attendance-summary-list > header small, .attendance-results > header small { color: var(--muted); font-size: 9px; }
@@ -266,6 +292,7 @@ button { color: inherit; }
   .admin-page-header { align-items: flex-start; }.admin-page-header .admin-button { white-space: nowrap; }.admin-stats { grid-template-columns: repeat(2, 1fr); }.admin-form-grid { grid-template-columns: 1fr; }.form-panel { padding: 20px 16px; }.account-management, .account-inline-form { grid-template-columns: 1fr; }
   .schedule-header { display: grid; }.schedule-week-nav { width: 100%; justify-content: space-between; }.schedule-week-nav strong { min-width: 0; }.schedule-summary { grid-template-columns: repeat(2, 1fr); }.schedule-toolbar, .schedule-publish-bar { align-items: flex-start; }.schedule-toolbar span, .schedule-publish-bar span { max-width: 210px; }
   .my-schedule-header { display: grid; }.my-week-nav { width: 100%; justify-content: space-between; }.my-week-nav strong { min-width: 0; }.my-schedule-grid { grid-template-columns: 1fr; overflow: visible; }.my-day-card { min-height: 0; }.my-day-empty { min-height: 125px; }.my-schedule-summary { padding: 13px 15px; }
+  .attendance-page-header { gap: 18px; }.attendance-correction-trigger { width: 100%; }.attendance-daily-card { grid-template-columns: 1fr; }.attendance-daily-result { border-right: 0; border-bottom: 1px solid #e6e7e2; }.attendance-daily-punch { grid-template-columns: 76px 1fr; }.attendance-daily-punch .attendance-evidence { grid-column: 1 / -1; }.correction-drawer { padding: 22px 18px 110px; }
   .attendance-list article { grid-template-columns: 62px 1fr; }.attendance-evidence { grid-column: 1 / -1; justify-items: start; padding-top: 10px; border-top: 1px solid #ecebe5; }
   .correction-form { grid-template-columns: 1fr 1fr; }.correction-reason { grid-column: 1 / -1; }.correction-form .admin-button { grid-column: 1 / -1; justify-content: center; }.attendance-summary-list article { grid-template-columns: 85px 1fr; padding: 9px 0; }.attendance-calculate { align-items: flex-start; flex-direction: column; }.attendance-calculate form { width: 100%; flex-wrap: wrap; }.attendance-calculate form label { flex: 1; }.correction-review-list article { grid-template-columns: 1fr; }.correction-review-list form { grid-template-columns: 1fr 1fr; }.correction-review-list form input { grid-column: 1 / -1; }
   .attendance-detail-stats { grid-template-columns: 1fr; }.attendance-segment-list article { grid-template-columns: 1fr 1fr; }.attendance-evidence-list article { grid-template-columns: 82px 1fr; }.attendance-evidence-list article > div:last-child { grid-column: 1 / -1; justify-items: start; padding-top: 10px; border-top: 1px solid #ecebe5; }
@@ -324,6 +351,7 @@ button { color: inherit; }
   .attendance-summary-list article > strong { font-size: 17px; }
   .attendance-summary-list article em { overflow: visible; font-size: 15px; line-height: 1.55; text-overflow: clip; white-space: normal; }
   .attendance-day-status, .correction-status { padding: 7px 10px; font-size: 14px; }
+  .attendance-correction-trigger { min-height: 52px; font-size: 16px; }.attendance-daily-result > strong { font-size: 22px; }.attendance-daily-result dt, .attendance-daily-result em { font-size: 15px; }.attendance-daily-result dd { font-size: 17px; }.attendance-daily-punch { min-height: 116px; padding: 18px; }.attendance-daily-punch strong { font-size: 18px; line-height: 1.45; }.attendance-daily-punch small, .attendance-no-punch { font-size: 15px; line-height: 1.55; }.correction-drawer h2 { font-size: 28px; }
   .exception-chip { padding: 6px 9px; font-size: 14px; }
   .attendance-recalc-alert p, .admin-back-link, .attendance-detail-stats small, .attendance-segment-list small, .attendance-segment-list span, .attendance-exception-list p, .attendance-evidence-list small { font-size: 15px; line-height: 1.55; }.attendance-detail-panel h2 { font-size: 26px; }.attendance-segment-list strong, .attendance-exception-list strong, .attendance-evidence-list strong { font-size: 16px; line-height: 1.5; }.attendance-detail-stats strong { font-size: 27px; }
 

@@ -12,9 +12,13 @@
 - 確認 `hs001` Employee、登入帳號與 tenant membership 均為 active 且已連結。
 - Vercel production deployment `dpl_4meiC5kERxFi9Bc4Hf4wAnNGrG7o` Ready，並 alias 至 `hrms.8sots.com.tw`；`/admin/holidays`、`/admin/attendance-rules`、`/admin/requests`、`/admin/attendance`、`/requests` smoke test 無 console error。
 
+### Changed
+
+- 員工 `/attendance` 改為以工作日整合每日出勤結果與同日原始打卡，免除跨區塊比對；補打卡表單改由頁首右側按鈕開啟 drawer，手機版採上下排列與滿寬操作介面。
+
 ### Validation
 
-- 本機 17 個測試檔／128 項 Vitest、TypeScript、ESLint 與 Next.js 16.3.2 production build 全數通過。
+- 本機 17 個測試檔／129 項 Vitest、TypeScript、ESLint 與 Next.js 16.3.2 production build 全數通過。
 
 ## 2026-08-25
 

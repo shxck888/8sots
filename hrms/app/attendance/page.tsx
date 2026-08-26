@@ -14,26 +14,41 @@ export default async function AttendancePage() {
   const workspace = await getWorkspaceContext();
   if (!workspace) redirect("/login");
   const overview = workspace.employeeId ? await getMyAttendanceOverview() : { days: [], punches: [], requests: [] };
+  const dayByWorkDate = new Map(overview.days.map((day) => [day.work_date, day]));
+  const punchesByWorkDate = new Map<string, typeof overview.punches>();
+  for (const punch of overview.punches) {
+    punchesByWorkDate.set(punch.work_date, [...(punchesByWorkDate.get(punch.work_date) ?? []), punch]);
+  }
+  const workDates = [...new Set([...dayByWorkDate.keys(), ...punchesByWorkDate.keys()])].sort().reverse();
 
   return (
     <WorkspaceShell activePath="/attendance" canManage={workspace.canManage} displayName={workspace.displayName} email={workspace.email} tenantName={workspace.tenantName}>
-      <header className="my-schedule-header"><div><span className="date-label">ATTENDANCE EVIDENCE</span><h1>出勤紀錄</h1><p>正式時間採用伺服器時間；原始紀錄建立後不可修改或刪除。</p></div></header>
-      <CorrectionForm enabled={Boolean(workspace.employeeId)} />
-      {overview.days.length ? <section className="attendance-summary-list"><header><div><span className="eyebrow">CALCULATED</span><h2>每日出勤結果</h2></div><small>每次重算保留獨立快照</small></header>{overview.days.map((day) => <article key={day.id}><strong>{day.work_date}</strong><span className={`attendance-day-status ${day.status}`}>{attendanceStatusLabels[day.status]}</span><span>排班 {day.scheduled_minutes} 分</span><span>實際 {day.actual_minutes} 分</span><em>{day.exception_count ? `${day.exception_count} 項異常` : "無異常"}</em></article>)}</section> : null}
+      <header className="my-schedule-header attendance-page-header"><div><span className="date-label">ATTENDANCE EVIDENCE</span><h1>出勤紀錄</h1><p>每日結果與原始打卡集中顯示；正式時間採用伺服器時間。</p></div><CorrectionForm enabled={Boolean(workspace.employeeId)} /></header>
       {overview.requests.length ? <section className="attendance-summary-list"><header><div><span className="eyebrow">CORRECTIONS</span><h2>我的更正申請</h2></div></header>{overview.requests.map((request) => <article key={request.id}><strong>{request.work_date}</strong><span>{punchEventLabels[request.proposed_event_type]} · {formatTaipeiDateTime(request.proposed_occurred_at)}</span><span className={`correction-status ${request.decision ?? "pending"}`}>{request.decision === "approved" ? "已核准" : request.decision === "rejected" ? "已拒絕" : "待審核"}</span><em title={request.reason}>{request.reason}</em></article>)}</section> : null}
       {!workspace.employeeId ? (
         <section className="my-schedule-empty"><Clock3 size={30} /><strong>此帳號尚未連結在職員工資料</strong><p>請聯絡管理員建立或連結員工登入帳號。</p></section>
-      ) : overview.punches.length === 0 ? (
+      ) : workDates.length === 0 ? (
         <section className="my-schedule-empty"><Clock3 size={30} /><strong>尚無打卡紀錄</strong><p>回到工作台，同意使用定位後即可進行第一次上班打卡。</p></section>
       ) : (
-        <section className="attendance-list" aria-label="個人打卡紀錄"><header className="attendance-list-heading"><div><span className="eyebrow">RAW EVIDENCE</span><h2>原始打卡</h2></div><span><AlertTriangle size={14} /> 不可修改</span></header>
-          {overview.punches.map((record) => (
-            <article key={record.id}>
-              <span className={`attendance-event ${record.event_type}`}>{punchEventLabels[record.event_type]}</span>
-              <div><strong>{formatTaipeiDateTime(record.occurred_at)}</strong><small>工作日 {record.work_date} · {punchSourceLabels[record.source]}</small></div>
-              <div className="attendance-evidence"><span><MapPin size={14} /> {locationVerificationLabels[record.location_verification]}</span><small>GPS 誤差約 {Number(record.accuracy_m ?? 0).toFixed(0)} 公尺</small></div>
-            </article>
-          ))}
+        <section aria-label="每日出勤與原始打卡" className="attendance-daily-list">
+          <header className="attendance-list-heading"><div><span className="eyebrow">DAILY ATTENDANCE</span><h2>每日出勤結果與原始打卡</h2></div><span><AlertTriangle size={14} /> 原始打卡不可修改</span></header>
+          {workDates.map((workDate) => {
+            const day = dayByWorkDate.get(workDate);
+            const punches = punchesByWorkDate.get(workDate) ?? [];
+            return <article className="attendance-daily-card" key={workDate}>
+              <div className="attendance-daily-result">
+                <strong>{workDate}</strong>
+                {day ? <><span className={`attendance-day-status ${day.status}`}>{attendanceStatusLabels[day.status]}</span><dl><div><dt>排班</dt><dd>{day.scheduled_minutes} 分</dd></div><div><dt>實際</dt><dd>{day.actual_minutes} 分</dd></div></dl><em>{day.exception_count ? `${day.exception_count} 項異常` : "無異常"}</em></> : <><span className="attendance-day-status pending">尚未計算</span><em>等待管理員產生出勤結果</em></>}
+              </div>
+              <div className="attendance-daily-punches">
+                {punches.length ? punches.map((record) => <div className="attendance-daily-punch" key={record.id}>
+                  <span className={`attendance-event ${record.event_type}`}>{punchEventLabels[record.event_type]}</span>
+                  <div><strong>{formatTaipeiDateTime(record.occurred_at)}</strong><small>{punchSourceLabels[record.source]}</small></div>
+                  <div className="attendance-evidence"><span><MapPin size={14} /> {locationVerificationLabels[record.location_verification]}</span><small>GPS 誤差約 {Number(record.accuracy_m ?? 0).toFixed(0)} 公尺</small></div>
+                </div>) : <p className="attendance-no-punch">此工作日沒有原始打卡</p>}
+              </div>
+            </article>;
+          })}
         </section>
       )}
     </WorkspaceShell>

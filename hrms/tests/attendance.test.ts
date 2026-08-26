@@ -36,4 +36,15 @@ describe("attendance contracts", () => {
     expect(detailPage).toContain("異常證據");
     expect(detailPage).toContain("當日原始打卡");
   });
+
+  it("shows calculated results beside raw punches and keeps correction fields in an on-demand drawer", () => {
+    const employeePage = readFileSync(join(process.cwd(), "app/attendance/page.tsx"), "utf8");
+    const correctionForm = readFileSync(join(process.cwd(), "app/attendance/correction-form.tsx"), "utf8");
+    expect(employeePage).toContain("每日出勤結果與原始打卡");
+    expect(employeePage).toContain("attendance-daily-card");
+    expect(employeePage).toContain("punchesByWorkDate");
+    expect(correctionForm).toContain("申請補打卡");
+    expect(correctionForm).toContain("correction-drawer");
+    expect(correctionForm).toContain('role="dialog"');
+  });
 });
