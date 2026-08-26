@@ -2,6 +2,20 @@
 
 本檔只記錄實際完成的變更，不將規劃中的產品功能列為 Added。
 
+## 2026-08-26
+
+### Production
+
+- Supabase production migration history 已確認 `017`，並受控套用 `018` Holiday Calendar、`019` Attendance Rule Management、`020` Work Request Proofs。
+- Production 驗證 `017`–`020` 四筆 migration history、三條 `work_request_proofs_*` Storage policies、private proof bucket 與對應 tables/RPC 均存在。
+- 透過正式 `/admin/attendance-rules` 建立 Rule Set V2：遲到與早退寬限皆為 0 分鐘，自 2026-08-26 生效；確認 audit log 具有 actor。
+- 確認 `hs001` Employee、登入帳號與 tenant membership 均為 active 且已連結。
+- Vercel production deployment `dpl_4meiC5kERxFi9Bc4Hf4wAnNGrG7o` Ready，並 alias 至 `hrms.8sots.com.tw`；`/admin/holidays`、`/admin/attendance-rules`、`/admin/requests`、`/admin/attendance`、`/requests` smoke test 無 console error。
+
+### Validation
+
+- 本機 17 個測試檔／128 項 Vitest、TypeScript、ESLint 與 Next.js 16.3.2 production build 全數通過。
+
 ## 2026-08-25
 
 ### Added

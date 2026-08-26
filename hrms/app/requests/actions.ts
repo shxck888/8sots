@@ -1,9 +1,11 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
 import { workRequestInputSchema, workRequestWithdrawalSchema, type WorkRequestActionState } from "@/lib/work-request-contract";
+import { proofObjectPath, validateProofFile } from "@/lib/work-request-proofs";
 
 export async function createWorkRequest(input: unknown): Promise<WorkRequestActionState> {
   const parsed = workRequestInputSchema.safeParse(input);
@@ -37,6 +39,54 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
   revalidatePath("/requests");
   revalidatePath("/admin/requests");
   return { ok: true, message: "申請已送出，請等待管理員審核。" };
+}
+
+export async function attachWorkRequestProof(formData: FormData): Promise<WorkRequestActionState> {
+  const requestId = formData.get("requestId");
+  const file = formData.get("proof");
+  if (typeof requestId !== "string" || !(file instanceof File)) {
+    return { ok: false, message: "上傳內容不正確。" };
+  }
+
+  const validation = validateProofFile(file);
+  if (!validation.ok) return { ok: false, message: validation.error };
+
+  const workspace = await getWorkspaceContext();
+  if (!workspace?.tenantId || !workspace.employeeId) {
+    return { ok: false, message: "此帳號尚未連結在職員工資料。" };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const path = proofObjectPath({
+    tenantId: workspace.tenantId,
+    authUserId: workspace.userId,
+    requestId,
+    fileId: randomUUID(),
+    extension: validation.extension,
+  });
+
+  const { error: uploadError } = await supabase.storage
+    .from("work-request-proofs")
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (uploadError) return { ok: false, message: "證明上傳失敗，請稍後再試。" };
+
+  const { error } = await supabase.rpc("attach_work_request_proof", {
+    p_tenant_id: workspace.tenantId,
+    p_request_id: requestId,
+    p_object_path: path,
+    p_file_name: file.name.slice(0, 200),
+    p_content_type: file.type,
+    p_size_bytes: file.size,
+  });
+  if (error) {
+    await supabase.storage.from("work-request-proofs").remove([path]);
+    if (error.code === "55000") return { ok: false, message: "已審核或已撤回的申請無法再附證明。" };
+    return { ok: false, message: "證明附加失敗，請稍後再試。" };
+  }
+
+  revalidatePath("/requests");
+  revalidatePath("/admin/requests");
+  return { ok: true, message: "證明已上傳。" };
 }
 
 export async function withdrawWorkRequest(formData: FormData) {

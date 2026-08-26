@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ClipboardCheck, Clock3, LayoutDashboard, UsersRound } from "lucide-react";
+import { CalendarDays, CalendarHeart, ClipboardCheck, Clock3, LayoutDashboard, SlidersHorizontal, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,7 +8,9 @@ const items = [
   { href: "/", label: "工作台", icon: LayoutDashboard, exact: true },
   { href: "/admin/employees", label: "員工管理", icon: UsersRound },
   { href: "/admin/schedules", label: "排班管理", icon: CalendarDays },
+  { href: "/admin/holidays", label: "假日曆", icon: CalendarHeart },
   { href: "/admin/attendance", label: "打卡紀錄", icon: Clock3 },
+  { href: "/admin/attendance-rules", label: "出勤規則", icon: SlidersHorizontal },
   { href: "/admin/requests", label: "申請審核", icon: ClipboardCheck },
 ];
 

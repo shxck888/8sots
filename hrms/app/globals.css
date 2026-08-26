@@ -396,3 +396,69 @@ button { color: inherit; }
 }
 @media (max-width: 390px) { .stat-grid { gap: 7px; }.stat-grid article { padding: 13px 9px; }.stat-grid strong { font-size: 21px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition: none !important; } }
+
+/* Holiday calendar and pre-publish schedule warnings */
+.schedule-warnings { display: grid; gap: 8px; margin: 4px 0 16px; }
+.schedule-warning { display: flex; align-items: center; gap: 9px; padding: 10px 13px; border-radius: 11px; font-size: 12px; line-height: 1.5; border: 1px solid transparent; }
+.schedule-warning svg { flex: none; }
+.schedule-warning.warn { color: #8a5a15; background: #fbf1dc; border-color: #efd9ac; }
+.schedule-warning.info { color: #2b6150; background: #e7f1ec; border-color: #c8ded4; }
+.holiday-form { display: grid; grid-template-columns: minmax(150px,.8fr) minmax(160px,1.1fr) minmax(120px,.7fr) auto; gap: 12px; align-items: end; padding: 20px; }
+.holiday-form-field { display: grid; gap: 6px; }
+.holiday-form-field label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.holiday-form-field input, .holiday-form-field select { min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); }
+.holiday-form-field input:focus, .holiday-form-field select:focus { border-color: #4e8374; box-shadow: 0 0 0 3px rgba(57,120,103,.09); outline: none; }
+.holiday-form-note { grid-column: 1 / -1; }
+.holiday-form-hint { margin: 0; padding: 0 20px 18px; color: var(--muted); font-size: 11px; }
+.holiday-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.holiday-list li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px; border-top: 1px solid #ecebe5; }
+.holiday-list li:first-child { border-top: 0; }
+.holiday-list-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.holiday-list-main > div { display: grid; gap: 3px; min-width: 0; }
+.holiday-list-main strong { font-size: 14px; }
+.holiday-list-main small { color: var(--muted); font-size: 12px; }
+.holiday-kind { flex: none; width: max-content; padding: 5px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+.holiday-kind-national { color: #a2472f; background: #f6e4dc; }
+.holiday-kind-company { color: #2b6150; background: #e2efe7; }
+.holiday-kind-makeup_workday { color: #856329; background: #f3ead7; }
+.admin-button.ghost { color: #7a5049; background: #f4ece9; }
+.admin-button.ghost:hover { background: #ecdedb; }
+@media (max-width: 720px) {
+  .holiday-form { grid-template-columns: 1fr 1fr; }
+  .holiday-form-note, .holiday-form .admin-button { grid-column: 1 / -1; }
+  .holiday-form .admin-button { justify-content: center; }
+}
+
+/* Attendance rule set management */
+.rule-form { display: grid; grid-template-columns: repeat(3, minmax(120px,1fr)) auto; gap: 12px; align-items: end; padding: 20px; }
+.rule-form-field { display: grid; gap: 6px; }
+.rule-form-field label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.rule-form-field input { min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); }
+.rule-form-field input:focus { border-color: #4e8374; box-shadow: 0 0 0 3px rgba(57,120,103,.09); outline: none; }
+.rule-form-hint { margin: 0; padding: 0 20px 18px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.rule-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.rule-list li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 18px; border-top: 1px solid #ecebe5; }
+.rule-list li:first-child { border-top: 0; }
+.rule-list li.rule-active { background: #f1f7f3; }
+.rule-list-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.rule-list-main > div { display: grid; gap: 3px; }
+.rule-list-main strong { font-size: 14px; }
+.rule-list-main small { color: var(--muted); font-size: 12px; }
+.rule-version { flex: none; min-width: 42px; text-align: center; padding: 5px 9px; border-radius: 9px; font: 600 13px/1 Georgia, serif; color: #286554; background: #dfece5; }
+.rule-current { flex: none; display: inline-flex; align-items: center; gap: 5px; color: #23634e; background: #e0efe7; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+@media (max-width: 720px) {
+  .rule-form { grid-template-columns: 1fr 1fr; }
+  .rule-form .admin-button { grid-column: 1 / -1; justify-content: center; }
+}
+
+/* Work request proof attachments */
+.proof-uploader { display: grid; gap: 6px; margin-top: 8px; }
+.proof-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.proof-list li { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; }
+.proof-list-readonly { margin-top: 6px; }
+.proof-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.proof-file { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: #2b6150; background: #e7f1ec; padding: 6px 11px; border-radius: 9px; font-size: 12px; font-weight: 600; }
+.proof-message { color: var(--muted); font-size: 12px; }
+.request-proof-links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; color: var(--muted); font-size: 12px; }
+.request-proof-links a { display: inline-flex; align-items: center; gap: 4px; color: #2b6150; font-weight: 600; }
+.request-proof-links a:hover { text-decoration: underline; }

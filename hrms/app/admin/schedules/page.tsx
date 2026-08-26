@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Save } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Info, Plus, Save } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/admin";
@@ -9,9 +9,25 @@ import {
   shiftMinuteLabel,
   toIsoDate,
 } from "@/lib/schedules";
+import { computeScheduleWarnings, type ScheduleWarning } from "@/lib/schedule-warnings";
+import type { HolidayKind } from "@/lib/holidays";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createScheduleDraft, publishSchedule, saveScheduleDraft } from "./actions";
 import { PublishButton } from "./publish-button";
+
+function ScheduleWarnings({ warnings }: { warnings: ScheduleWarning[] }) {
+  if (warnings.length === 0) return null;
+  return (
+    <section aria-label="發布前提醒" className="schedule-warnings">
+      {warnings.map((warning) => (
+        <div className={`schedule-warning ${warning.level}`} key={warning.code + warning.message}>
+          {warning.level === "warn" ? <AlertTriangle size={16} /> : <Info size={16} />}
+          <span>{warning.message}</span>
+        </div>
+      ))}
+    </section>
+  );
+}
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +66,7 @@ export default async function SchedulesPage({ searchParams }: {
   const weekEnd = weekDates[6];
   const supabase = await createSupabaseServerClient();
 
-  const [employeesResult, shiftsResult, segmentsResult, versionsResult] = await Promise.all([
+  const [employeesResult, shiftsResult, segmentsResult, versionsResult, holidaysResult] = await Promise.all([
     supabase.from("employees").select("id, employee_no, full_name")
       .eq("tenant_id", admin.tenantId).eq("status", "active").order("employee_no"),
     supabase.from("shifts").select("id, code, name")
@@ -60,12 +76,19 @@ export default async function SchedulesPage({ searchParams }: {
     supabase.from("schedule_versions").select("id, version, status, published_at")
       .eq("tenant_id", admin.tenantId).eq("period_start", weekStart).eq("period_end", weekEnd)
       .order("version", { ascending: false }),
+    supabase.from("holiday_calendar_entries").select("holiday_date, name, kind")
+      .eq("tenant_id", admin.tenantId).gte("holiday_date", weekStart).lte("holiday_date", weekEnd),
   ]);
 
   const employees = employeesResult.data ?? [];
   const shifts = shiftsResult.data ?? [];
   const segments = segmentsResult.data ?? [];
   const versions = versionsResult.data ?? [];
+  const holidays = (holidaysResult.data ?? []).map((entry) => ({
+    holiday_date: entry.holiday_date,
+    name: entry.name,
+    kind: entry.kind as HolidayKind,
+  }));
   const draft = versions.find((version) => version.status === "draft") ?? null;
   const published = versions.find((version) => version.status === "published") ?? null;
   const selectedVersion = draft ?? published;
@@ -74,9 +97,13 @@ export default async function SchedulesPage({ searchParams }: {
     ? await supabase.from("schedule_assignments").select("employee_id, work_date, shift_id")
       .eq("tenant_id", admin.tenantId).eq("schedule_version_id", selectedVersion.id)
     : { data: [], error: null };
+  const assignmentRows = assignmentsResult.data ?? [];
   const assignmentMap = new Map(
-    (assignmentsResult.data ?? []).map((item) => [`${item.employee_id}:${item.work_date}`, item.shift_id]),
+    assignmentRows.map((item) => [`${item.employee_id}:${item.work_date}`, item.shift_id]),
   );
+  const scheduleWarnings = computeScheduleWarnings({
+    weekDates, employees, holidays, assignments: assignmentRows,
+  });
   const shiftLabels = new Map(shifts.map((shift) => {
     const parts = segments.filter((segment) => segment.shift_id === shift.id)
       .map((segment) => `${shiftMinuteLabel(segment.start_minute)}–${shiftMinuteLabel(segment.end_minute)}`);
@@ -190,6 +217,7 @@ export default async function SchedulesPage({ searchParams }: {
               </table>
             </div>
           </form>
+          <ScheduleWarnings warnings={scheduleWarnings} />
           <div className="schedule-publish-bar">
             <div><strong>發布本週班表</strong><span>{assignmentMap.size === 0 ? "至少安排一個班別並儲存後才能發布。" : "請先儲存草稿。發布後本版本不可直接修改。"}</span></div>
             <form action={publishSchedule}>

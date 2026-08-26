@@ -1,36 +1,41 @@
 # Next Steps
 
-Last Updated: 2026-08-25
+Last Updated: 2026-08-26
 
 ## Current Phase
 
-**請假／加班申請中心第一版 DONE；第二版 code completed、待 production migration 與真實員工驗收**。`017` 已加入待審申請撤回、年度假別分鐘額度，以及核准請假／加班與 Attendance calculation snapshot 的銜接；請假只計入與排班班段重疊的分鐘。本機 TypeScript、103 項測試、ESLint 與 production build 通過，並備妥 rollback-only V2 database test；依使用者指示尚未套用 production，不得標示正式上線。
+**請假／加班申請第二版與三項 Phase 1 收尾功能已完成 production migration、部署與 smoke test**。`017` 撤回／年度額度／核准後出勤快照、`018` Holiday Calendar、`019` 出勤規則管理、`020` 請假／加班附件證明均已套用 production；`hrms.8sots.com.tw` 已部署包含新管理頁的版本。Rule Set V2 已依使用者決策設為遲到／早退 0 分鐘寬限，自 2026-08-26 生效並留下 audit record。`hs001` 已確認 Employee、登入帳號與 membership 均為 active；仍需由使用者在真實手機完成 GPS 與申請流程操作驗收。
 
 ## Next Recommended Task (P0)
 
-完成真實 Employee operational acceptance：
+完成 `hs001` 真實 Employee operational acceptance：
 
-1. 由使用者指定一位真實 Employee 並確認是否建立／連結登入帳號，完成手機 GPS 打卡 → 缺卡 → 補卡 → 核准 → 重算 E2E；不得自行建立永久帳號。
-2. 與使用者確認遲到／早退寬限、未排班打卡、跨日與多餘卡的正式規則，再建立 Rule Set V2，不覆寫 V1。
-3. 由使用者指定真實 Employee 與帳號處置（沿用／建立），套用並驗證 `017` 後，使用同一帳號提出請假及加班，由管理員核准／拒絕並確認員工狀態、審核備註、撤回與額度更新；不得使用未經授權的永久測試帳號或申請。
+1. 由使用者以 `hs001` 在真實手機完成 GPS 打卡 → 缺卡 → 補卡 → 管理員核准 → 重算 E2E。
+2. 以 `hs001` 驗收請假／加班／撤回／額度／附件與出勤異常標記；不得為驗收建立永久假資料。
+3. 取得使用者確認的缺卡配對、未排班打卡、多餘卡等剩餘規則；Rule Set V2 的遲到／早退寬限已完成。
+
+## 本 session 已完成並套用 production
+
+- `018` Holiday Calendar：`holiday_calendar_entries`、`holiday_kind` enum、`upsert_holiday_entry`／`delete_holiday_entry` audited RPC、tenant RLS、`/admin/holidays` 管理頁；排班頁發布前依假日曆與排班狀態提示（整週未排、員工整週無班、國定假日仍排班、補班日未排）。
+- `019` 出勤規則管理：`create_attendance_rule_set`（版本化、`attendance.manage`、audited），`/admin/attendance-rules` 頁可填遲到／早退寬限與生效日並建立新版；`calculate_attendance` 依 `effective_from desc, version desc` 選用，故新版自動生效。
+- `020` 請假／加班附件證明：`work_request_attachments` 表、私人 Storage bucket `work-request-proofs`（本人上傳、`request.manage` 讀取的 storage policy）、`attach_work_request_proof` audited RPC、`leave_types.requires_proof`（病假預設 true）；員工於 `/requests` 為待審申請上傳證明，管理員於 `/admin/requests` 以短效簽名網址下載。
 
 ## Pending Priorities
 
 ### P0 — Attendance correctness and operations
 
-- 真實已連結員工的手機 operational acceptance；production UI deployment 與管理員 smoke test 已完成。
-- Rule Set V2 業務參數與生效日；不得把 Attendance 差異直接當成薪資扣款。
-- Correction 審核後通知與批次重算操作權限；受影響日期提醒及管理端 Segment evidence 明細已完成。
-- GPS consent 保存政策、mock-location 風險、CSP/security headers、rate limit 與 audit writer 強化。
-- 建立 production Server Timing／p95 navigation 監測，量測 `015` aggregate RPC 上線後的實際手機切頁時間；若管理頁仍超標，再針對員工列表、週排班與管理出勤建立獨立 read model。
+- `hs001` 真實手機 operational acceptance；`017`–`020` 已完成 production schema 與頁面驗證。
+- Rule Set V2 已建立為 0／0 分鐘並於 2026-08-26 生效；不得把 Attendance 差異直接當成薪資扣款。
+- Correction 審核後通知與批次重算操作權限；GPS consent 保存政策、mock-location 風險、CSP／security headers、rate limit 與 audit writer 強化。
+- 建立 production Server Timing／p95 navigation 監測。
 
-### P1 — Phase 1 completion
+### P1 — Phase 1 completion（剩餘皆需使用者這邊配合）
 
-- 請假／加班附件／證明與可配置多層 Approval；待審撤回、年度假別額度與核准後 Attendance snapshot 銜接已完成程式碼，待 production 驗證。
-- Holiday Calendar 與排班發布前完整性警示。
-- Password recovery、invitation、MFA 與非 Email 帳號綁定政策。
-- 建立 Company／Location 管理後才設定 geofence；目前無需門市且不得宣稱到店驗證。
-- QR 短效 token、防重放與裝置／離線補送規則。
+- 密碼復原、邀請、MFA 與非 Email 帳號綁定政策：需 Supabase Auth 後台設定與政策決定。
+- 建立 Company／Location 管理後才設定 geofence：需門市清單與座標範圍。
+- QR 短效 token、防重放與裝置／離線補送規則：需 token TTL 與裝置綁定決策。
+- （已完成 production，待真實員工操作驗收）請假／加班附件證明、假別額度與撤回、核准後 Attendance snapshot、Holiday Calendar 與發布前警示、出勤規則版本化機制。
+- （已決定不做）可配置多層 Approval 與代理人：維持單層審核。
 
 ### P2 — Subsequent phases
 
@@ -39,21 +44,18 @@ Last Updated: 2026-08-25
 
 ## Decisions Needed
 
-- 遲到／早退寬限分鐘、缺卡配對容錯、未排班打卡與多餘卡處理方式。
-- 補卡是否只允許最近 62 天、核准層級與是否需要員工撤回功能。
-- 各假別額度、生效日、證明要求、最小申請單位、跨日計算、加班認列與補休／加班費政策；目前不得從單層核准直接推導薪資結果。
-- Preview/production 拓撲、Tokyo region failover 與 secret rotation。
-- 金額表示、background job/queue、cache、observability 與公開 API conventions。
+- 已決定：請假／加班維持單層審核。
+- 已決定：遲到／早退均無寬限，Rule Set V2 自 2026-08-26 生效；`hs001` 為真實驗收 Employee；已授權並套用 `017`–`020`。
+- 待決定：缺卡配對容錯；各假別額度、生效日、證明要求、最小申請單位、跨日計算、加班認列與補休／加班費政策；門市與 geofence 資料；QR／離線規則；Preview／production 拓撲、Tokyo failover 與 secret rotation。
 
 ## Known Issues / Risks
 
-- Production 尚無經使用者授權的已連結 Employee 驗收帳號；Database 流程已用 rollback-only fixture 驗證。
-- `admin` 沒有連結 Employee，因此 production 只完成管理員申請頁 smoke test；員工送單與審核 E2E 仍待使用者指定真實員工帳號。
-- Rule V1 寬限為 0 分鐘，屬技術基線而非確認過的海之星人事政策。
-- Attendance 計算配對第 N 筆上班與第 N 筆下班；極端亂序／誤打仍需人工更正與後續規則強化。
+- `017`–`020` 已完成 production 驗證；真實手機 GPS、附件上傳、撤回與審核 E2E 仍需 `hs001` 實際操作。
+- `lib/database.types.ts` 已手動補上 `018`／`019`／`020`；本機缺少 Supabase access token，尚未用 `npm run db:types` 由 production schema 重新產生。
+- Rule V2 的 0／0 分鐘是使用者確認的海之星政策，自 2026-08-26 生效；V1 保留為歷史技術基線。
 - 尚無 Location/geofence；GPS 只保存 evidence。
-- Docker/Supabase local stack 不可用；真實 database integration tests 在受控遠端 transaction 執行。
-- 一般員工頁已移除主要串行查詢，但尚無正式 p50/p95 telemetry；不能只用單一手機體感宣稱效能目標完成。
+- Docker/Supabase local stack 不可用；真實 database integration tests 需在受控遠端 transaction 執行。
+- 使用者本機 device 執行環境於 2026-08-25 啟動失敗；本 session 的驗證改在雲端容器進行。
 
 ## Definition of Done
 

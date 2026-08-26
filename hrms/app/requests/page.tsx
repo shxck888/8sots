@@ -1,4 +1,4 @@
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Paperclip } from "lucide-react";
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { formatTaipeiDateTime } from "@/lib/schedule-display";
@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
 import { calculateLeaveBalance, formatRequestedMinutes, workRequestDecisionLabels, workRequestTypeLabels } from "@/lib/work-request-contract";
 import { RequestForm } from "./request-form";
+import { ProofUploader } from "./proof-uploader";
 import { withdrawWorkRequest } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -22,11 +23,18 @@ export default async function RequestsPage() {
     ])
     : [{ data: [] }, { data: [] }, { data: [] }];
   const requestIds = (requests ?? []).map((item) => item.id);
-  const [{ data: decisions }, { data: withdrawals }] = requestIds.length ? await Promise.all([
+  const [{ data: decisions }, { data: withdrawals }, { data: attachments }] = requestIds.length ? await Promise.all([
     supabase.from("work_request_decisions").select("*").in("work_request_id", requestIds),
     supabase.from("work_request_withdrawals").select("*").in("work_request_id", requestIds),
-  ]) : [{ data: [] }, { data: [] }];
+    supabase.from("work_request_attachments").select("id, work_request_id, file_name").in("work_request_id", requestIds),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }];
   const decisionByRequest = new Map((decisions ?? []).map((item) => [item.work_request_id, item]));
+  const attachmentsByRequest = new Map<string, { id: string; file_name: string }[]>();
+  for (const attachment of attachments ?? []) {
+    const list = attachmentsByRequest.get(attachment.work_request_id) ?? [];
+    list.push({ id: attachment.id, file_name: attachment.file_name });
+    attachmentsByRequest.set(attachment.work_request_id, list);
+  }
   const leaveTypeById = new Map((leaveTypes ?? []).map((item) => [item.id, item]));
   const withdrawnIds = new Set((withdrawals ?? []).map((item) => item.work_request_id));
   const usedByType = new Map<string, number>();
@@ -51,6 +59,11 @@ export default async function RequestsPage() {
             <span>{formatRequestedMinutes(request.requested_minutes)}</span>
             <span className={`correction-status ${withdrawn ? "withdrawn" : decision?.decision ?? "pending"}`}>{withdrawn ? "已撤回" : decision ? workRequestDecisionLabels[decision.decision] : "待審核"}</span>
             <em title={request.reason}>{request.reason}{decision?.review_note ? `｜審核：${decision.review_note}` : ""}{!decision && !withdrawn ? <form action={withdrawWorkRequest}><input name="requestId" type="hidden" value={request.id} /><button className="text-button" type="submit">撤回申請</button></form> : null}</em>
+            {!decision && !withdrawn
+              ? <ProofUploader attachments={attachmentsByRequest.get(request.id) ?? []} requestId={request.id} />
+              : (attachmentsByRequest.get(request.id)?.length
+                ? <ul className="proof-list proof-list-readonly">{attachmentsByRequest.get(request.id)!.map((attachment) => <li key={attachment.id}><Paperclip size={13} /> {attachment.file_name}</li>)}</ul>
+                : null)}
           </article>; })}
         </section>
       </>}

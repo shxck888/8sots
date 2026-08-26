@@ -863,6 +863,18 @@ export type Database = {
         timezone: string
         work_date: string
       }>
+      holiday_calendar_entries: SimpleTable<{
+        created_at: string
+        created_by: string | null
+        holiday_date: string
+        id: string
+        kind: Database["public"]["Enums"]["holiday_kind"]
+        name: string
+        note: string | null
+        tenant_id: string
+        updated_at: string
+        updated_by: string | null
+      }>
       leave_types: SimpleTable<{
         code: string
         created_at: string
@@ -870,7 +882,19 @@ export type Database = {
         id: string
         is_active: boolean
         name: string
+        requires_proof: boolean
         tenant_id: string
+      }>
+      work_request_attachments: SimpleTable<{
+        content_type: string
+        created_at: string
+        file_name: string
+        id: string
+        object_path: string
+        size_bytes: number
+        tenant_id: string
+        uploaded_by: string | null
+        work_request_id: string
       }>
       work_request_decisions: SimpleTable<{
         decided_at: string
@@ -1330,6 +1354,15 @@ export type Database = {
         }
         Returns: string
       }
+      create_attendance_rule_set: {
+        Args: {
+          p_early_leave_grace_minutes: number
+          p_effective_from: string
+          p_late_grace_minutes: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       create_work_request: {
         Args: {
           p_ends_local: string
@@ -1345,6 +1378,31 @@ export type Database = {
       current_user_has_permission: {
         Args: { p_permission_code: string; p_tenant_id: string }
         Returns: boolean
+      }
+      attach_work_request_proof: {
+        Args: {
+          p_content_type: string
+          p_file_name: string
+          p_object_path: string
+          p_request_id: string
+          p_size_bytes: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      upsert_holiday_entry: {
+        Args: {
+          p_holiday_date: string
+          p_kind: Database["public"]["Enums"]["holiday_kind"]
+          p_name: string
+          p_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      delete_holiday_entry: {
+        Args: { p_holiday_id: string; p_tenant_id: string }
+        Returns: undefined
       }
       current_user_tenant_ids: { Args: never; Returns: string[] }
       get_current_workspace_context: {
@@ -1554,6 +1612,7 @@ export type Database = {
         | "contract"
         | "temporary"
       gender_type: "male" | "female" | "non_binary" | "undisclosed"
+      holiday_kind: "national" | "company" | "makeup_workday"
       membership_status: "invited" | "active" | "suspended" | "revoked"
       organization_status: "active" | "inactive" | "archived"
       punch_event_type: "clock_in" | "clock_out"

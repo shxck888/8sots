@@ -77,6 +77,36 @@ const navigationPerformanceMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const holidayCalendarMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250018_holiday_calendar.sql"),
+  "utf8",
+).toLowerCase();
+
+const holidayCalendarTest = readFileSync(
+  join(process.cwd(), "supabase/tests/holiday_calendar.sql"),
+  "utf8",
+).toLowerCase();
+
+const attendanceRuleMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250019_attendance_rule_management.sql"),
+  "utf8",
+).toLowerCase();
+
+const attendanceRuleTest = readFileSync(
+  join(process.cwd(), "supabase/tests/attendance_rule_management.sql"),
+  "utf8",
+).toLowerCase();
+
+const workRequestProofMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608250020_work_request_proofs.sql"),
+  "utf8",
+).toLowerCase();
+
+const workRequestProofTest = readFileSync(
+  join(process.cwd(), "supabase/tests/work_request_proofs.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -407,6 +437,78 @@ describe("foundation migration contract", () => {
     expect(scheduleFoundationTest).toContain("published shift mutation unexpectedly succeeded");
     expect(scheduleFoundationTest).toContain("published schedule clone failed");
     expect(scheduleFoundationTest).toContain("batch schedule assignment save failed");
+  });
+
+  it("creates a tenant-scoped holiday calendar behind permission-checked audited RPCs", () => {
+    expect(holidayCalendarMigration).toContain("create table public.holiday_calendar_entries");
+    expect(holidayCalendarMigration).toContain("create type public.holiday_kind");
+    expect(holidayCalendarMigration).toContain("unique (tenant_id, holiday_date)");
+    expect(holidayCalendarMigration).toContain("alter table public.holiday_calendar_entries enable row level security");
+    expect(holidayCalendarMigration).toContain("holiday_calendar_entries_select_same_tenant");
+    expect(holidayCalendarMigration).toContain("current_user_has_permission");
+    expect(holidayCalendarMigration).toContain("'schedule.manage'");
+    expect(holidayCalendarMigration).toContain("upsert_holiday_entry");
+    expect(holidayCalendarMigration).toContain("delete_holiday_entry");
+    expect(holidayCalendarMigration).toContain("'holiday.created'");
+    expect(holidayCalendarMigration).toContain("'holiday.deleted'");
+    expect(holidayCalendarMigration).toContain("insert into public.audit_logs");
+    expect(holidayCalendarMigration).not.toMatch(
+      /grant\s+(insert|update|delete|all)[\s\S]*?public\.holiday_calendar_entries[\s\S]*?to authenticated/,
+    );
+  });
+
+  it("keeps the holiday calendar integration fixture rollback-only", () => {
+    expect(holidayCalendarTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(holidayCalendarTest.trim()).toMatch(/rollback;$/);
+    expect(holidayCalendarTest).not.toContain("commit;");
+    expect(holidayCalendarTest).toContain("holiday upsert failed");
+    expect(holidayCalendarTest).toContain("holiday duplicate date did not update");
+    expect(holidayCalendarTest).toContain("cross-tenant holiday leaked");
+    expect(holidayCalendarTest).toContain("unauthorized holiday write unexpectedly succeeded");
+  });
+
+  it("publishes new attendance rule set versions through a permission-checked audited RPC", () => {
+    expect(attendanceRuleMigration).toContain("create_attendance_rule_set");
+    expect(attendanceRuleMigration).toContain("current_user_has_permission");
+    expect(attendanceRuleMigration).toContain("'attendance.manage'");
+    expect(attendanceRuleMigration).toContain("coalesce(max(version), 0) + 1");
+    expect(attendanceRuleMigration).toContain("late grace minutes out of range");
+    expect(attendanceRuleMigration).toContain("early leave grace minutes out of range");
+    expect(attendanceRuleMigration).toContain("'attendance.rule_set_created'");
+    expect(attendanceRuleMigration).toContain("insert into public.audit_logs");
+  });
+
+  it("keeps the attendance rule management fixture rollback-only", () => {
+    expect(attendanceRuleTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(attendanceRuleTest.trim()).toMatch(/rollback;$/);
+    expect(attendanceRuleTest).not.toContain("commit;");
+    expect(attendanceRuleTest).toContain("rule set version was not incremented");
+    expect(attendanceRuleTest).toContain("out-of-range rule set unexpectedly succeeded");
+    expect(attendanceRuleTest).toContain("unauthorized rule set write unexpectedly succeeded");
+  });
+
+  it("stores work request proofs in a private bucket behind an owner-checked audited RPC", () => {
+    expect(workRequestProofMigration).toContain("create table public.work_request_attachments");
+    expect(workRequestProofMigration).toContain("alter table public.leave_types");
+    expect(workRequestProofMigration).toContain("requires_proof");
+    expect(workRequestProofMigration).toContain("'work-request-proofs', 'work-request-proofs', false, 5242880");
+    expect(workRequestProofMigration).toContain("work_request_proofs_owner_insert");
+    expect(workRequestProofMigration).toContain("work_request_proofs_reader_select");
+    expect(workRequestProofMigration).toContain("attach_work_request_proof");
+    expect(workRequestProofMigration).toContain("only own request proof can be attached");
+    expect(workRequestProofMigration).toContain("'work_request.proof_attached'");
+    expect(workRequestProofMigration).not.toMatch(
+      /grant\s+(insert|update|delete|all)[\s\S]*?public\.work_request_attachments[\s\S]*?to authenticated/,
+    );
+  });
+
+  it("keeps the work request proof fixture rollback-only", () => {
+    expect(workRequestProofTest).toMatch(/^--[\s\S]*?begin;/);
+    expect(workRequestProofTest.trim()).toMatch(/rollback;$/);
+    expect(workRequestProofTest).not.toContain("commit;");
+    expect(workRequestProofTest).toContain("proof attachment failed");
+    expect(workRequestProofTest).toContain("unauthorized proof attach unexpectedly succeeded");
+    expect(workRequestProofTest).toContain("withdrawn request proof attach unexpectedly succeeded");
   });
 
   it("keeps the cross-tenant RLS integration fixture transaction-scoped", () => {
