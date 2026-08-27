@@ -22,6 +22,9 @@ export async function decideWorkRequest(formData: FormData) {
     p_review_note: parsed.data.reviewNote,
     p_tenant_id: admin.tenantId,
   });
+  if (error?.message.includes("required leave proof missing")) {
+    redirect("/admin/requests?error=proofRequired");
+  }
   if (error) redirect("/admin/requests?error=decision");
   revalidatePath("/requests");
   revalidatePath("/admin/requests");

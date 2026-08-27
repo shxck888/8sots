@@ -106,6 +106,15 @@ describe("work request center", () => {
     expect(action).toContain("既有待審或已核准申請重疊");
   });
 
+  it("requires configured leave proof before approval", () => {
+    const migration = read("supabase/migrations/202608280027_require_proof_before_leave_approval.sql");
+    expect(migration).toContain("required leave proof missing");
+    expect(migration).toContain("lt.requires_proof");
+    expect(migration).toContain("work_request_attachments");
+    expect(read("app/admin/requests/actions.ts")).toContain("proofrequired");
+    expect(read("app/admin/requests/page.tsx")).toContain("待補證明");
+  });
+
   it("links both employee and admin navigation to real request pages", () => {
     expect(read("app/workspace-shell.tsx")).toContain('href: "/requests"');
     expect(read("app/admin/admin-nav.tsx")).toContain('href: "/admin/requests"');
