@@ -490,3 +490,30 @@ button { color: inherit; }
 .request-proof-links { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; color: var(--muted); font-size: 12px; }
 .request-proof-links a { display: inline-flex; align-items: center; gap: 4px; color: #2b6150; font-weight: 600; }
 .request-proof-links a:hover { text-decoration: underline; }
+
+/* Payroll draft and payslip */
+.payroll-setup form { display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)) auto; gap:10px; padding:18px; }
+.payroll-setup input,.payroll-setup select,.payroll-entry-list input,.payroll-entry-list select { min-height:42px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:#fff; }
+.payroll-chip-list { display:flex; gap:8px; flex-wrap:wrap; padding:0 18px 18px; }
+.payroll-chip-list span { padding:6px 9px; border-radius:999px; color:#345d52; background:#e9f1ed; font-size:12px; }
+.payroll-period>header { display:flex; justify-content:space-between; gap:16px; align-items:center; }
+.payroll-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.payroll-actions form { display:inline-flex; }
+.payroll-entry-list { display:grid; }
+.payroll-entry-list article { display:grid; grid-template-columns:minmax(240px,.8fr) 1.5fr; gap:16px; padding:16px 18px; border-top:1px solid #ecebe5; }
+.payroll-entry-list article>div { display:grid; gap:5px; }
+.payroll-entry-list article span,.payroll-entry-list article small { color:var(--muted); font-size:12px; }
+.payroll-entry-list form { display:grid; grid-template-columns:90px 1fr 110px 1fr auto; gap:8px; }
+.payslip-sheet { max-width:820px; margin:0 auto; padding:34px; border:1px solid var(--line); border-radius:16px; background:#fff; box-shadow:0 14px 35px rgba(25,55,47,.08); }
+.payslip-sheet>header,.payslip-period,.payslip-totals { display:flex; justify-content:space-between; gap:16px; }
+.payslip-sheet>header small,.payslip-sheet>header div { display:grid; gap:4px; }
+.payslip-period { margin:24px 0; padding:12px 0; border-block:1px solid var(--line); color:var(--muted); font-size:13px; }
+.payslip-sheet table { width:100%; border-collapse:collapse; }
+.payslip-sheet th,.payslip-sheet td { padding:12px; border-bottom:1px solid #ecebe5; text-align:left; }
+.payslip-sheet th:last-child,.payslip-sheet td:last-child { text-align:right; }
+.payslip-sheet td small { display:block; color:var(--muted); }
+.payslip-totals { margin-top:24px; }
+.payslip-totals div { display:grid; gap:5px; }.payslip-totals .net strong { color:#205f4c; font-size:24px; }
+.payslip-sheet footer { margin-top:28px; color:var(--muted); font-size:11px; line-height:1.6; }
+@media(max-width:760px){.payroll-setup form,.payroll-entry-list article,.payroll-entry-list form{grid-template-columns:1fr}.payroll-period>header,.payslip-sheet>header,.payslip-period,.payslip-totals{align-items:flex-start;flex-direction:column}.payslip-sheet{padding:20px}.payslip-totals{gap:12px}}
+@media print { body{background:#fff}.app-shell .sidebar,.mobile-nav,.no-print{display:none!important}.app-shell,.content{display:block!important}.payslip-sheet{max-width:none;margin:0;border:0;box-shadow:none}.payslip-sheet footer{page-break-inside:avoid} }

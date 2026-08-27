@@ -27,7 +27,7 @@ Supabase Auth + PostgreSQL with RLS
 - **Attendance**：Punch、工作日歸屬、考勤計算與異常；不自動核准加班。
 - **Leave / Overtime**：第一版共用 Work Request 與單次 final Decision；額度、薪資認列、撤回與證明尚未實作。
 - **Approval**：目前只有 request-specific 單層核准／拒絕；可配置流程、代理與多層步驟仍是後續模組。
-- **Payroll / Insurance**：有效日期規則、批次計算、鎖定與快照；不得反向修改考勤來源。
+- **Payroll / Insurance**：已建立有效日薪資、月結草稿、來源快照、人工調整、核對／鎖定與員工薪資單；未設定的保險、稅務及扣薪規則不自動套用，且不得反向修改考勤來源。
 - **Notification / Report / Audit**：跨模組消費者；不得成為核心交易資料的唯一來源。
 
 依賴原則：入口層 → 應用服務 → domain rules → data access。跨模組協作須透過穩定介面或事件，不直接修改其他模組的內部資料。

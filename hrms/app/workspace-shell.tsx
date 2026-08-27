@@ -1,5 +1,5 @@
 import {
-  CalendarDays, Clock3, LayoutDashboard, LogOut, MapPin, ReceiptText, Settings, Sparkles,
+  Banknote, CalendarDays, Clock3, LayoutDashboard, LogOut, MapPin, ReceiptText, Settings, Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
@@ -9,12 +9,13 @@ const nav = [
   { label: "我的班表", icon: CalendarDays, href: "/my-schedule" },
   { label: "出勤紀錄", icon: Clock3, href: "/attendance" },
   { label: "申請中心", icon: ReceiptText, href: "/requests" },
+  { label: "薪資單", icon: Banknote, href: "/payslips" },
 ];
 
 export function WorkspaceShell({
   activePath, canManage, children, displayName, email, tenantName,
 }: Readonly<{
-  activePath: "/" | "/my-schedule" | "/attendance" | "/requests";
+  activePath: "/" | "/my-schedule" | "/attendance" | "/requests" | "/payslips";
   canManage: boolean;
   children: React.ReactNode;
   displayName: string;

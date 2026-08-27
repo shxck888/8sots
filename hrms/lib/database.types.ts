@@ -21,6 +21,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      employee_compensation_versions: SimpleTable<{
+        created_at: string
+        created_by: string
+        effective_from: string
+        employee_id: string
+        id: string
+        monthly_base_cents: number
+        note: string | null
+        tenant_id: string
+      }>
+      payroll_components: SimpleTable<{
+        code: string
+        created_at: string
+        id: string
+        is_active: boolean
+        kind: Database["public"]["Enums"]["payroll_item_kind"]
+        name: string
+        tenant_id: string
+      }>
+      payroll_entries: SimpleTable<{
+        compensation_version_id: string | null
+        created_at: string
+        deduction_cents: number
+        employee_id: string
+        gross_cents: number
+        id: string
+        net_cents: number
+        payroll_period_id: string
+        source_snapshot: Json
+        tenant_id: string
+      }>
+      payroll_items: SimpleTable<{
+        amount_cents: number
+        code: string
+        component_id: string | null
+        created_at: string
+        created_by: string | null
+        id: string
+        kind: Database["public"]["Enums"]["payroll_item_kind"]
+        name: string
+        note: string | null
+        payroll_entry_id: string
+        source: string
+        tenant_id: string
+      }>
+      payroll_periods: SimpleTable<{
+        calculated_at: string | null
+        calculated_by: string | null
+        created_at: string
+        id: string
+        locked_at: string | null
+        locked_by: string | null
+        pay_date: string | null
+        period_end: string
+        period_month: string
+        period_start: string
+        reviewed_at: string | null
+        reviewed_by: string | null
+        status: Database["public"]["Enums"]["payroll_period_status"]
+        tenant_id: string
+      }>
+      payroll_rule_versions: SimpleTable<{
+        created_at: string
+        created_by: string
+        effective_from: string
+        id: string
+        rules: Json
+        source_note: string | null
+        tenant_id: string
+        version: number
+      }>
       attendance_calculation_runs: SimpleTable<{
         calculated_at: string
         calculated_by: string
@@ -1285,6 +1356,14 @@ export type Database = {
       }
     }
     Functions: {
+      add_payroll_adjustment: {
+        Args: { p_amount_cents: number; p_entry_id: string; p_kind: Database["public"]["Enums"]["payroll_item_kind"]; p_name: string; p_note: string; p_tenant_id: string }
+        Returns: string
+      }
+      calculate_payroll_draft: { Args: { p_period_id: string; p_tenant_id: string }; Returns: number }
+      create_payroll_period: { Args: { p_pay_date: string; p_period_month: string; p_tenant_id: string }; Returns: string }
+      set_payroll_period_status: { Args: { p_period_id: string; p_status: Database["public"]["Enums"]["payroll_period_status"]; p_tenant_id: string }; Returns: undefined }
+      upsert_employee_compensation: { Args: { p_effective_from: string; p_employee_id: string; p_monthly_base_cents: number; p_note: string; p_tenant_id: string }; Returns: string }
       calculate_attendance: {
         Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
         Returns: string
@@ -1595,6 +1674,8 @@ export type Database = {
       }
     }
     Enums: {
+      payroll_item_kind: "earning" | "deduction"
+      payroll_period_status: "draft" | "reviewed" | "locked"
       attendance_day_status: "complete" | "exception" | "unscheduled" | "leave"
       attendance_exception_type:
         | "missing_clock_in"

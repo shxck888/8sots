@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, CalendarHeart, ClipboardCheck, Clock3, LayoutDashboard, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Banknote, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, LayoutDashboard, SlidersHorizontal, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -12,6 +12,7 @@ const items = [
   { href: "/admin/attendance", label: "打卡紀錄", icon: Clock3 },
   { href: "/admin/attendance-rules", label: "出勤規則", icon: SlidersHorizontal },
   { href: "/admin/requests", label: "申請審核", icon: ClipboardCheck },
+  { href: "/admin/payroll", label: "薪資管理", icon: Banknote },
 ];
 
 export function AdminNav() {
