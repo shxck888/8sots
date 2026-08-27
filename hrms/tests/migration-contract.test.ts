@@ -132,6 +132,11 @@ const taiwanHolidaySeedMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const overlappingRequestMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202608280026_prevent_overlapping_work_requests.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -231,6 +236,17 @@ describe("official 2026 Taiwan holiday seed", () => {
     expect(taiwanHolidaySeedMigration).toContain("https://data.gov.tw/dataset/14718");
     expect(taiwanHolidaySeedMigration).toContain("holiday.official_calendar_imported");
     expect(taiwanHolidaySeedMigration).not.toContain("date '2026-01-03'");
+  });
+});
+
+describe("work-request overlap prevention", () => {
+  it("serializes submissions and ignores only withdrawn or rejected requests", () => {
+    expect(overlappingRequestMigration).toContain("pg_advisory_xact_lock");
+    expect(overlappingRequestMigration).toContain("existing.starts_at < v_ends_at");
+    expect(overlappingRequestMigration).toContain("existing.ends_at > v_starts_at");
+    expect(overlappingRequestMigration).toContain("public.work_request_withdrawals");
+    expect(overlappingRequestMigration).toContain("decision.decision = 'rejected'");
+    expect(overlappingRequestMigration).toContain("work request overlaps an active request");
   });
 });
 

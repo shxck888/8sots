@@ -50,6 +50,9 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
     if (error.message.includes("one local date")) {
       return { ok: false, message: "每筆請假只能選一個日期；多日請假請分開送出。" };
     }
+    if (error.message.includes("overlaps an active request")) {
+      return { ok: false, message: "所選時段與既有待審或已核准申請重疊，請調整時間後再送出。" };
+    }
     return { ok: false, message: "申請送出失敗，請稍後再試。" };
   }
 

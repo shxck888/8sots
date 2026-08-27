@@ -100,6 +100,12 @@ describe("work request center", () => {
     expect(migration).not.toMatch(/grant\s+(insert|update|delete|all)[\s\S]*?public\.work_requests[\s\S]*?to authenticated/);
   });
 
+  it("surfaces a specific message for overlapping active requests", () => {
+    const action = read("app/requests/actions.ts");
+    expect(action).toContain("overlaps an active request");
+    expect(action).toContain("既有待審或已核准申請重疊");
+  });
+
   it("links both employee and admin navigation to real request pages", () => {
     expect(read("app/workspace-shell.tsx")).toContain('href: "/requests"');
     expect(read("app/admin/admin-nav.tsx")).toContain('href: "/admin/requests"');
