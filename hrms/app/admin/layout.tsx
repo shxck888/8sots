@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           <span><Building2 size={20} /></span>
           <div><strong>餐飲 eHR</strong><small>管理後台</small></div>
         </Link>
-        <AdminNav />
+        <AdminNav permissions={admin.permissions} />
         <div className="admin-tenant"><small>目前組織</small><strong>{admin.tenantName}</strong></div>
         <form action={logout}>
           <button className="admin-logout" type="submit"><LogOut size={17} /> 登出</button>

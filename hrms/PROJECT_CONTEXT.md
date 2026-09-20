@@ -1,6 +1,8 @@
 # 餐飲 eHR — Project Context
 
-Last Updated: 2026-08-26
+Last Updated: 2026-09-21
+
+> 2026-09-21: Phase 2 operational settings and payroll draft hardening are now implemented through production migrations `029`–`031`. This includes versioned workplace/geofence settings, versioned payroll-cycle settings, monthly/hourly employee compensation, payroll review/lock/payslip history, audit viewer, database submission rate limits and application security headers. Real workplace and payroll values still must be entered by an administrator; tax/insurance automation, notifications, reports, QR/Wi-Fi/NFC attendance and Auth recovery/MFA remain future modules.
 
 ## Project Overview
 

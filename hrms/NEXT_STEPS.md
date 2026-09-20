@@ -1,6 +1,12 @@
 # Next Steps
 
-Last Updated: 2026-08-26
+Last Updated: 2026-09-21
+
+## 2026-09-21 completion update
+
+Production migrations `029`–`031` are applied. Administrators can now create effective-dated workplace/geofence and payroll-cycle settings from `/admin/settings`; settings are immutable versions with audit evidence. Payroll calculation now uses real Employee Master fields and only the latest attendance snapshot per work date, supports monthly/hourly compensation versions, preserves manual adjustments on recalculation, requires an explicit review note, prevents empty or incomplete payroll from being locked, and exposes only locked self payslips without recursive RLS. `/admin/audit` provides permission-checked audit history. Database rate limits and response security headers are also enabled.
+
+No workplace coordinates or payroll policy values were invented. Until an administrator creates a workplace version, GPS remains evidence-only; until payroll settings and each employee compensation version are entered and reviewed, payroll cannot be published. Insurance, withholding tax and legally sensitive automatic deductions remain intentionally unapplied and clearly labelled.
 
 ## Current Phase
 

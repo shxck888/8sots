@@ -41,6 +41,9 @@ describe("generated database types", () => {
           "guard_published_schedule_assignment",
           "guard_published_shift_segment",
           "prevent_punch_record_mutation",
+          "apply_punch_geofence",
+          "guard_payroll_history",
+          "enforce_submission_rate_limit",
         ].includes(entity),
     );
 

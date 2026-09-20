@@ -29,7 +29,7 @@ export default async function Home() {
         ...getMonthBounds(today),
         employeeId: workspace.employeeId,
       }), getEmployeePunchContext({ employeeId: workspace.employeeId, tenantId: workspace.tenantId })])
-    : [{ employeeId: null, entries: [] }, { employeeId: null, records: [] }];
+    : [{ employeeId: null, entries: [] }, { employeeId: null, records: [], policy: { configured: false } }];
   const todaySchedule = schedule.entries.find((entry) => entry.workDate === today);
   const scheduledMinutes = schedule.entries.reduce((total, entry) => total + entry.totalMinutes, 0);
   const todayLabel = new Intl.DateTimeFormat("zh-TW", {
@@ -67,7 +67,9 @@ export default async function Home() {
           <div className="location-orbit" aria-hidden="true">
             <div className="orbit outer" /><div className="orbit inner" />
             <div className="pin"><MapPin size={25} /></div>
-            <span className="location-label">店址圍欄尚未設定</span>
+            <span className="location-label">{punches.policy.configured
+              ? `${punches.policy.name ?? "門市"} · ${punches.policy.mode === "enforced" ? `範圍 ${punches.policy.radius_m ?? "—"}m` : "記錄定位"}`
+              : "店址圍欄尚未設定"}</span>
           </div>
         </section>
 
@@ -75,8 +77,8 @@ export default async function Home() {
           <div className="section-heading"><div><span className="eyebrow">本月摘要</span><h2>排班狀況</h2></div></div>
           <div className="stat-grid">
             <article><span className="stat-icon mint"><Clock3 size={20} /></span><strong>{formatScheduledHours(scheduledMinutes)}</strong><small>已發布排班時數</small></article>
-            <article><span className="stat-icon sand"><Coffee size={20} /></span><strong>—</strong><small>休假功能尚未上線</small></article>
-            <article><span className="stat-icon blue"><CheckCircle2 size={20} /></span><strong>—</strong><small>出勤統計尚未上線</small></article>
+            <article><span className="stat-icon sand"><Coffee size={20} /></span><strong><Link href="/requests">申請</Link></strong><small>請假與加班中心</small></article>
+            <article><span className="stat-icon blue"><CheckCircle2 size={20} /></span><strong><Link href="/attendance">查看</Link></strong><small>每日出勤與原始打卡</small></article>
           </div>
         </section>
 
@@ -100,7 +102,7 @@ export default async function Home() {
         <section className="team-card">
           <div className="section-heading"><div><span className="eyebrow">SYSTEM</span><h2>功能進度</h2></div><span className="team-count"><UsersRound size={16} /> 員工端</span></div>
           <div className="notice"><div className="notice-icon">班</div><div><strong>我的班表已連線</strong><p>只顯示管理員已發布的個人排班；草稿不會提前曝光。</p></div></div>
-          <div className="feature-status"><span><i className="online" /> 登入、個人班表與 GPS 原始打卡</span><span><i /> 出勤計算、店址圍欄與申請中心建構中</span></div>
+          <div className="feature-status"><span><i className="online" /> 登入、班表、GPS 打卡與申請中心</span><span><i className="online" /> 出勤結果與{punches.policy.configured ? "門市定位驗證已啟用" : "門市定位待管理員設定"}</span></div>
         </section>
       </div>
     </WorkspaceShell>

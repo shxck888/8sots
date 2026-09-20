@@ -30,6 +30,12 @@ type EmployeeMasterFunctions = {
   };
 };
 
+type PayrollFunctions = {
+  create_payroll_period: Omit<GeneratedFunctions["create_payroll_period"], "Args"> & {
+    Args: Omit<GeneratedFunctions["create_payroll_period"]["Args"], "p_pay_date"> & { p_pay_date: string | null };
+  };
+};
+
 /**
  * Application database contract.
  *
@@ -42,7 +48,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
   public: Omit<PublicSchema, "Functions"> & {
     Functions: Omit<
       GeneratedFunctions,
-      keyof EmployeeMasterFunctions
-    > & EmployeeMasterFunctions;
+      keyof EmployeeMasterFunctions | keyof PayrollFunctions
+    > & EmployeeMasterFunctions & PayrollFunctions;
   };
 };

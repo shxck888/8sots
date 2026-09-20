@@ -23,6 +23,7 @@ export async function requestPunchCorrection(input: unknown): Promise<Correction
   if (error) {
     if (error.message.includes("outside allowed window")) return { ok: false, message: "只能申請今天起算 62 天內的打卡更正。" };
     if (error.message.includes("active linked employee")) return { ok: false, message: "此帳號尚未連結在職員工資料。" };
+    if (error.message.includes("rate limit")) return { ok: false, message: "今天送出的補卡申請次數過多，請稍後再試或聯絡管理員。" };
     return { ok: false, message: "更正申請送出失敗，請稍後再試。" };
   }
   revalidatePath("/attendance");

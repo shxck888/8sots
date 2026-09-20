@@ -516,4 +516,50 @@ button { color: inherit; }
 .payslip-totals div { display:grid; gap:5px; }.payslip-totals .net strong { color:#205f4c; font-size:24px; }
 .payslip-sheet footer { margin-top:28px; color:var(--muted); font-size:11px; line-height:1.6; }
 @media(max-width:760px){.payroll-setup form,.payroll-entry-list article,.payroll-entry-list form{grid-template-columns:1fr}.payroll-period>header,.payslip-sheet>header,.payslip-period,.payslip-totals{align-items:flex-start;flex-direction:column}.payslip-sheet{padding:20px}.payslip-totals{gap:12px}}
+
+.settings-panel { margin-bottom: 22px; }
+.settings-panel > header { padding: 20px 22px 0; }
+.settings-panel h2 { display: flex; align-items: center; gap: 8px; }
+.settings-panel header p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.settings-form { padding: 20px 22px; display: grid; grid-template-columns: repeat(4,minmax(130px,1fr)); gap: 14px; align-items: end; }
+.settings-form label,.payroll-setup label,.payroll-review-form label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.settings-form input,.settings-form select,.payroll-setup label input,.payroll-setup label select,.payroll-review-form textarea { min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); font: inherit; }
+.settings-form .settings-wide { grid-column: span 2; }
+.settings-history { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.settings-history li { padding: 14px 22px; display: grid; grid-template-columns: minmax(120px,.45fr) minmax(260px,1fr); gap: 5px 18px; border-top: 1px solid #f0efe9; }
+.settings-history li:first-child { border-top: 0; }
+.settings-history span,.settings-history small { color: var(--muted); font-size: 12px; }
+.settings-history small { grid-column: 2; }
+.settings-error { padding: 0 22px 20px; color: #963b31; }
+.payroll-period-tabs,.payslip-tabs { margin: 18px 0; display: flex; gap: 8px; overflow-x: auto; }
+.payroll-period-tabs a,.payslip-tabs a { min-width: 104px; padding: 10px 13px; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); }
+.payroll-period-tabs a.active,.payslip-tabs a.active { border-color: #4e8374; background: #e9f1ed; }
+.payroll-period-tabs small { color: var(--muted); font-size: 11px; }
+.payroll-item-stack { min-width: 0; }
+.payroll-item-stack ul { margin: 0 0 10px; padding: 0; list-style: none; }
+.payroll-item-stack li { padding: 7px 4px; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; border-bottom: 1px solid #efeee9; }
+.payroll-item-stack li span { display: grid; }
+.payroll-item-stack li form button { padding: 5px; border: 0; border-radius: 7px; color: #963b31; background: #fff0ed; }
+.payroll-adjustment-form { display: grid; grid-template-columns: 86px 1fr 110px 1fr auto; gap: 8px; }
+.payroll-warning { color: #a45a2a !important; font-weight: 700; }
+.payroll-review-form { padding: 18px; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; border-top: 1px solid var(--line); background: #f8faf7; }
+.payroll-review-form textarea { min-height: 76px; resize: vertical; }
+.payslip-tabs { max-width: 920px; margin: 0 auto 18px; }
+.audit-table td { vertical-align: top; }
+.audit-table td > small,.audit-table td strong + small { margin-top: 3px; display: block; color: var(--muted); font-size: 10px; }
+.audit-table details { min-width: 160px; }
+.audit-table summary { cursor: pointer; color: #315f52; font-weight: 700; }
+.audit-table details b,.audit-table details code { margin-top: 7px; display: block; }
+.audit-table details code { max-width: 360px; padding: 7px; overflow-wrap: anywhere; white-space: normal; border-radius: 6px; background: #f4f6f1; font-size: 10px; }
+.audit-pagination { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; }
+
+@media(max-width:900px){
+  .settings-form { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .settings-history li { grid-template-columns: 1fr; }
+  .settings-history small { grid-column: 1; }
+}
+@media(max-width:760px){
+  .settings-form,.payroll-adjustment-form,.payroll-review-form { grid-template-columns: 1fr; }
+  .settings-form .settings-wide { grid-column: 1; }
+}
 @media print { body{background:#fff}.app-shell .sidebar,.mobile-nav,.no-print{display:none!important}.app-shell,.content{display:block!important}.payslip-sheet{max-width:none;margin:0;border:0;box-shadow:none}.payslip-sheet footer{page-break-inside:avoid} }

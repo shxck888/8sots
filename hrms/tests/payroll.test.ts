@@ -8,12 +8,15 @@ describe("payroll draft foundation", () => {
   it("validates exact money inputs and formats TWD", () => {
     expect(toCents(36500)).toBe(3650000);
     expect(formatMoney(3650000)).toContain("36,500");
-    expect(compensationSchema.safeParse({ employeeId: crypto.randomUUID(), effectiveFrom: "2026-09-01", monthlyBase: 36500, note: "" }).success).toBe(true);
+    expect(compensationSchema.safeParse({ employeeId: crypto.randomUUID(), effectiveFrom: "2026-09-01", payBasis: "monthly", rate: "36500.25", note: "" }).success).toBe(true);
+    expect(toCents("36500.25")).toBe(3650025);
+    expect(() => toCents("1.001")).toThrow();
+    expect(compensationSchema.safeParse({ employeeId: crypto.randomUUID(), effectiveFrom: "2026-09-01", payBasis: "monthly", rate: "", note: "" }).success).toBe(false);
     expect(payrollPeriodSchema.safeParse({ periodMonth: "2026-09", payDate: "2026-10-05" }).success).toBe(true);
-    expect(payrollAdjustmentSchema.safeParse({ entryId: crypto.randomUUID(), kind: "deduction", name: "人工調整", amount: 100, note: "" }).success).toBe(true);
+    expect(payrollAdjustmentSchema.safeParse({ entryId: crypto.randomUUID(), idempotencyKey: crypto.randomUUID(), kind: "deduction", name: "人工調整", amount: "100", note: "" }).success).toBe(true);
   });
   it("uses snapshot and lock semantics without guessing deductions", () => {
-    const sql = read("supabase/migrations/202608280028_payroll_draft_foundation.sql");
+    const sql = read("supabase/migrations/202608280028_payroll_draft_foundation.sql") + read("supabase/migrations/202609200030_payroll_integrity.sql");
     expect(sql).toContain("source_snapshot jsonb");
     expect(sql).toContain("automatic_deductions_applied',false");
     expect(sql).toContain("insurance_tax_applied',false");
@@ -24,7 +27,7 @@ describe("payroll draft foundation", () => {
   });
   it("publishes only locked payslips to employees", () => {
     const page = read("app/payslips/page.tsx");
-    expect(page).toContain('.eq("status","locked")');
+    expect(page).toMatch(/\.eq\("status",\s*"locked"\)/);
     expect(read("app/payslips/print-button.tsx")).toContain("列印／存成 pdf");
   });
 });

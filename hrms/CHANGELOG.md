@@ -205,3 +205,11 @@
 
 - TypeScript、ESLint、16 個 Vitest tests 與 Next.js production build 通過。
 - Local smoke test：首頁 `200`、health `200`、未設定 Supabase 的 me endpoint `503`（符合預期）。
+# 2026-09-21
+
+- Added effective-dated workplace/geofence and payroll-cycle administration.
+- Fixed payroll calculation against Employee Master, deduplicated attendance snapshots, preserved manual adjustments, and added monthly/hourly compensation versions.
+- Added explicit payroll review, immutable lock enforcement, payslip history and non-recursive employee payroll RLS.
+- Added permission-aware administration navigation, audited settings, a database-backed audit viewer and submission rate limits.
+- Added production response security headers and raised Server Action body limit to 6 MB for the existing 5 MB proof upload contract.
+- Added PGlite integration coverage that applies all migrations and executes geofence, payroll, RLS, audit and rate-limit workflows.

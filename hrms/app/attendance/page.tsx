@@ -44,7 +44,7 @@ export default async function AttendancePage() {
                 {punches.length ? punches.map((record) => <div className="attendance-daily-punch" key={record.id}>
                   <span className={`attendance-event ${record.event_type}`}>{punchEventLabels[record.event_type]}</span>
                   <div><strong>{formatTaipeiDateTime(record.occurred_at)}</strong><small>{punchSourceLabels[record.source]}</small></div>
-                  <div className="attendance-evidence"><span><MapPin size={14} /> {locationVerificationLabels[record.location_verification]}</span><small>GPS 誤差約 {Number(record.accuracy_m ?? 0).toFixed(0)} 公尺</small></div>
+                  <div className="attendance-evidence"><span><MapPin size={14} /> {locationVerificationLabels[record.location_verification]}</span><small>GPS 誤差約 {Number(record.accuracy_m ?? 0).toFixed(0)} 公尺{record.location_distance_m != null ? ` · 距門市約 ${Number(record.location_distance_m).toFixed(0)} 公尺` : ""}</small></div>
                 </div>) : <p className="attendance-no-punch">此工作日沒有原始打卡</p>}
               </div>
             </article>;

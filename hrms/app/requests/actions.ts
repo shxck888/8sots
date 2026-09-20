@@ -53,6 +53,9 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
     if (error.message.includes("overlaps an active request")) {
       return { ok: false, message: "所選時段與既有待審或已核准申請重疊，請調整時間後再送出。" };
     }
+    if (error.message.includes("rate limit")) {
+      return { ok: false, message: "今天送出的申請次數過多，請稍後再試或聯絡管理員。" };
+    }
     return { ok: false, message: "申請送出失敗，請稍後再試。" };
   }
 
@@ -101,6 +104,7 @@ export async function attachWorkRequestProof(formData: FormData): Promise<WorkRe
   if (error) {
     await supabase.storage.from("work-request-proofs").remove([path]);
     if (error.code === "55000") return { ok: false, message: "已審核或已撤回的申請無法再附證明。" };
+    if (error.message.includes("rate limit")) return { ok: false, message: "今天上傳的附件次數過多，請稍後再試。" };
     return { ok: false, message: "證明附加失敗，請稍後再試。" };
   }
 

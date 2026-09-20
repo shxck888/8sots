@@ -28,6 +28,8 @@ export type Database = {
         employee_id: string
         id: string
         monthly_base_cents: number
+        pay_basis: string
+        hourly_rate_cents: number
         note: string | null
         tenant_id: string
       }>
@@ -59,6 +61,7 @@ export type Database = {
         created_at: string
         created_by: string | null
         id: string
+        idempotency_key: string | null
         kind: Database["public"]["Enums"]["payroll_item_kind"]
         name: string
         note: string | null
@@ -71,6 +74,9 @@ export type Database = {
         calculated_by: string | null
         created_at: string
         id: string
+        rule_version_id: string | null
+        settings_snapshot: Json
+        review_note: string | null
         locked_at: string | null
         locked_by: string | null
         pay_date: string | null
@@ -91,6 +97,20 @@ export type Database = {
         source_note: string | null
         tenant_id: string
         version: number
+      }>
+      workplace_setting_versions: SimpleTable<{
+        id: string
+        tenant_id: string
+        effective_from: string
+        name: string
+        address: string
+        latitude: number
+        longitude: number
+        radius_m: number
+        max_accuracy_m: number
+        mode: string
+        created_by: string
+        created_at: string
       }>
       attendance_calculation_runs: SimpleTable<{
         calculated_at: string
@@ -840,12 +860,14 @@ export type Database = {
           latitude: number | null
           location_consent_at: string | null
           location_id: string | null
+          location_distance_m: number | null
           location_verification: Database["public"]["Enums"]["punch_location_verification"]
           longitude: number | null
           occurred_at: string
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
+          workplace_setting_version_id: string | null
           work_date: string
         }
         Insert: {
@@ -860,12 +882,14 @@ export type Database = {
           latitude?: number | null
           location_consent_at?: string | null
           location_id?: string | null
+          location_distance_m?: number | null
           location_verification?: Database["public"]["Enums"]["punch_location_verification"]
           longitude?: number | null
           occurred_at?: string
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
+          workplace_setting_version_id?: string | null
           work_date: string
         }
         Update: {
@@ -880,12 +904,14 @@ export type Database = {
           latitude?: number | null
           location_consent_at?: string | null
           location_id?: string | null
+          location_distance_m?: number | null
           location_verification?: Database["public"]["Enums"]["punch_location_verification"]
           longitude?: number | null
           occurred_at?: string
           source?: Database["public"]["Enums"]["punch_source"]
           tenant_id?: string
           timezone?: string
+          workplace_setting_version_id?: string | null
           work_date?: string
         }
         Relationships: [
@@ -1360,6 +1386,25 @@ export type Database = {
         Args: { p_amount_cents: number; p_entry_id: string; p_kind: Database["public"]["Enums"]["payroll_item_kind"]; p_name: string; p_note: string; p_tenant_id: string }
         Returns: string
       }
+      add_payroll_adjustment_once: {
+        Args: { p_amount_cents: number; p_entry_id: string; p_idempotency_key: string; p_kind: Database["public"]["Enums"]["payroll_item_kind"]; p_name: string; p_note: string; p_tenant_id: string }
+        Returns: string
+      }
+      remove_payroll_adjustment: { Args: { p_item_id: string; p_tenant_id: string }; Returns: undefined }
+      review_payroll_period: { Args: { p_period_id: string; p_review_note: string; p_tenant_id: string }; Returns: undefined }
+      save_employee_compensation: {
+        Args: { p_effective_from: string; p_employee_id: string; p_note: string; p_pay_basis: string; p_rate_cents: number; p_tenant_id: string }
+        Returns: string
+      }
+      save_payroll_settings: {
+        Args: { p_closing_day: number; p_default_basis: string; p_effective_from: string; p_note: string; p_pay_day: number; p_pay_month_offset: number; p_tenant_id: string }
+        Returns: string
+      }
+      save_workplace_settings: {
+        Args: { p_address: string; p_effective_from: string; p_latitude: number; p_longitude: number; p_max_accuracy_m: number; p_mode: string; p_name: string; p_radius_m: number; p_tenant_id: string }
+        Returns: string
+      }
+      can_read_locked_payroll: { Args: { p_employee_id?: string | null; p_period_id: string; p_tenant_id: string }; Returns: boolean }
       calculate_payroll_draft: { Args: { p_period_id: string; p_tenant_id: string }; Returns: number }
       create_payroll_period: { Args: { p_pay_date: string; p_period_month: string; p_tenant_id: string }; Returns: string }
       set_payroll_period_status: { Args: { p_period_id: string; p_status: Database["public"]["Enums"]["payroll_period_status"]; p_tenant_id: string }; Returns: undefined }
@@ -1491,6 +1536,9 @@ export type Database = {
           can_manage_employee: boolean
           can_manage_request: boolean
           can_manage_schedule: boolean
+          can_manage_payroll: boolean
+          can_manage_settings: boolean
+          can_read_audit: boolean
           email: string
           employee_id: string | null
           tenant_id: string | null
@@ -1506,6 +1554,22 @@ export type Database = {
           p_request_limit?: number
         }
         Returns: Json
+      }
+      get_my_punch_policy: { Args: never; Returns: Json }
+      get_audit_log_page: {
+        Args: { p_before?: string | null; p_limit?: number; p_tenant_id: string }
+        Returns: {
+          id: number
+          actor_user_id: string | null
+          actor_email: string
+          action: string
+          entity_type: string
+          entity_id: string | null
+          request_id: string | null
+          before_data: Json | null
+          after_data: Json | null
+          occurred_at: string
+        }[]
       }
       get_my_published_schedule: {
         Args: { p_date_from: string; p_date_to: string }
