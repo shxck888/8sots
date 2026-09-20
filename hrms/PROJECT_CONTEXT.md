@@ -4,6 +4,8 @@ Last Updated: 2026-09-21
 
 > 2026-09-21: Phase 2 operational settings and payroll draft hardening are now implemented through production migrations `029`–`031`. This includes versioned workplace/geofence settings, versioned payroll-cycle settings, monthly/hourly employee compensation, payroll review/lock/payslip history, audit viewer, database submission rate limits and application security headers. Real workplace and payroll values still must be entered by an administrator; tax/insurance automation, notifications, reports, QR/Wi-Fi/NFC attendance and Auth recovery/MFA remain future modules.
 
+> 2026-09-21: Auth recovery remains an operator-assisted process, but signed-in administrators can now change their own password at `/admin/account`. The action reauthenticates the current password, updates Supabase Auth, records a password-change audit event without storing the password, revokes all sessions and requires a fresh login. Production migration `032` is applied.
+
 ## Project Overview
 
 餐飲 eHR 是面向台灣餐飲業的多租戶人資 SaaS，以 responsive Web / PWA 服務員工、主管、HR 與業主。目標涵蓋組織與員工主檔、排班、GPS／Wi-Fi／QR 打卡、考勤、假勤與簽核、薪資、勞健保、通知、報表及稽核。系統不依賴 LINE；法規、費率與薪資規則必須可設定並保留版本。

@@ -135,9 +135,12 @@ describe("database migrations and critical workflows", () => {
 
   it("restricts audit history and rate-limits abnormal punch bursts", async () => {
     await setUser(fixtureIds.admin);
+    await db.query("select public.record_self_password_change($1)", [fixtureIds.tenant]);
     const audit = await db.query<{ action: string }>("select action from public.get_audit_log_page($1,100,null)", [fixtureIds.tenant]);
     expect(audit.rows.some((row) => row.action === "payroll.status_changed")).toBe(true);
+    expect(audit.rows.some((row) => row.action === "auth.password_changed")).toBe(true);
     await setUser(fixtureIds.employeeUser);
+    await expect(db.query("select public.record_self_password_change($1)", [fixtureIds.tenant])).rejects.toThrow(/administrator membership required/);
     await expect(db.query("select * from public.get_audit_log_page($1,100,null)", [fixtureIds.tenant])).rejects.toThrow(/security.audit permission required/);
 
     for (let index = 0; index < 19; index += 1) {

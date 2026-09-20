@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, FileClock, LayoutDashboard, Settings, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Banknote, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, FileClock, KeyRound, LayoutDashboard, Settings, SlidersHorizontal, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,6 +16,7 @@ const items: Array<{ href: string; label: string; icon: typeof LayoutDashboard; 
   { href: "/admin/payroll", label: "薪資管理", icon: Banknote, permission: "payroll" },
   { href: "/admin/settings", label: "系統設定", icon: Settings, permission: "settings" },
   { href: "/admin/audit", label: "稽核紀錄", icon: FileClock, permission: "audit" },
+  { href: "/admin/account", label: "帳號安全", icon: KeyRound },
 ];
 
 export function AdminNav({ permissions }: { permissions: Record<PermissionKey, boolean> }) {

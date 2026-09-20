@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; passwordChanged?: string; warning?: string }>;
 }) {
   let currentUser = null;
 
@@ -25,7 +25,7 @@ export default async function LoginPage({
     redirect("/");
   }
 
-  const { next } = await searchParams;
+  const { next, passwordChanged, warning } = await searchParams;
 
   return (
     <main className="login-shell">
@@ -47,6 +47,7 @@ export default async function LoginPage({
           <span className="login-kicker">WELCOME BACK</span>
           <h2>登入員工工作台</h2>
           <p className="login-intro">使用公司提供的工作帳號登入。</p>
+          {passwordChanged === "1" ? <p className="login-success" role="status">密碼已變更，請使用新密碼重新登入。{warning ? " 若舊裝置仍保持登入，請聯絡系統管理員檢查稽核紀錄。" : ""}</p> : null}
           <LoginForm nextPath={sanitizeNextPath(next)} />
           <p className="login-help">尚未取得帳號或忘記密碼？請聯絡門市主管或 HR。</p>
         </div>

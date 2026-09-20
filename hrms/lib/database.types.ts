@@ -1630,6 +1630,10 @@ export type Database = {
         Args: { p_employee_id: string; p_tenant_id: string }
         Returns: undefined
       }
+      record_self_password_change: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
+      }
       record_gps_punch: {
         Args: {
           p_accuracy_m: number

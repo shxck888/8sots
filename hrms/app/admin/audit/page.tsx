@@ -12,7 +12,7 @@ const actionLabels: Record<string, string> = {
   "punch_correction.requested": "申請補卡", "punch_correction.approved": "核准補卡", "punch_correction.rejected": "拒絕補卡",
   "work_request.requested": "建立申請", "work_request.approved": "核准申請", "work_request.rejected": "拒絕申請", "work_request.withdrawn": "撤回申請",
   "employee.created": "建立員工", "employee.updated": "更新員工", "employee.account_provisioned": "建立登入帳號",
-  "employee.account_status_changed": "變更帳號狀態", "employee.password_reset": "重設員工密碼",
+  "employee.account_status_changed": "變更帳號狀態", "employee.password_reset": "重設員工密碼", "auth.password_changed": "管理員變更自己的密碼",
   "schedule.draft_created": "建立班表草稿", "schedule.assignments_saved": "儲存班表", "schedule.published": "發布班表",
   "payroll.compensation_created": "建立薪資版本", "payroll.period_created": "建立薪資月份", "payroll.draft_calculated": "試算薪資",
   "payroll.adjustment_added": "新增薪資調整", "payroll.adjustment_removed": "移除薪資調整", "payroll.status_changed": "變更薪資狀態",
