@@ -36,7 +36,13 @@ export function toCents(amount: string | number) {
   return Number(cents);
 }
 export function formatMoney(cents: number) {
-  return new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 }).format(cents / 100);
+  const hasFraction = Math.abs(cents) % 100 !== 0;
+  return new Intl.NumberFormat("zh-TW", {
+    style: "currency",
+    currency: "TWD",
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: hasFraction ? 2 : 0,
+  }).format(cents / 100);
 }
 
 export const payrollStatusLabels = { draft: "草稿", reviewed: "已核對", locked: "已鎖定" } as const;

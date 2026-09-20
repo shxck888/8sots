@@ -10,6 +10,7 @@ describe("payroll draft foundation", () => {
     expect(formatMoney(3650000)).toContain("36,500");
     expect(compensationSchema.safeParse({ employeeId: crypto.randomUUID(), effectiveFrom: "2026-09-01", payBasis: "monthly", rate: "36500.25", note: "" }).success).toBe(true);
     expect(toCents("36500.25")).toBe(3650025);
+    expect(formatMoney(3650025)).toContain("36,500.25");
     expect(() => toCents("1.001")).toThrow();
     expect(compensationSchema.safeParse({ employeeId: crypto.randomUUID(), effectiveFrom: "2026-09-01", payBasis: "monthly", rate: "", note: "" }).success).toBe(false);
     expect(payrollPeriodSchema.safeParse({ periodMonth: "2026-09", payDate: "2026-10-05" }).success).toBe(true);
