@@ -580,4 +580,52 @@ button { color: inherit; }
   .account-security-form { grid-template-columns: 1fr; }
   .account-security-form label:first-child,.account-security-note { grid-column: 1; }
 }
+
+/* Readability baseline: body copy stays legible on desktop, tablet and mobile. */
+body { font-size: 16px; line-height: 1.55; }
+p { font-size: 15px !important; line-height: 1.65; }
+small { font-size: 14px !important; line-height: 1.5; }
+label { font-size: 15px !important; line-height: 1.45; }
+input, select, textarea { font-size: 16px !important; line-height: 1.45; }
+button { font-size: 15px; }
+table { font-size: 15px; }
+th { font-size: 13px !important; line-height: 1.45; }
+td { font-size: 15px; line-height: 1.5; }
+code { font-size: 14px !important; line-height: 1.55; }
+
+.login-kicker,.eyebrow,.admin-eyebrow { font-size: 12px; line-height: 1.45; }
+.login-trust,.login-intro,.login-help,.field-error,.login-error,.login-success { font-size: 14px; }
+.login-form > label { font-size: 15px !important; }
+.login-input input { font-size: 16px !important; }
+.login-submit { font-size: 16px; }
+
+.nav-item,.admin-nav a { font-size: 15px; }
+.mobile-nav a,.mobile-nav button { font-size: 14px; }
+.store-card > span:last-child,.profile-mini div span,.admin-brand small,.admin-tenant small { font-size: 14px; }
+.profile-mini div:nth-child(2),.admin-brand strong,.admin-tenant strong { font-size: 15px; }
+.admin-entry,.admin-button,.table-action,.text-button { font-size: 15px; }
+.admin-success,.admin-form-error,.admin-form-success { font-size: 15px; line-height: 1.55; }
+.admin-search input,.admin-table,.admin-table code { font-size: 15px !important; }
+.employee-status,.schedule-status,.account-status,.holiday-kind,.rule-current { font-size: 14px !important; }
+
+.date-label,.status-pill,.shift-note,.qr-button,.location-label,.location-consent,.punch-message { font-size: 15px; line-height: 1.55; }
+.section-heading a,.date-chip,.team-count,.feature-status,.attendance-list-heading > span { font-size: 14px; line-height: 1.5; }
+.stat-grid small,.schedule-detail span,.schedule-detail em,.notice p,.avatars small { font-size: 14px !important; }
+.timeline-row time,.schedule-detail strong,.notice strong,.dashboard-empty strong { font-size: 16px; }
+.dashboard-empty p { font-size: 15px !important; }
+
+.attendance-list strong,.attendance-daily-punch strong { font-size: 16px; line-height: 1.45; }
+.attendance-list small,.attendance-evidence,.attendance-event,.correction-card > div > p,.correction-message { font-size: 14px; line-height: 1.55; }
+.attendance-summary-list article,.attendance-summary-list article em,.attendance-day-status,.correction-status,.exception-chip { font-size: 14px; line-height: 1.5; }
+.correction-review-list article span,.correction-review-list article p,.correction-review-list button { font-size: 14px; line-height: 1.5; }
+.attendance-calculate p,.attendance-recalc-alert p,.attendance-segment-list span,.attendance-segment-list strong,.attendance-exception-list p,.attendance-evidence-list strong { font-size: 15px !important; line-height: 1.55; }
+
+.work-request-form-card > header p,.work-request-review > header small,.request-policy-note { font-size: 15px !important; }
+.leave-balance-grid article span,.leave-balance-grid article small,.proof-list li,.proof-file,.proof-message,.request-proof-links { font-size: 14px !important; line-height: 1.5; }
+.my-schedule-header p,.my-week-nav strong,.my-schedule-summary p,.my-day-card > header span,.my-day-card > header em,.my-segments p,.my-total,.my-day-empty span,.my-schedule-empty p { font-size: 15px !important; line-height: 1.55; }
+.my-day-empty strong { font-size: 17px; }
+
+.schedule-warning,.holiday-form-hint,.rule-form-hint,.settings-panel header p,.settings-history span,.payroll-chip-list span,.payroll-entry-list article span,.payroll-entry-list article small,.payslip-period,.payslip-sheet footer,.account-security-panel > header p,.account-security-note span,.payroll-period-tabs small { font-size: 14px !important; line-height: 1.55; }
+.audit-table td > small,.audit-table td strong + small,.audit-table details code { font-size: 14px !important; line-height: 1.55; }
+
 @media print { body{background:#fff}.app-shell .sidebar,.mobile-nav,.no-print{display:none!important}.app-shell,.content{display:block!important}.payslip-sheet{max-width:none;margin:0;border:0;box-shadow:none}.payslip-sheet footer{page-break-inside:avoid} }
