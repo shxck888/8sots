@@ -39,7 +39,7 @@ No workplace coordinates or payroll policy values were invented. Until an admini
 
 ### P1 — Phase 1 completion（剩餘皆需使用者這邊配合）
 
-- 密碼復原、邀請、MFA 與非 Email 帳號綁定政策：需 Supabase Auth 後台設定與政策決定。
+- 員工自助忘記密碼已決定不做；員工忘記密碼時聯絡主管，由具 `employee.manage` 權限者在員工帳號管理重設。管理員可在登入後自行變更密碼，完全遺失時維持 operator-assisted recovery。邀請與 MFA 僅在未來有需求時再評估。
 - 建立 Company／Location 管理後才設定 geofence：需門市清單與座標範圍。
 - QR 短效 token、防重放與裝置／離線補送規則：需 token TTL 與裝置綁定決策。
 - （已完成 production，待真實員工操作驗收）請假／加班附件證明、假別額度與撤回、核准後 Attendance snapshot、Holiday Calendar 與發布前警示、出勤規則版本化機制。
@@ -53,6 +53,7 @@ No workplace coordinates or payroll policy values were invented. Until an admini
 ## Decisions Needed
 
 - 已決定：請假／加班維持單層審核。
+- 已決定：不提供員工自助忘記密碼流程；由主管在後台重設，避免以身分證等固定個資作為唯一復原憑證。
 - 已決定：遲到／早退均無寬限，Rule Set V2 自 2026-08-26 生效；`hs001` 為真實驗收 Employee；已授權並套用 `017`–`020`。
 - 待決定：缺卡配對容錯；各假別額度、生效日、證明要求、最小申請單位、跨日計算、加班認列與補休／加班費政策；門市與 geofence 資料；QR／離線規則；Preview／production 拓撲、Tokyo failover 與 secret rotation。
 

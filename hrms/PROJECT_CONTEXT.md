@@ -2,9 +2,9 @@
 
 Last Updated: 2026-09-21
 
-> 2026-09-21: Phase 2 operational settings and payroll draft hardening are now implemented through production migrations `029`–`031`. This includes versioned workplace/geofence settings, versioned payroll-cycle settings, monthly/hourly employee compensation, payroll review/lock/payslip history, audit viewer, database submission rate limits and application security headers. Real workplace and payroll values still must be entered by an administrator; tax/insurance automation, notifications, reports, QR/Wi-Fi/NFC attendance and Auth recovery/MFA remain future modules.
+> 2026-09-21: Phase 2 operational settings and payroll draft hardening are now implemented through production migrations `029`–`031`. This includes versioned workplace/geofence settings, versioned payroll-cycle settings, monthly/hourly employee compensation, payroll review/lock/payslip history, audit viewer, database submission rate limits and application security headers. Real workplace and payroll values still must be entered by an administrator; tax/insurance automation, notifications, reports and QR/Wi-Fi/NFC attendance remain future modules.
 
-> 2026-09-21: Auth recovery remains an operator-assisted process, but signed-in administrators can now change their own password at `/admin/account`. The action reauthenticates the current password, updates Supabase Auth, records a password-change audit event without storing the password, revokes all sessions and requires a fresh login. Production migration `032` is applied.
+> 2026-09-21: Employee self-service password recovery is intentionally not provided. Employees contact a supervisor, who uses the existing permission-protected Employee Account panel to reset the password. Signed-in administrators can change their own password at `/admin/account`; a fully lost administrator password remains operator-assisted. Passwords and identity numbers are never used as audit content.
 
 ## Project Overview
 
@@ -54,7 +54,7 @@ Last Updated: 2026-09-21
 
 ### PLANNED
 
-- Password recovery、邀請、MFA、QR/geofence 與後續業務模組。
+- 邀請、MFA、QR／Wi-Fi／NFC 打卡與後續業務模組；員工自助密碼復原已決定不做。
 - Phase 2 後續：假別額度／證明、撤回、代理人與可配置多層 Approval；請假／加班單層審核第一版已完成。
 - Phase 3：Salary、Payroll、Insurance、Payslip。
 - Phase 4：分析、人事成本、營收整合、進階規則、多公司與外部 API。
@@ -85,7 +85,7 @@ Last Updated: 2026-09-21
 - **DONE:** Attendance Rule V1、版本化計算批次、每日／班段／異常快照、員工補卡申請與管理員核准／拒絕 Database foundation。
 - **DONE:** Attendance 日期範圍計算、版本化快照、員工補卡與管理員審核 UI production slice。
 - **DONE:** 請假／加班申請、四種初始假別、員工狀態查詢與管理員單層審核 production slice。
-- **PLANNED:** Password Recovery/MFA、QR/geofence、假別額度與多層 Approval、Payroll、Insurance、Notification、Report。
+- **PLANNED:** MFA、QR／Wi-Fi／NFC、Insurance、Notification、Report；員工自助密碼復原與多層 Approval 已決定不做。
 
 ## Non-Negotiable Rules
 

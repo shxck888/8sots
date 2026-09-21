@@ -231,3 +231,12 @@ ADR 的 Accepted 表示方向已決定，不表示已有程式碼或測試。日
 - **Alternatives:** 直接在 Request row 覆寫 mutable status；立即建立通用 polymorphic workflow engine；把請假與加班費率寫死在第一版。
 - **Consequences:** 目前拒絕或核准後不能再次決定，也尚無撤回；管理員只做單層決策。未來若導入多層流程，須以新 migration 新增 Approval aggregate／actions 或版本，不可覆蓋既有 Decision；薪資與假期額度只能消費明確版本化的認列結果。
 - **Implementation:** Migration `202608250016_request_center.sql`、`/requests`、`/admin/requests`、`lib/work-request-contract.ts` 與 request center contracts。
+
+## ADR-023: Supervisor-assisted employee password reset
+
+- **Status:** Accepted
+- **Date:** 2026-09-21
+- **Context:** 內部帳號使用不可收信的識別網域；以身分證字號等固定個資直接自助重設會讓已知或外洩個資變成帳號接管憑證。
+- **Decision:** 不提供員工自助忘記密碼流程。員工忘記密碼時直接聯絡主管，由具 `employee.manage` 權限者在既有 Employee Account panel 設定新密碼；操作經 server-only Auth Admin boundary 並留下不含密碼的稽核紀錄。登入頁維持聯絡主管或 HR 的指示。管理員登入後可於 `/admin/account` 變更自己的密碼；完全遺失則採 operator-assisted recovery。
+- **Reason:** 符合小型門市當面核對流程，不引入 Email／SMS 成本，也避免將身分證等高風險 PII 當成單一認證因素。
+- **Consequences:** 員工無法在沒有主管協助時自行恢復帳號；主管應先當面確認本人，臨時密碼不得透過公開群組傳送。未來若導入自助復原，必須使用已驗證的 possession factor、短效單次 token、限流與復原通知，不可僅核對固定個資。
