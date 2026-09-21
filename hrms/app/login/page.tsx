@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { Star } from "lucide-react";
 import { sanitizeNextPath } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LoginForm } from "./login-form";
@@ -29,24 +29,14 @@ export default async function LoginPage({
 
   return (
     <main className="login-shell">
-      <section className="login-story" aria-label="餐飲 eHR 介紹">
-        <div className="login-brand">
-          <span className="brand-mark"><Sparkles size={20} /></span>
-          <span>餐飲 <strong>eHR</strong></span>
-        </div>
-        <div className="login-story-copy">
-          <span className="login-kicker">RESTAURANT PEOPLE OPERATIONS</span>
-          <h1>讓每一個班次，<br />都從安心開始。</h1>
-          <p>排班、出勤與人事資訊集中在同一個安全入口，讓餐飲團隊把時間留給真正重要的服務。</p>
-        </div>
-        <div className="login-trust"><ShieldCheck size={18} /> 以 Supabase Auth 保護帳號與工作資料</div>
-      </section>
-
-      <section className="login-panel">
+      <section className="login-panel" aria-label="海之星員工登入">
         <div className="login-card">
-          <span className="login-kicker">WELCOME BACK</span>
-          <h2>登入員工工作台</h2>
-          <p className="login-intro">使用公司提供的工作帳號登入。</p>
+          <div className="login-card-brand">
+            <span className="brand-mark"><Star aria-hidden="true" size={20} /></span>
+            <div><strong>海之星</strong><span>員工工作台</span></div>
+          </div>
+          <h1>員工登入</h1>
+          <p className="login-intro">請使用您的員工帳號登入。</p>
           {passwordChanged === "1" ? <p className="login-success" role="status">密碼已變更，請使用新密碼重新登入。{warning ? " 若舊裝置仍保持登入，請聯絡系統管理員檢查稽核紀錄。" : ""}</p> : null}
           <LoginForm nextPath={sanitizeNextPath(next)} />
           <p className="login-help">尚未取得帳號或忘記密碼？請聯絡門市主管或 HR。</p>

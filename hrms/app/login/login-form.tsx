@@ -57,7 +57,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       {state.message ? <p className="login-error" role="alert">{state.message}</p> : null}
 
       <button className="login-submit" disabled={pending} type="submit">
-        {pending ? "登入中…" : "登入工作台"}
+        {pending ? "登入中…" : "登入"}
         {!pending ? <ArrowRight aria-hidden="true" size={19} /> : null}
       </button>
     </form>

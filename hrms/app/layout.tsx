@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "餐飲 eHR｜今日工作台",
-  description: "為台灣餐飲團隊設計的排班、打卡與人資工作台。",
-  applicationName: "餐飲 eHR",
+  title: "海之星｜員工工作台",
+  description: "海之星員工專用工作台。",
+  applicationName: "海之星員工工作台",
 };
 
 export const viewport: Viewport = {
