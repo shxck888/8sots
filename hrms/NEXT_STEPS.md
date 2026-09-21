@@ -8,7 +8,9 @@ Production migrations `029`–`031` are applied. Administrators can now create e
 
 Production migration `032` is applied. Signed-in administrators can change their own password from `/admin/account`; the workflow verifies the current password, records a password-free audit event, revokes all sessions and returns to login. A fully forgotten administrator password still requires operator-assisted recovery because the internal Auth email address is not a deliverable mailbox.
 
-No workplace coordinates or payroll policy values were invented. Until an administrator creates a workplace version, GPS remains evidence-only; until payroll settings and each employee compensation version are entered and reviewed, payroll cannot be published. Insurance, withholding tax and legally sensitive automatic deductions remain intentionally unapplied and clearly labelled.
+Production migrations `033`–`034` are applied. The in-app notification center now covers request/correction creation and decisions, request withdrawal, schedule publication and locked-payslip publication. Payroll now uses effective-dated statutory rules, employee insurance/tax profiles and leave-pay ratios to calculate approved overtime, leave deductions or paid leave, labor/employment/health insurance, voluntary pension and configured income-tax withholding. Missing versions become explicit blockers and prevent review/lock.
+
+No workplace coordinates, insurance brackets, withholding amounts or legal rates were invented. Administrators must create the applicable versions in `/admin/settings` and `/admin/payroll`; locked periods preserve the versions and snapshots used.
 
 ## Current Phase
 
@@ -16,11 +18,12 @@ No workplace coordinates or payroll policy values were invented. Until an admini
 
 ## Next Recommended Task (P0)
 
-完成 `hs001` 真實 Employee operational acceptance：
+完成 `hs001` 真實 Employee operational acceptance 與正式薪資參數建檔：
 
 1. 由使用者以 `hs001` 在真實手機完成 GPS 打卡 → 缺卡 → 補卡 → 管理員核准 → 重算 E2E。
 2. 以 `hs001` 驗收請假／加班／撤回／額度／附件與出勤異常標記；不得為驗收建立永久假資料。
 3. 取得使用者確認的缺卡配對、未排班打卡、多餘卡等剩餘規則；Rule Set V2 的遲到／早退寬限已完成。
+4. 由管理員依正式投保級距與公司適用法規建立法定薪資版本、每位員工投保／扣繳版本及各假別給薪比例，再以一個測試月份核對後鎖定。
 
 ## 本 session 已完成並套用 production
 
@@ -47,8 +50,8 @@ No workplace coordinates or payroll policy values were invented. Until an admini
 
 ### P2 — Subsequent phases
 
-- Salary、Payroll、Insurance、Payslip 與背景 job。
-- Notification、Report、Labor Cost、Revenue integration 與進階 rule engine。
+- 薪資草稿、法定扣款連動、Payslip 與站內通知已完成；後續為週期性背景工作、申報檔／報表與薪資批次匯出。
+- Report、Labor Cost、Revenue integration 與進階 rule engine。
 
 ## Decisions Needed
 
@@ -60,10 +63,10 @@ No workplace coordinates or payroll policy values were invented. Until an admini
 ## Known Issues / Risks
 
 - `017`–`020` 已完成 production 驗證；真實手機 GPS、附件上傳、撤回與審核 E2E 仍需 `hs001` 實際操作。
-- `lib/database.types.ts` 已手動補上 `018`／`019`／`020`；本機缺少 Supabase access token，尚未用 `npm run db:types` 由 production schema 重新產生。
+- `lib/database.types.ts` 已由套用 `034` 後的 production schema 重新產生。
 - Rule V2 的 0／0 分鐘是使用者確認的海之星政策，自 2026-08-26 生效；V1 保留為歷史技術基線。
 - 尚無 Location/geofence；GPS 只保存 evidence。
-- Docker/Supabase local stack 不可用；真實 database integration tests 需在受控遠端 transaction 執行。
+- Docker/Supabase local stack不再是 migration 驗證的必要條件；PGlite 會依序實際套用全部 migration 並測試關鍵工作流，production migration 仍由 Supabase CLI 受控套用。
 - 使用者本機 device 執行環境於 2026-08-25 啟動失敗；本 session 的驗證改在雲端容器進行。
 
 ## Definition of Done

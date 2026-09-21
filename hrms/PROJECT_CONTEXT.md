@@ -2,7 +2,7 @@
 
 Last Updated: 2026-09-21
 
-> 2026-09-21: Phase 2 operational settings and payroll draft hardening are now implemented through production migrations `029`–`031`. This includes versioned workplace/geofence settings, versioned payroll-cycle settings, monthly/hourly employee compensation, payroll review/lock/payslip history, audit viewer, database submission rate limits and application security headers. Real workplace and payroll values still must be entered by an administrator; tax/insurance automation, notifications, reports and QR/Wi-Fi/NFC attendance remain future modules.
+> 2026-09-21: Phase 2 operational settings, statutory payroll linkage and the notification center are implemented through production migrations `029`–`034`. This includes versioned workplace/geofence and payroll-cycle settings, monthly/hourly compensation, effective-dated statutory rates, employee insurance/tax profiles, leave-pay ratios, approved leave/overtime linkage, payroll review/lock/payslip history, in-app notifications, audit viewer, rate limits and security headers. Real workplace, insurance and tax values still must be entered by an administrator; reports and QR/Wi-Fi/NFC attendance remain future modules.
 
 > 2026-09-21: Employee self-service password recovery is intentionally not provided. Employees contact a supervisor, who uses the existing permission-protected Employee Account panel to reset the password. Signed-in administrators can change their own password at `/admin/account`; a fully lost administrator password remains operator-assisted. Passwords and identity numbers are never used as audit content.
 
@@ -17,7 +17,7 @@ Last Updated: 2026-09-21
 ### DONE（已完成且有驗證證據）
 
 - Next.js 16 / React 19 / TypeScript strict 應用骨架、ESLint、Vitest、production build 與 PWA manifest。
-- Responsive 員工今日工作台已讀取真實 published schedule，並提供明確同意後的 GPS 上／下班打卡；休假與通知仍標示未上線。
+- Responsive 員工今日工作台已讀取真實 published schedule，並提供明確同意後的 GPS 上／下班打卡與可點擊的未讀通知中心。
 - `GET /api/health` 與 `GET /api/v1/me` 基線。
 - Tenant、Membership、Company、Location、RBAC、Audit Log、RLS 與最小 Data API grants migrations。
 - Supabase production 已套用 `202608240001` 至 `202608250016`；`015` 建立常用導覽 aggregate RPC，`016` 建立請假／加班申請、審核、假別與 `request.manage` 權限。正式 `/admin/requests` 可成功讀取，證明新權限與 schema 生效。
@@ -45,7 +45,7 @@ Last Updated: 2026-09-21
 - 手機版已套用高可讀性字級與觸控規範：主要小字至少約 15px、表單控制 16px、重要出勤時間 18px，並以 regression test 防止縮回過小字級。
 - 動態頁面已加入 employee/admin `loading.tsx` 即時回饋與部分預取；Proxy 使用本地 JWT claims，工作區身份／租戶／四項管理權限／Employee link 合併成單一 RPC，個人班表及出勤各自合併成單一 RPC，並由 React request-scoped cache 去重。
 - Vercel Functions 明確部署於東京 `hnd1`，與 Supabase `ap-northeast-1` 同區，避免每個動態頁面由預設華盛頓 region 跨太平洋查詢資料庫。
-- 目前程式通過 ESLint、TypeScript、100 項 Vitest 與 Next.js production build。
+- 目前程式通過 ESLint、TypeScript、159 項 Vitest、Next.js production build，以及正式站桌機／手機 Chromium 公開與權限導向 E2E。
 
 ### IN PROGRESS
 
@@ -56,7 +56,7 @@ Last Updated: 2026-09-21
 
 - 邀請、MFA、QR／Wi-Fi／NFC 打卡與後續業務模組；員工自助密碼復原已決定不做。
 - Phase 2 後續：假別額度／證明、撤回、代理人與可配置多層 Approval；請假／加班單層審核第一版已完成。
-- Phase 3：Salary、Payroll、Insurance、Payslip。
+- Phase 3 核心 Salary、Payroll、Insurance linkage、Payslip 與站內 Notification 已完成；仍需管理員輸入正式費率／投保資料並做實際月份驗收。
 - Phase 4：分析、人事成本、營收整合、進階規則、多公司與外部 API。
 
 ## Tech Stack
@@ -85,7 +85,8 @@ Last Updated: 2026-09-21
 - **DONE:** Attendance Rule V1、版本化計算批次、每日／班段／異常快照、員工補卡申請與管理員核准／拒絕 Database foundation。
 - **DONE:** Attendance 日期範圍計算、版本化快照、員工補卡與管理員審核 UI production slice。
 - **DONE:** 請假／加班申請、四種初始假別、員工狀態查詢與管理員單層審核 production slice。
-- **PLANNED:** MFA、QR／Wi-Fi／NFC、Insurance、Notification、Report；員工自助密碼復原與多層 Approval 已決定不做。
+- **DONE:** 版本化薪資、法定扣款、核准請假／加班連動、鎖定 Payslip 與站內通知中心。
+- **PLANNED:** MFA、QR／Wi-Fi／NFC、Report；員工自助密碼復原與多層 Approval 已決定不做。
 
 ## Non-Negotiable Rules
 
