@@ -45,6 +45,12 @@ export const payrollStatutorySettingsSchema = z.object({
   sourceNote: z.string().trim().min(5).max(500),
 });
 
+export const annualLeavePolicySchema = z.object({
+  effectiveFrom: z.iso.date(),
+  standardDayMinutes: integer(60, 720),
+  sourceNote: z.string().trim().min(5).max(500),
+});
+
 export function percentageToPpm(value: number) {
   return Math.round(value * 10_000);
 }

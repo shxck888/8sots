@@ -4,13 +4,37 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/admin";
 import {
-  multiplierToPpm, payrollSettingsSchema, payrollStatutorySettingsSchema,
+  annualLeavePolicySchema, multiplierToPpm, payrollSettingsSchema, payrollStatutorySettingsSchema,
   percentageToPpm, workplaceSettingsSchema,
 } from "@/lib/operations-settings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-function destination(kind: "workplace" | "payroll" | "statutory", error?: string): never {
+function destination(kind: "workplace" | "payroll" | "statutory" | "annual-leave", error?: string): never {
   redirect(`/admin/settings?${error ? `error=${error}` : `saved=${kind}`}`);
+}
+
+export async function saveAnnualLeavePolicy(formData: FormData) {
+  const parsed = annualLeavePolicySchema.safeParse({
+    effectiveFrom: formData.get("effectiveFrom"),
+    standardDayMinutes: formData.get("standardDayMinutes"),
+    sourceNote: formData.get("sourceNote"),
+  });
+  if (!parsed.success) destination("annual-leave", "annual-leave-input");
+  const admin = await getAdminContext("request.manage");
+  if (!admin) destination("annual-leave", "permission");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("save_annual_leave_policy", {
+    p_tenant_id: admin.tenantId,
+    p_effective_from: parsed.data.effectiveFrom,
+    p_standard_day_minutes: parsed.data.standardDayMinutes,
+    p_source_note: parsed.data.sourceNote,
+  });
+  if (error) destination("annual-leave", error.code === "42501" ? "permission" : "save");
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin/requests");
+  revalidatePath("/requests");
+  revalidatePath("/admin/payroll");
+  destination("annual-leave");
 }
 
 export async function savePayrollStatutorySettings(formData: FormData) {

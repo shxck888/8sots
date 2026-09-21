@@ -49,6 +49,8 @@ describe("generated database types", () => {
           "notify_schedule_published",
           "notify_payroll_locked",
           "guard_payroll_configuration_version",
+          "guard_annual_leave_policy_version",
+          "allocate_approved_annual_leave",
         ].includes(entity),
     );
 

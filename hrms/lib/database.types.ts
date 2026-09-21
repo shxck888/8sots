@@ -14,6 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
+      annual_leave_adjustments: {
+        Row: {
+          adjustment_minutes: number
+          created_at: string
+          created_by: string
+          employee_id: string
+          grant_id: string
+          id: string
+          reason: string
+          tenant_id: string
+        }
+        Insert: {
+          adjustment_minutes: number
+          created_at?: string
+          created_by: string
+          employee_id: string
+          grant_id: string
+          id?: string
+          reason: string
+          tenant_id: string
+        }
+        Update: {
+          adjustment_minutes?: number
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          grant_id?: string
+          id?: string
+          reason?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_leave_adjustments_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_adjustments_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_adjustments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_leave_adjustments_tenant_id_grant_id_fkey"
+            columns: ["tenant_id", "grant_id"]
+            isOneToOne: false
+            referencedRelation: "annual_leave_grants"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      annual_leave_grants: {
+        Row: {
+          created_at: string
+          employee_id: string
+          granted_days: number
+          granted_minutes: number
+          id: string
+          period_end_exclusive: string
+          period_start: string
+          policy_version_id: string
+          service_milestone_months: number
+          settlement_status: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          granted_days: number
+          granted_minutes: number
+          id?: string
+          period_end_exclusive: string
+          period_start: string
+          policy_version_id: string
+          service_milestone_months: number
+          settlement_status?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          granted_days?: number
+          granted_minutes?: number
+          id?: string
+          period_end_exclusive?: string
+          period_start?: string
+          policy_version_id?: string
+          service_milestone_months?: number
+          settlement_status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_policy_version_id_fkey"
+            columns: ["tenant_id", "policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "annual_leave_policy_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      annual_leave_policy_versions: {
+        Row: {
+          allocation_method: string
+          created_at: string
+          created_by: string
+          effective_from: string
+          id: string
+          source_note: string
+          standard_day_minutes: number
+          statutory_tiers: Json
+          tenant_id: string
+          unused_leave_treatment: string
+        }
+        Insert: {
+          allocation_method?: string
+          created_at?: string
+          created_by: string
+          effective_from: string
+          id?: string
+          source_note: string
+          standard_day_minutes: number
+          statutory_tiers: Json
+          tenant_id: string
+          unused_leave_treatment?: string
+        }
+        Update: {
+          allocation_method?: string
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          id?: string
+          source_note?: string
+          standard_day_minutes?: number
+          statutory_tiers?: Json
+          tenant_id?: string
+          unused_leave_treatment?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_leave_policy_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      annual_leave_usages: {
+        Row: {
+          created_at: string
+          employee_id: string
+          grant_id: string
+          id: string
+          tenant_id: string
+          used_minutes: number
+          work_request_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          grant_id: string
+          id?: string
+          tenant_id: string
+          used_minutes: number
+          work_request_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          grant_id?: string
+          id?: string
+          tenant_id?: string
+          used_minutes?: number
+          work_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_leave_usages_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_usages_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_usages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_leave_usages_tenant_id_grant_id_fkey"
+            columns: ["tenant_id", "grant_id"]
+            isOneToOne: false
+            referencedRelation: "annual_leave_grants"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_usages_tenant_id_work_request_id_fkey"
+            columns: ["tenant_id", "work_request_id"]
+            isOneToOne: false
+            referencedRelation: "work_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
       attendance_calculation_runs: {
         Row: {
           calculated_at: string
@@ -2632,6 +2878,15 @@ export type Database = {
       }
     }
     Functions: {
+      add_annual_leave_adjustment: {
+        Args: {
+          p_adjustment_minutes: number
+          p_grant_id: string
+          p_reason: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       add_payroll_adjustment: {
         Args: {
           p_amount_cents: number
@@ -2655,6 +2910,11 @@ export type Database = {
         }
         Returns: string
       }
+      annual_leave_days_for_milestone: {
+        Args: { p_service_milestone_months: number }
+        Returns: number
+      }
+      annual_leave_statutory_tiers: { Args: never; Returns: Json }
       assign_schedule_shift: {
         Args: {
           p_employee_id: string
@@ -2817,6 +3077,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_annual_leave_balance: {
+        Args: { p_as_of?: string; p_employee_id: string; p_tenant_id: string }
+        Returns: Json
+      }
       get_audit_log_page: {
         Args: { p_before?: string; p_limit?: number; p_tenant_id: string }
         Returns: {
@@ -2850,6 +3114,7 @@ export type Database = {
           user_metadata: Json
         }[]
       }
+      get_my_annual_leave_balance: { Args: { p_as_of?: string }; Returns: Json }
       get_my_attendance_overview: {
         Args: {
           p_day_limit?: number
@@ -2968,6 +3233,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_annual_leave_policy: {
+        Args: {
+          p_effective_from: string
+          p_source_note: string
+          p_standard_day_minutes: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       save_employee_compensation: {
         Args: {
           p_effective_from: string
@@ -3084,6 +3358,14 @@ export type Database = {
           p_tenant_id: string
         }
         Returns: undefined
+      }
+      sync_annual_leave_grants: {
+        Args: { p_as_of?: string; p_tenant_id: string }
+        Returns: number
+      }
+      sync_employee_annual_leave: {
+        Args: { p_as_of: string; p_employee_id: string; p_tenant_id: string }
+        Returns: string
       }
       update_employee: {
         Args: {

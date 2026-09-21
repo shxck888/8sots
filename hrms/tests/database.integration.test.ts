@@ -165,6 +165,62 @@ describe("database migrations and critical workflows", () => {
     await db.exec("reset role");
   });
 
+  it("grants statutory annual leave by anniversary and deducts approved requests", async () => {
+    await setUser(fixtureIds.admin);
+    await db.query(
+      "insert into public.leave_types(tenant_id,code,name) values($1,'ANNUAL','特別休假') on conflict(tenant_id,code) do nothing",
+      [fixtureIds.tenant],
+    );
+    const policy = await db.query<{ id: string }>(
+      "select public.save_annual_leave_policy($1,$2,480,$3) id",
+      [fixtureIds.tenant, "2026-01-01", "勞動基準法第 38 條週年制測試"],
+    );
+    await expect(db.query(
+      "update public.annual_leave_policy_versions set standard_day_minutes=420 where id=$1",
+      [policy.rows[0].id],
+    )).rejects.toThrow(/immutable/);
+
+    await setUser(fixtureIds.employeeUser);
+    const initial = await db.query<{ balance: { configured: boolean; available_minutes: number; standard_day_minutes: number } }>(
+      "select public.get_my_annual_leave_balance($1) balance",
+      ["2026-09-21"],
+    );
+    expect(initial.rows[0].balance).toMatchObject({ configured: true, available_minutes: 1_440, standard_day_minutes: 480 });
+
+    const request = await db.query<{ id: string }>(`select public.create_work_request(
+      $1,'leave',(select id from public.leave_types where tenant_id=$1 and code='ANNUAL'),
+      '2026-09-22 10:00','2026-09-22 12:00','法定特休扣抵測試',$2) id`,
+      [fixtureIds.tenant, crypto.randomUUID()]);
+    await setUser(fixtureIds.admin);
+    await db.query("select public.decide_work_request($1,$2,'approved','核准特休測試')", [fixtureIds.tenant, request.rows[0].id]);
+    const afterApproval = await db.query<{ balance: { available_minutes: number; used_minutes: number } }>(
+      "select public.get_annual_leave_balance($1,$2,$3) balance",
+      [fixtureIds.tenant, fixtureIds.employee, "2026-09-22"],
+    );
+    expect(afterApproval.rows[0].balance).toMatchObject({ available_minutes: 1_320, used_minutes: 120 });
+
+    await setUser(fixtureIds.employeeUser);
+    const excessive = await db.query<{ id: string }>(`select public.create_work_request(
+      $1,'leave',(select id from public.leave_types where tenant_id=$1 and code='ANNUAL'),
+      '2026-09-24 00:00','2026-09-24 23:59','超過法定特休餘額測試',$2) id`,
+      [fixtureIds.tenant, crypto.randomUUID()]);
+    await setUser(fixtureIds.admin);
+    await expect(db.query(
+      "select public.decide_work_request($1,$2,'approved','應阻擋超額核准')",
+      [fixtureIds.tenant, excessive.rows[0].id],
+    )).rejects.toThrow(/insufficient annual leave balance/);
+
+    const anniversary = await db.query<{ balance: { available_minutes: number; used_minutes: number; grants: Array<{ service_milestone_months: number; settlement_status: string }> } }>(
+      "select public.get_annual_leave_balance($1,$2,$3) balance",
+      [fixtureIds.tenant, fixtureIds.employee, "2027-01-01"],
+    );
+    expect(anniversary.rows[0].balance).toMatchObject({ available_minutes: 3_360, used_minutes: 0 });
+    expect(anniversary.rows[0].balance.grants).toEqual(expect.arrayContaining([
+      expect.objectContaining({ service_milestone_months: 6, settlement_status: "pending" }),
+      expect.objectContaining({ service_milestone_months: 12, settlement_status: "not_due" }),
+    ]));
+  });
+
   it("restricts audit history and rate-limits abnormal punch bursts", async () => {
     await setUser(fixtureIds.admin);
     await db.query("select public.record_self_password_change($1)", [fixtureIds.tenant]);

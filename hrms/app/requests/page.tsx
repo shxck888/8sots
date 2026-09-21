@@ -1,10 +1,13 @@
-import { ClipboardList, Paperclip } from "lucide-react";
+import { CalendarDays, ClipboardList, Paperclip } from "lucide-react";
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { formatTaipeiDateTime } from "@/lib/schedule-display";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
-import { calculateLeaveBalance, formatRequestedMinutes, workRequestDecisionLabels, workRequestTypeLabels } from "@/lib/work-request-contract";
+import {
+  annualLeavePeriodEnd, calculateLeaveBalance, formatAnnualLeaveMinutes, formatRequestedMinutes,
+  parseAnnualLeaveBalance, workRequestDecisionLabels, workRequestTypeLabels,
+} from "@/lib/work-request-contract";
 import { RequestForm } from "./request-form";
 import { ProofUploader } from "./proof-uploader";
 import { withdrawWorkRequest } from "./actions";
@@ -15,14 +18,15 @@ export default async function RequestsPage() {
   const workspace = await getWorkspaceContext();
   if (!workspace) redirect("/login");
   const supabase = await createSupabaseServerClient();
-  const [{ data: leaveTypes }, { data: requests }, { data: entitlements }, { data: holidays }] = workspace.employeeId && workspace.tenantId
+  const [{ data: leaveTypes }, { data: requests }, { data: entitlements }, { data: holidays }, annualBalanceResult] = workspace.employeeId && workspace.tenantId
     ? await Promise.all([
       supabase.from("leave_types").select("*").eq("tenant_id", workspace.tenantId).eq("is_active", true).order("code"),
       supabase.from("work_requests").select("*").eq("tenant_id", workspace.tenantId).eq("employee_id", workspace.employeeId).order("requested_at", { ascending: false }).limit(50),
       supabase.from("leave_entitlements").select("*").eq("tenant_id", workspace.tenantId).eq("employee_id", workspace.employeeId).eq("entitlement_year", new Date().getFullYear()),
       supabase.from("holiday_calendar_entries").select("holiday_date, kind").eq("tenant_id", workspace.tenantId).in("kind", ["national", "company"]),
+      supabase.rpc("get_my_annual_leave_balance"),
     ])
-    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: null, error: null }];
   const requestIds = (requests ?? []).map((item) => item.id);
   const [{ data: decisions }, { data: withdrawals }, { data: attachments }] = requestIds.length ? await Promise.all([
     supabase.from("work_request_decisions").select("*").in("work_request_id", requestIds),
@@ -38,6 +42,10 @@ export default async function RequestsPage() {
   }
   const leaveTypeById = new Map((leaveTypes ?? []).map((item) => [item.id, item]));
   const withdrawnIds = new Set((withdrawals ?? []).map((item) => item.work_request_id));
+  const annualLeave = parseAnnualLeaveBalance(annualBalanceResult.data);
+  const manualEntitlements = (entitlements ?? []).filter((item) => leaveTypeById.get(item.leave_type_id)?.code !== "ANNUAL");
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(new Date());
+  const currentAnnualGrant = annualLeave.grants.find((grant) => grant.periodStart <= today && grant.periodEndExclusive > today);
   const usedByType = new Map<string, number>();
   for (const request of requests ?? []) if (request.request_type === "leave" && request.leave_type_id && !withdrawnIds.has(request.id) && decisionByRequest.get(request.id)?.decision === "approved" && new Date(request.starts_at).getFullYear() === new Date().getFullYear()) usedByType.set(request.leave_type_id, (usedByType.get(request.leave_type_id) ?? 0) + request.requested_minutes);
 
@@ -50,8 +58,10 @@ export default async function RequestsPage() {
           <RequestForm enabled leaveTypes={leaveTypes ?? []} requestType="overtime" />
         </section>
         <section className="leave-balance-grid" aria-label="本年度假別額度">
-          {(entitlements ?? []).map((item) => { const leaveType = leaveTypeById.get(item.leave_type_id); const balance = calculateLeaveBalance(item.entitled_minutes, usedByType.get(item.leave_type_id) ?? 0); return <article key={item.id}><span>{item.entitlement_year} · {leaveType?.name ?? "假別"}</span><strong>{formatRequestedMinutes(balance.remainingMinutes)}</strong><small>額度 {formatRequestedMinutes(balance.entitledMinutes)} · 已核准 {formatRequestedMinutes(balance.usedMinutes)}</small></article>; })}
-          {!entitlements?.length ? <p className="request-policy-note">尚未設定本年度假別額度；請假仍可送審，但不代表可用餘額或薪資結果。</p> : null}
+          {annualLeave.configured ? <article className="annual-leave-balance"><span><CalendarDays size={15}/> 法定特休 · 週年制</span><strong>{formatAnnualLeaveMinutes(annualLeave.availableMinutes, annualLeave.standardDayMinutes)}</strong><small>已核准 {formatAnnualLeaveMinutes(annualLeave.usedMinutes, annualLeave.standardDayMinutes)} · 待審 {formatAnnualLeaveMinutes(annualLeave.pendingMinutes, annualLeave.standardDayMinutes)}</small>{currentAnnualGrant ? <small>本批次 {currentAnnualGrant.grantedDays} 天 · 可使用至 {annualLeavePeriodEnd(currentAnnualGrant.periodEndExclusive)}</small> : <small>尚未到達滿 6 個月的首個取得日</small>}</article> : <p className="request-policy-note">週年制法定特休尚未啟用，請聯絡主管完成設定。</p>}
+          {annualBalanceResult.error ? <p className="request-policy-note">特休餘額暫時無法讀取，送出前請先聯絡主管確認。</p> : null}
+          {manualEntitlements.map((item) => { const leaveType = leaveTypeById.get(item.leave_type_id); const balance = calculateLeaveBalance(item.entitled_minutes, usedByType.get(item.leave_type_id) ?? 0); return <article key={item.id}><span>{item.entitlement_year} · {leaveType?.name ?? "假別"}</span><strong>{formatRequestedMinutes(balance.remainingMinutes)}</strong><small>額度 {formatRequestedMinutes(balance.entitledMinutes)} · 已核准 {formatRequestedMinutes(balance.usedMinutes)}</small></article>; })}
+          {!manualEntitlements.length && !annualLeave.configured ? <p className="request-policy-note">尚未設定本年度假別額度；請假仍可送審，但不代表可用餘額或薪資結果。</p> : null}
         </section>
         <section className="attendance-summary-list work-request-history"><header><div><span className="eyebrow">MY REQUESTS</span><h2>我的申請紀錄</h2></div><small>最近 50 筆</small></header>
           {!requests?.length ? <div className="admin-empty"><ClipboardList size={28} /><strong>目前沒有申請紀錄</strong><p>送出第一筆請假或加班申請後會顯示在這裡。</p></div> : requests.map((request) => { const decision = decisionByRequest.get(request.id); const withdrawn = withdrawnIds.has(request.id); const leaveType = request.leave_type_id ? leaveTypeById.get(request.leave_type_id) : null; return <article key={request.id}>

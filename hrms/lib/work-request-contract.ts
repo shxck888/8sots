@@ -88,3 +88,76 @@ export function formatRequestedMinutes(minutes: number): string {
   return [days ? `${days} 天` : "", hours ? `${hours} 小時` : "", rest ? `${rest} 分鐘` : ""]
     .filter(Boolean).join(" ") || "0 分鐘";
 }
+
+export type AnnualLeaveGrant = {
+  id: string;
+  grantedDays: number;
+  grantedMinutes: number;
+  usedMinutes: number;
+  adjustmentMinutes: number;
+  periodStart: string;
+  periodEndExclusive: string;
+  serviceMilestoneMonths: number;
+  settlementStatus: "not_due" | "pending" | "settled";
+};
+
+export type AnnualLeaveBalance = {
+  configured: boolean;
+  standardDayMinutes: number;
+  availableMinutes: number;
+  pendingMinutes: number;
+  usedMinutes: number;
+  grants: AnnualLeaveGrant[];
+};
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function finite(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export function parseAnnualLeaveBalance(value: unknown): AnnualLeaveBalance {
+  const source = record(value);
+  const standardDayMinutes = Math.max(1, finite(source.standard_day_minutes, 480));
+  const grants = Array.isArray(source.grants) ? source.grants.map((item) => {
+    const grant = record(item);
+    const settlementStatus = ["not_due", "pending", "settled"].includes(String(grant.settlement_status))
+      ? String(grant.settlement_status) as AnnualLeaveGrant["settlementStatus"] : "not_due";
+    return {
+      id: String(grant.id ?? ""), grantedDays: finite(grant.granted_days),
+      grantedMinutes: finite(grant.granted_minutes), usedMinutes: finite(grant.used_minutes),
+      adjustmentMinutes: finite(grant.adjustment_minutes), periodStart: String(grant.period_start ?? ""),
+      periodEndExclusive: String(grant.period_end_exclusive ?? ""),
+      serviceMilestoneMonths: finite(grant.service_milestone_months), settlementStatus,
+    };
+  }) : [];
+  return {
+    configured: source.configured === true,
+    standardDayMinutes,
+    availableMinutes: finite(source.available_minutes),
+    pendingMinutes: finite(source.pending_minutes),
+    usedMinutes: finite(source.used_minutes),
+    grants,
+  };
+}
+
+export function formatAnnualLeaveMinutes(minutes: number, standardDayMinutes: number): string {
+  const safeMinutes = Math.max(0, Math.round(minutes));
+  const safeDay = Math.max(1, Math.round(standardDayMinutes));
+  const days = Math.floor(safeMinutes / safeDay);
+  const remainder = safeMinutes % safeDay;
+  const hours = Math.floor(remainder / 60);
+  const rest = remainder % 60;
+  return [days ? `${days} 天` : "", hours ? `${hours} 小時` : "", rest ? `${rest} 分鐘` : ""]
+    .filter(Boolean).join(" ") || "0 分鐘";
+}
+
+export function annualLeavePeriodEnd(periodEndExclusive: string) {
+  const end = new Date(`${periodEndExclusive}T00:00:00Z`);
+  if (Number.isNaN(end.getTime())) return periodEndExclusive;
+  end.setUTCDate(end.getUTCDate() - 1);
+  return end.toISOString().slice(0, 10);
+}

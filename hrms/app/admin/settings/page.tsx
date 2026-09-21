@@ -1,9 +1,9 @@
-import { Banknote, Calculator, MapPin, ShieldCheck } from "lucide-react";
+import { Banknote, Calculator, CalendarDays, MapPin, ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getWorkspaceContext } from "@/lib/workspace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { payBasisLabels, ppmToMultiplier, ppmToPercentage, workplaceModeLabels } from "@/lib/operations-settings";
-import { savePayrollSettings, savePayrollStatutorySettings, saveWorkplaceSettings } from "./actions";
+import { saveAnnualLeavePolicy, savePayrollSettings, savePayrollStatutorySettings, saveWorkplaceSettings } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,7 @@ const errors: Record<string, string> = {
   "workplace-input": "門市設定格式不正確，請檢查座標、範圍與定位誤差。",
   "payroll-input": "薪資設定格式不正確，日期皆須為 1–31 日。",
   "statutory-input": "法定扣款或加班級距格式不正確，請檢查百分比、分鐘與來源說明。",
+  "annual-leave-input": "特休設定格式不正確，每日工時須為 60–720 分鐘。",
   permission: "你沒有維護這項設定的權限。",
   save: "設定儲存失敗，請稍後再試。",
 };
@@ -22,9 +23,9 @@ const errors: Record<string, string> = {
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const params = await searchParams;
   const workspace = await getWorkspaceContext();
-  if (!workspace?.tenantId || (!workspace.canManageSettings && !workspace.canManagePayroll)) redirect("/");
+  if (!workspace?.tenantId || (!workspace.canManageSettings && !workspace.canManagePayroll && !workspace.canManageRequests)) redirect("/");
   const supabase = await createSupabaseServerClient();
-  const [workplacesResult, payrollResult, statutoryResult] = await Promise.all([
+  const [workplacesResult, payrollResult, statutoryResult, annualLeaveResult] = await Promise.all([
     workspace.canManageSettings
       ? supabase.from("workplace_setting_versions").select("*").eq("tenant_id", workspace.tenantId).order("effective_from", { ascending: false }).order("created_at", { ascending: false }).limit(20)
       : Promise.resolve({ data: [], error: null }),
@@ -34,6 +35,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     workspace.canManagePayroll
       ? supabase.from("payroll_statutory_rule_versions").select("*").eq("tenant_id", workspace.tenantId).order("effective_from", { ascending: false }).order("created_at", { ascending: false }).limit(20)
       : Promise.resolve({ data: [], error: null }),
+    workspace.canManageRequests
+      ? supabase.from("annual_leave_policy_versions").select("*").eq("tenant_id", workspace.tenantId).order("effective_from", { ascending: false }).order("created_at", { ascending: false }).limit(20)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   const workplaces = workplacesResult.data ?? [];
   const payrollRules = payrollResult.data ?? [];
@@ -41,12 +45,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const latestPayroll = payrollRules[0];
   const statutoryRules = statutoryResult.data ?? [];
   const latestStatutory = statutoryRules[0];
+  const annualLeavePolicies = annualLeaveResult.data ?? [];
+  const latestAnnualLeave = annualLeavePolicies[0];
   const latestRules = latestPayroll?.rules && typeof latestPayroll.rules === "object" && !Array.isArray(latestPayroll.rules) ? latestPayroll.rules : {};
   const today = todayTaipei();
 
   return <>
     <header className="admin-page-header"><div><span className="admin-eyebrow">OPERATIONS SETTINGS</span><h1>系統設定</h1><p>門市打卡與薪資規則皆以生效日建立版本；舊版保留，歷史結果不會被新版設定覆寫。</p></div></header>
-    {params.saved ? <div className="admin-success">已建立新版{params.saved === "workplace" ? "門市打卡" : params.saved === "statutory" ? "法定扣款與加班" : "薪資週期"}設定。</div> : null}
+    {params.saved ? <div className="admin-success">已建立新版{params.saved === "workplace" ? "門市打卡" : params.saved === "statutory" ? "法定扣款與加班" : params.saved === "annual-leave" ? "週年制法定特休" : "薪資週期"}設定。</div> : null}
     {params.error ? <div className="admin-form-error schedule-message">{errors[params.error] ?? errors.save}</div> : null}
 
     {workspace.canManageSettings ? <section className="admin-panel settings-panel">
@@ -63,6 +69,19 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <button className="admin-button primary" type="submit"><ShieldCheck size={16}/> 建立新版門市設定</button>
       </form>
       {workplacesResult.error ? <p className="settings-error">門市設定讀取失敗。</p> : <ul className="settings-history">{workplaces.map((item) => <li key={item.id}><strong>{item.name}</strong><span>{item.effective_from} 起 · {workplaceModeLabels[item.mode as keyof typeof workplaceModeLabels]} · 半徑 {item.radius_m}m · 誤差上限 {item.max_accuracy_m}m</span><small>{item.address}（{item.latitude}, {item.longitude}）</small></li>)}</ul>}
+    </section> : null}
+
+    {workspace.canManageRequests ? <section className="admin-panel settings-panel">
+      <header><div><span className="admin-eyebrow">ANNUAL LEAVE</span><h2><CalendarDays size={19}/> 週年制法定特休</h2><p>依員工到職日，在滿 6 個月及每個到職週年自動建立可追溯的特休批次。</p></div></header>
+      {!latestAnnualLeave ? <div className="attendance-recalc-alert"><ShieldCheck size={20}/><div><strong>尚未啟用自動特休</strong><p>建立第一個版本後，系統才會依到職日產生員工特休；核准特休時才正式扣抵。</p></div></div> : null}
+      <form action={saveAnnualLeavePolicy} className="settings-form">
+        <label>生效日<input name="effectiveFrom" type="date" defaultValue={today} required/></label>
+        <label>一天換算分鐘<input name="standardDayMinutes" type="number" min="60" max="720" step="1" defaultValue={latestAnnualLeave?.standard_day_minutes ?? 480} required/></label>
+        <label className="settings-wide">法規／制度依據<input name="sourceNote" minLength={5} maxLength={500} defaultValue={latestAnnualLeave?.source_note ?? "勞動基準法第 38 條（週年制）"} required/></label>
+        <button className="admin-button primary" type="submit"><CalendarDays size={16}/> 建立新版特休設定</button>
+      </form>
+      <p className="request-policy-note">法定級距固定為：滿 6 個月 3 天、1 年 7 天、2 年 10 天、3–4 年 14 天、5–9 年 15 天，10 年起每年加 1 天，上限 30 天。特休給薪比例固定 100%；到期未休會標記為「待結清」供薪資核對。</p>
+      {annualLeaveResult.error ? <p className="settings-error">特休設定讀取失敗。</p> : <ul className="settings-history">{annualLeavePolicies.map((item) => <li key={item.id}><strong>{item.effective_from} 起 · 每日 {item.standard_day_minutes} 分鐘</strong><span>週年制 · 到期未休待折算工資</span><small>{item.source_note}</small></li>)}</ul>}
     </section> : null}
 
     {workspace.canManagePayroll ? <section className="admin-panel settings-panel">

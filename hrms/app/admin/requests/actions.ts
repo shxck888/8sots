@@ -25,10 +25,28 @@ export async function decideWorkRequest(formData: FormData) {
   if (error?.message.includes("required leave proof missing")) {
     redirect("/admin/requests?error=proofRequired");
   }
+  if (error?.message.includes("insufficient annual leave balance")) {
+    redirect("/admin/requests?error=annualBalance");
+  }
   if (error) redirect("/admin/requests?error=decision");
   revalidatePath("/requests");
   revalidatePath("/admin/requests");
   redirect("/admin/requests?decided=1");
+}
+
+export async function syncAnnualLeaveGrants() {
+  const admin = await getAdminContext("request.manage");
+  if (!admin) redirect("/");
+  const supabase = await createSupabaseServerClient();
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(new Date());
+  const { data, error } = await supabase.rpc("sync_annual_leave_grants", {
+    p_tenant_id: admin.tenantId,
+    p_as_of: today,
+  });
+  if (error) redirect("/admin/requests?error=annualSync");
+  revalidatePath("/admin/requests");
+  revalidatePath("/requests");
+  redirect(`/admin/requests?annualSynced=${Number(data ?? 0)}`);
 }
 
 export async function saveLeaveEntitlement(formData: FormData) {

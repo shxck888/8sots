@@ -1,15 +1,15 @@
-import { Check, ClipboardCheck, Download, Paperclip, X } from "lucide-react";
+import { CalendarDays, Check, ClipboardCheck, Download, Paperclip, RefreshCw, X } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/admin";
 import { formatTaipeiDateTime } from "@/lib/schedule-display";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatRequestedMinutes, workRequestDecisionLabels, workRequestTypeLabels } from "@/lib/work-request-contract";
-import { decideWorkRequest, saveLeaveEntitlement } from "./actions";
+import { formatAnnualLeaveMinutes, formatRequestedMinutes, parseAnnualLeaveBalance, workRequestDecisionLabels, workRequestTypeLabels } from "@/lib/work-request-contract";
+import { decideWorkRequest, saveLeaveEntitlement, syncAnnualLeaveGrants } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminRequestsPage({ searchParams }: {
-  searchParams: Promise<{ decided?: string; entitlementSaved?: string; error?: string }>;
+  searchParams: Promise<{ decided?: string; entitlementSaved?: string; annualSynced?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const admin = await getAdminContext("request.manage");
@@ -20,10 +20,20 @@ export default async function AdminRequestsPage({ searchParams }: {
   const [{ data: decisions }, { data: withdrawals }, { data: employees }, { data: leaveTypes }, { data: attachments }] = await Promise.all([
     requestIds.length ? supabase.from("work_request_decisions").select("*").in("work_request_id", requestIds) : Promise.resolve({ data: [] }),
     requestIds.length ? supabase.from("work_request_withdrawals").select("*").in("work_request_id", requestIds) : Promise.resolve({ data: [] }),
-    supabase.from("employees").select("id, employee_no, full_name").eq("tenant_id", admin.tenantId).eq("status", "active").order("employee_no"),
+    supabase.from("employees").select("id, employee_no, full_name, hire_date").eq("tenant_id", admin.tenantId).in("status", ["active", "on_leave"]).order("employee_no"),
     supabase.from("leave_types").select("*").eq("tenant_id", admin.tenantId).eq("is_active", true).order("code"),
     requestIds.length ? supabase.from("work_request_attachments").select("id, work_request_id, object_path, file_name").in("work_request_id", requestIds) : Promise.resolve({ data: [] }),
   ]);
+  const annualBalances = new Map<string, ReturnType<typeof parseAnnualLeaveBalance>>();
+  const annualBalanceErrors = new Set<string>();
+  await Promise.all((employees ?? []).map(async (employee) => {
+    const { data, error: balanceError } = await supabase.rpc("get_annual_leave_balance", {
+      p_tenant_id: admin.tenantId,
+      p_employee_id: employee.id,
+    });
+    annualBalances.set(employee.id, parseAnnualLeaveBalance(data));
+    if (balanceError) annualBalanceErrors.add(employee.id);
+  }));
   const attachmentList = attachments ?? [];
   const signedByPath = new Map<string, string>();
   if (attachmentList.length) {
@@ -49,8 +59,10 @@ export default async function AdminRequestsPage({ searchParams }: {
     <header className="admin-page-header"><div><span className="admin-eyebrow">APPROVALS</span><h1>申請審核</h1><p>審核員工請假與加班；原始申請與決定均保留稽核紀錄。</p></div></header>
     {params.decided ? <div className="admin-success">申請已完成審核。</div> : null}
     {params.entitlementSaved ? <div className="admin-success">假別額度已儲存。</div> : null}
-    {params.error ? <div className="admin-form-error">{params.error === "proofRequired" ? "此假別需要附件證明，上傳證明後才能核准。" : "審核失敗，申請可能已被其他管理員處理。"}</div> : null}
-    <section className="admin-panel entitlement-panel"><header><div><span className="admin-eyebrow">LEAVE BALANCE</span><h2>年度假別額度</h2></div></header><form action={saveLeaveEntitlement}><select name="employeeId" required defaultValue=""><option disabled value="">選擇員工</option>{employees?.map((e) => <option key={e.id} value={e.id}>{e.employee_no} · {e.full_name}</option>)}</select><select name="leaveTypeId" required defaultValue=""><option disabled value="">選擇假別</option>{leaveTypes?.map((lt) => <option key={lt.id} value={lt.id}>{lt.name}</option>)}</select><input name="entitlementYear" type="number" min="2000" max="2200" defaultValue={new Date().getFullYear()} required /><input name="entitledHours" type="number" min="0" max="8784" step="0.5" placeholder="額度（小時）" required /><input name="note" maxLength={200} placeholder="備註（選填）" /><button className="admin-button" type="submit">儲存額度</button></form><p className="request-policy-note">額度以分鐘保存；已核准請假會計入使用量，並依薪資管理中的假別給薪版本連動薪資。</p></section>
+    {"annualSynced" in params ? <div className="admin-success">特休已同步，本次新增 {Number(params.annualSynced ?? 0)} 筆取得批次。</div> : null}
+    {params.error ? <div className="admin-form-error">{params.error === "proofRequired" ? "此假別需要附件證明，上傳證明後才能核准。" : params.error === "annualBalance" ? "員工在請假日期的特休餘額不足，無法核准。" : params.error === "annualSync" ? "特休同步失敗，請先確認已在系統設定建立特休版本。" : "審核失敗，申請可能已被其他管理員處理。"}</div> : null}
+    <section className="admin-panel entitlement-panel"><header><div><span className="admin-eyebrow">STATUTORY ANNUAL LEAVE</span><h2><CalendarDays size={18}/> 週年制法定特休</h2><p>依到職日自動計算；核准申請才扣抵，人工年度額度不會覆寫特休。</p></div><form action={syncAnnualLeaveGrants} className="annual-sync-form"><button className="admin-button" type="submit"><RefreshCw size={15}/> 同步至今天</button></form></header><div className="leave-balance-grid">{(employees ?? []).map((employee) => { const balance = annualBalances.get(employee.id); const pendingSettlement = balance?.grants.filter((grant) => grant.settlementStatus === "pending").length ?? 0; return <article key={employee.id}><span>{employee.employee_no} · {employee.full_name}</span>{annualBalanceErrors.has(employee.id) ? <strong>讀取失敗</strong> : balance?.configured ? <><strong>{formatAnnualLeaveMinutes(balance.availableMinutes, balance.standardDayMinutes)}</strong><small>到職 {employee.hire_date} · 待審 {formatAnnualLeaveMinutes(balance.pendingMinutes, balance.standardDayMinutes)}</small>{pendingSettlement ? <small>{pendingSettlement} 筆到期餘額待薪資結清</small> : null}</> : <><strong>尚未啟用</strong><small>請至系統設定建立週年制特休版本</small></>}</article>; })}</div></section>
+    <section className="admin-panel entitlement-panel"><header><div><span className="admin-eyebrow">OTHER LEAVE BALANCE</span><h2>其他假別年度額度</h2></div></header><form action={saveLeaveEntitlement}><select name="employeeId" required defaultValue=""><option disabled value="">選擇員工</option>{employees?.map((e) => <option key={e.id} value={e.id}>{e.employee_no} · {e.full_name}</option>)}</select><select name="leaveTypeId" required defaultValue=""><option disabled value="">選擇假別</option>{leaveTypes?.filter((lt) => lt.code !== "ANNUAL").map((lt) => <option key={lt.id} value={lt.id}>{lt.name}</option>)}</select><input name="entitlementYear" type="number" min="2000" max="2200" defaultValue={new Date().getFullYear()} required /><input name="entitledHours" type="number" min="0" max="8784" step="0.5" placeholder="額度（小時）" required /><input name="note" maxLength={200} placeholder="備註（選填）" /><button className="admin-button" type="submit">儲存額度</button></form><p className="request-policy-note">事假、病假等額度仍可人工維護；特休由到職日台帳自動產生，並固定為 100% 給薪。</p></section>
     <section className="admin-panel correction-review work-request-review"><header><div><span className="admin-eyebrow">REQUEST QUEUE</span><h2>請假與加班</h2></div><small>{sorted.filter((item) => !decisionByRequest.has(item.id) && !withdrawnIds.has(item.id)).length} 筆待審</small></header>
       {error ? <div className="admin-empty"><strong>申請資料讀取失敗</strong><p>請確認最新 database migration 已完成。</p></div> : !sorted.length ? <div className="admin-empty"><ClipboardCheck size={28} /><strong>目前沒有申請</strong></div> : <div className="correction-review-list">{sorted.map((request) => { const decision = decisionByRequest.get(request.id); const withdrawn = withdrawnIds.has(request.id); const employee = employeeById.get(request.employee_id); const leaveType = request.leave_type_id ? leaveTypeById.get(request.leave_type_id) : null; const attachments = attachmentsByRequest.get(request.id) ?? []; const proofMissing = Boolean(leaveType?.requires_proof && attachments.length === 0); return <article key={request.id}><div><strong>{employee?.full_name ?? "未知員工"} · {workRequestTypeLabels[request.request_type]}{leaveType ? ` · ${leaveType.name}` : ""}</strong><span>{formatTaipeiDateTime(request.starts_at)} 至 {formatTaipeiDateTime(request.ends_at)} · {formatRequestedMinutes(request.requested_minutes)}</span><p>{request.reason}</p><small>{employee?.employee_no ?? request.employee_id.slice(0, 8)} · 申請於 {formatTaipeiDateTime(request.requested_at)}</small>{attachments.length ? <div className="request-proof-links"><Paperclip size={13} />{attachments.map((attachment) => attachment.url ? <a key={attachment.id} href={attachment.url} rel="noopener noreferrer" target="_blank"><Download size={12} /> {attachment.file_name}</a> : <span key={attachment.id}>{attachment.file_name}</span>)}</div> : proofMissing ? <p className="request-policy-note">此假別需要附件證明，尚不可核准。</p> : null}</div>{withdrawn ? <div className="work-request-decision"><span className="correction-status withdrawn">已撤回</span></div> : decision ? <div className="work-request-decision"><span className={`correction-status ${decision.decision}`}>{workRequestDecisionLabels[decision.decision]}</span>{decision.review_note ? <small>{decision.review_note}</small> : null}</div> : <form action={decideWorkRequest}><input name="requestId" type="hidden" value={request.id} /><input maxLength={500} name="reviewNote" placeholder="審核備註（選填）" /><button className="approve" disabled={proofMissing} name="decision" title={proofMissing ? "需先上傳附件證明" : undefined} type="submit" value="approved"><Check size={14} /> {proofMissing ? "待補證明" : "核准"}</button><button className="reject" name="decision" type="submit" value="rejected"><X size={14} /> 拒絕</button></form>}</article>; })}</div>}
     </section>
