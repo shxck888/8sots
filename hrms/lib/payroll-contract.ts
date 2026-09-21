@@ -27,6 +27,30 @@ export const payrollAdjustmentSchema = z.object({
 export const payrollReviewSchema = z.object({ periodId: uuid, reviewNote: z.string().trim().min(10).max(1000) });
 export const payrollItemSchema = z.object({ itemId: uuid });
 
+const wholeMoney = z.union([z.string(), z.number().finite()])
+  .transform((value) => String(value).trim())
+  .pipe(z.string().regex(/^(?:0|[1-9]\d{0,7})(?:\.\d{1,2})?$/));
+
+export const statutoryProfileSchema = z.object({
+  employeeId: uuid,
+  effectiveFrom: date,
+  laborInsuredSalary: wholeMoney,
+  employmentInsuredSalary: wholeMoney,
+  healthInsuredSalary: wholeMoney,
+  healthDependentCount: z.coerce.number().int().min(0).max(3),
+  pensionSalary: wholeMoney,
+  pensionVoluntaryRate: z.coerce.number().finite().min(0).max(6),
+  incomeTaxWithholding: wholeMoney,
+  note: z.string().trim().max(500).default(""),
+});
+
+export const leavePayRuleSchema = z.object({
+  leaveTypeId: uuid,
+  effectiveFrom: date,
+  paidRatio: z.coerce.number().finite().min(0).max(100),
+  note: z.string().trim().min(5).max(500),
+});
+
 export function toCents(amount: string | number) {
   const value = String(amount).trim();
   if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(value)) throw new Error("invalid money");

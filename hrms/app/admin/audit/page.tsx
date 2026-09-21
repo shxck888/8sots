@@ -31,7 +31,9 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   if (!admin) redirect("/");
   const before = params.before && !Number.isNaN(Date.parse(params.before)) ? params.before : null;
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("get_audit_log_page", { p_tenant_id: admin.tenantId, p_limit: 100, p_before: before });
+  const { data, error } = await supabase.rpc("get_audit_log_page", {
+    p_tenant_id: admin.tenantId, p_limit: 100, ...(before ? { p_before: before } : {}),
+  });
   const logs = data ?? [];
   const next = logs.length === 100 ? logs.at(-1)?.occurred_at : null;
 

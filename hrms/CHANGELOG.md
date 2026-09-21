@@ -221,3 +221,9 @@
 - Added permission-aware administration navigation, audited settings, a database-backed audit viewer and submission rate limits.
 - Added production response security headers and raised Server Action body limit to 6 MB for the existing 5 MB proof upload contract.
 - Added PGlite integration coverage that applies all migrations and executes geofence, payroll, RLS, audit and rate-limit workflows.
+# 2026-09-21
+
+- 新增站內通知中心：申請、補打卡、班表與薪資發布事件自動通知，支援單筆與全部已讀。
+- 新增版本化法定薪資規則、員工投保／扣繳資料與假別給薪比例。
+- 薪資草稿會自動帶入已核准的請假、加班、勞保、就保、健保、勞退自提與所得稅扣繳，缺少設定時阻擋核對。
+- 新增 Playwright 桌機與手機 E2E，涵蓋公開、管理員、員工與可選的拋棄式申請流程。

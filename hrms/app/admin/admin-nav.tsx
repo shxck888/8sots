@@ -1,12 +1,13 @@
 "use client";
 
-import { Banknote, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, FileClock, KeyRound, LayoutDashboard, Settings, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Banknote, Bell, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, FileClock, KeyRound, LayoutDashboard, Settings, SlidersHorizontal, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type PermissionKey = "employees" | "schedules" | "attendance" | "requests" | "payroll" | "settings" | "audit";
 const items: Array<{ href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; permission?: PermissionKey }> = [
   { href: "/", label: "工作台", icon: LayoutDashboard, exact: true },
+  { href: "/notifications", label: "通知中心", icon: Bell },
   { href: "/admin/employees", label: "員工管理", icon: UsersRound, permission: "employees" },
   { href: "/admin/schedules", label: "排班管理", icon: CalendarDays, permission: "schedules" },
   { href: "/admin/holidays", label: "假日曆", icon: CalendarHeart, permission: "schedules" },

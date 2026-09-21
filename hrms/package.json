@@ -14,7 +14,10 @@
     "typecheck": "tsc --noEmit",
     "db:types": "supabase gen types typescript --project-id zyhlzuwymgxxidktuscc --schema public > lib/database.types.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.5",
@@ -27,6 +30,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -44,6 +44,11 @@ describe("generated database types", () => {
           "apply_punch_geofence",
           "guard_payroll_history",
           "enforce_submission_rate_limit",
+          "notify_work_request_event",
+          "notify_correction_event",
+          "notify_schedule_published",
+          "notify_payroll_locked",
+          "guard_payroll_configuration_version",
         ].includes(entity),
     );
 

@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
-import { compensationSchema, payrollAdjustmentSchema, payrollIdSchema, payrollItemSchema, payrollPeriodSchema, payrollReviewSchema, payrollStatusSchema, toCents } from "@/lib/payroll-contract";
+import {
+  compensationSchema, leavePayRuleSchema, payrollAdjustmentSchema, payrollIdSchema,
+  payrollItemSchema, payrollPeriodSchema, payrollReviewSchema, payrollStatusSchema,
+  statutoryProfileSchema, toCents,
+} from "@/lib/payroll-contract";
+import { percentageToPpm } from "@/lib/operations-settings";
 
 async function payrollContext() {
   const workspace = await getWorkspaceContext();
@@ -23,6 +28,40 @@ export async function saveCompensation(formData: FormData) {
   const { supabase, tenantId } = await payrollContext();
   const { error } = await supabase.rpc("save_employee_compensation", { p_tenant_id: tenantId, p_employee_id: parsed.data.employeeId, p_effective_from: parsed.data.effectiveFrom, p_pay_basis: parsed.data.payBasis, p_rate_cents: toCents(parsed.data.rate), p_note: parsed.data.note });
   revalidatePath("/admin/payroll"); finish(error, "saved=compensation");
+}
+export async function saveStatutoryProfile(formData: FormData) {
+  const parsed = statutoryProfileSchema.safeParse({
+    employeeId: formData.get("employeeId"), effectiveFrom: formData.get("effectiveFrom"),
+    laborInsuredSalary: formData.get("laborInsuredSalary"), employmentInsuredSalary: formData.get("employmentInsuredSalary"),
+    healthInsuredSalary: formData.get("healthInsuredSalary"), healthDependentCount: formData.get("healthDependentCount"),
+    pensionSalary: formData.get("pensionSalary"), pensionVoluntaryRate: formData.get("pensionVoluntaryRate"),
+    incomeTaxWithholding: formData.get("incomeTaxWithholding"), note: formData.get("note") ?? "",
+  });
+  if (!parsed.success) redirect("/admin/payroll?error=statutory-profile");
+  const { supabase, tenantId } = await payrollContext();
+  const data = parsed.data;
+  const { error } = await supabase.rpc("save_employee_statutory_profile", {
+    p_tenant_id: tenantId, p_employee_id: data.employeeId, p_effective_from: data.effectiveFrom,
+    p_labor_insured_salary_cents: toCents(data.laborInsuredSalary),
+    p_employment_insured_salary_cents: toCents(data.employmentInsuredSalary),
+    p_health_insured_salary_cents: toCents(data.healthInsuredSalary), p_health_dependent_count: data.healthDependentCount,
+    p_pension_salary_cents: toCents(data.pensionSalary), p_pension_voluntary_rate_ppm: percentageToPpm(data.pensionVoluntaryRate),
+    p_income_tax_withholding_cents: toCents(data.incomeTaxWithholding), p_note: data.note,
+  });
+  revalidatePath("/admin/payroll"); finish(error, "saved=statutory-profile");
+}
+export async function saveLeavePayRule(formData: FormData) {
+  const parsed = leavePayRuleSchema.safeParse({
+    leaveTypeId: formData.get("leaveTypeId"), effectiveFrom: formData.get("effectiveFrom"),
+    paidRatio: formData.get("paidRatio"), note: formData.get("note"),
+  });
+  if (!parsed.success) redirect("/admin/payroll?error=leave-rule");
+  const { supabase, tenantId } = await payrollContext();
+  const { error } = await supabase.rpc("save_leave_pay_rule", {
+    p_tenant_id: tenantId, p_leave_type_id: parsed.data.leaveTypeId, p_effective_from: parsed.data.effectiveFrom,
+    p_paid_ratio_ppm: percentageToPpm(parsed.data.paidRatio), p_note: parsed.data.note,
+  });
+  revalidatePath("/admin/payroll"); finish(error, "saved=leave-rule");
 }
 export async function createPeriod(formData: FormData) {
   const parsed = payrollPeriodSchema.safeParse({ periodMonth: formData.get("periodMonth"), payDate: formData.get("payDate") });

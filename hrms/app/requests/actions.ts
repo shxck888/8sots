@@ -25,7 +25,8 @@ export async function createWorkRequest(input: unknown): Promise<WorkRequestActi
   const { error } = await supabase.rpc("create_work_request", {
     p_ends_local: parsed.data.endsLocal.replace("T", " "),
     p_idempotency_key: parsed.data.idempotencyKey,
-    p_leave_type_id: parsed.data.requestType === "leave" ? parsed.data.leaveTypeId || null : null,
+    // Supabase cannot infer nullable function parameters; PostgreSQL accepts null here by design.
+    p_leave_type_id: (parsed.data.requestType === "leave" ? parsed.data.leaveTypeId || null : null) as unknown as string,
     p_reason: parsed.data.reason,
     p_request_type: parsed.data.requestType,
     p_starts_local: parsed.data.startsLocal.replace("T", " "),

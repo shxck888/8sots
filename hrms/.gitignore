@@ -10,3 +10,5 @@ npm-debug.log*
 *.tsbuildinfo
 .vercel
 supabase/.temp/
+playwright-report/
+test-results/

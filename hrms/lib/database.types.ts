@@ -6,185 +6,339 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-type SimpleTable<Row extends Record<string, unknown>> = {
-  Row: Row
-  Insert: Partial<Row>
-  Update: Partial<Row>
-  Relationships: []
-}
-
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      employee_compensation_versions: SimpleTable<{
-        created_at: string
-        created_by: string
-        effective_from: string
-        employee_id: string
-        id: string
-        monthly_base_cents: number
-        pay_basis: string
-        hourly_rate_cents: number
-        note: string | null
-        tenant_id: string
-      }>
-      payroll_components: SimpleTable<{
-        code: string
-        created_at: string
-        id: string
-        is_active: boolean
-        kind: Database["public"]["Enums"]["payroll_item_kind"]
-        name: string
-        tenant_id: string
-      }>
-      payroll_entries: SimpleTable<{
-        compensation_version_id: string | null
-        created_at: string
-        deduction_cents: number
-        employee_id: string
-        gross_cents: number
-        id: string
-        net_cents: number
-        payroll_period_id: string
-        source_snapshot: Json
-        tenant_id: string
-      }>
-      payroll_items: SimpleTable<{
-        amount_cents: number
-        code: string
-        component_id: string | null
-        created_at: string
-        created_by: string | null
-        id: string
-        idempotency_key: string | null
-        kind: Database["public"]["Enums"]["payroll_item_kind"]
-        name: string
-        note: string | null
-        payroll_entry_id: string
-        source: string
-        tenant_id: string
-      }>
-      payroll_periods: SimpleTable<{
-        calculated_at: string | null
-        calculated_by: string | null
-        created_at: string
-        id: string
-        rule_version_id: string | null
-        settings_snapshot: Json
-        review_note: string | null
-        locked_at: string | null
-        locked_by: string | null
-        pay_date: string | null
-        period_end: string
-        period_month: string
-        period_start: string
-        reviewed_at: string | null
-        reviewed_by: string | null
-        status: Database["public"]["Enums"]["payroll_period_status"]
-        tenant_id: string
-      }>
-      payroll_rule_versions: SimpleTable<{
-        created_at: string
-        created_by: string
-        effective_from: string
-        id: string
-        rules: Json
-        source_note: string | null
-        tenant_id: string
-        version: number
-      }>
-      workplace_setting_versions: SimpleTable<{
-        id: string
-        tenant_id: string
-        effective_from: string
-        name: string
-        address: string
-        latitude: number
-        longitude: number
-        radius_m: number
-        max_accuracy_m: number
-        mode: string
-        created_by: string
-        created_at: string
-      }>
-      attendance_calculation_runs: SimpleTable<{
-        calculated_at: string
-        calculated_by: string
-        date_from: string
-        date_to: string
-        id: string
-        rule_set_id: string
-        tenant_id: string
-      }>
-      attendance_days: SimpleTable<{
-        approved_leave_minutes: number
-        approved_overtime_minutes: number
-        actual_minutes: number
-        calculation_run_id: string
-        created_at: string
-        employee_id: string
-        exception_count: number
-        id: string
-        schedule_assignment_id: string | null
-        scheduled_minutes: number
-        status: Database["public"]["Enums"]["attendance_day_status"]
-        tenant_id: string
-        work_date: string
-      }>
-      leave_entitlements: SimpleTable<{
-        entitlement_year: number
-        entitled_minutes: number
-        employee_id: string
-        id: string
-        leave_type_id: string
-        note: string | null
-        tenant_id: string
-        updated_at: string
-        updated_by: string
-      }>
-      attendance_exceptions: SimpleTable<{
-        attendance_day_id: string
-        attendance_segment_id: string | null
-        created_at: string
-        detail: Json
-        exception_type: Database["public"]["Enums"]["attendance_exception_type"]
-        id: string
-        minutes: number | null
-        tenant_id: string
-      }>
-      attendance_rule_sets: SimpleTable<{
-        created_at: string
-        created_by: string | null
-        early_leave_grace_minutes: number
-        effective_from: string
-        id: string
-        late_grace_minutes: number
-        tenant_id: string
-        version: number
-      }>
-      attendance_segments: SimpleTable<{
-        actual_minutes: number
-        attendance_day_id: string
-        clock_in_correction_id: string | null
-        clock_in_punch_id: string | null
-        clock_out_correction_id: string | null
-        clock_out_punch_id: string | null
-        created_at: string
-        early_leave_minutes: number
-        effective_clock_in_at: string | null
-        effective_clock_out_at: string | null
-        id: string
-        late_minutes: number
-        scheduled_end_at: string
-        scheduled_start_at: string
-        segment_order: number
-        tenant_id: string
-      }>
+      attendance_calculation_runs: {
+        Row: {
+          calculated_at: string
+          calculated_by: string
+          date_from: string
+          date_to: string
+          id: string
+          rule_set_id: string
+          tenant_id: string
+        }
+        Insert: {
+          calculated_at?: string
+          calculated_by: string
+          date_from: string
+          date_to: string
+          id?: string
+          rule_set_id: string
+          tenant_id: string
+        }
+        Update: {
+          calculated_at?: string
+          calculated_by?: string
+          date_from?: string
+          date_to?: string
+          id?: string
+          rule_set_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_calculation_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_calculation_runs_tenant_id_rule_set_id_fkey"
+            columns: ["tenant_id", "rule_set_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_rule_sets"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      attendance_days: {
+        Row: {
+          actual_minutes: number
+          approved_leave_minutes: number
+          approved_overtime_minutes: number
+          calculation_run_id: string
+          created_at: string
+          employee_id: string
+          exception_count: number
+          id: string
+          schedule_assignment_id: string | null
+          scheduled_minutes: number
+          status: Database["public"]["Enums"]["attendance_day_status"]
+          tenant_id: string
+          work_date: string
+        }
+        Insert: {
+          actual_minutes?: number
+          approved_leave_minutes?: number
+          approved_overtime_minutes?: number
+          calculation_run_id: string
+          created_at?: string
+          employee_id: string
+          exception_count?: number
+          id?: string
+          schedule_assignment_id?: string | null
+          scheduled_minutes?: number
+          status: Database["public"]["Enums"]["attendance_day_status"]
+          tenant_id: string
+          work_date: string
+        }
+        Update: {
+          actual_minutes?: number
+          approved_leave_minutes?: number
+          approved_overtime_minutes?: number
+          calculation_run_id?: string
+          created_at?: string
+          employee_id?: string
+          exception_count?: number
+          id?: string
+          schedule_assignment_id?: string | null
+          scheduled_minutes?: number
+          status?: Database["public"]["Enums"]["attendance_day_status"]
+          tenant_id?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_days_tenant_id_calculation_run_id_fkey"
+            columns: ["tenant_id", "calculation_run_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_calculation_runs"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_days_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_days_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_days_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_days_tenant_id_schedule_assignment_id_fkey"
+            columns: ["tenant_id", "schedule_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "schedule_assignments"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      attendance_exceptions: {
+        Row: {
+          attendance_day_id: string
+          attendance_segment_id: string | null
+          created_at: string
+          detail: Json
+          exception_type: Database["public"]["Enums"]["attendance_exception_type"]
+          id: string
+          minutes: number | null
+          tenant_id: string
+        }
+        Insert: {
+          attendance_day_id: string
+          attendance_segment_id?: string | null
+          created_at?: string
+          detail?: Json
+          exception_type: Database["public"]["Enums"]["attendance_exception_type"]
+          id?: string
+          minutes?: number | null
+          tenant_id: string
+        }
+        Update: {
+          attendance_day_id?: string
+          attendance_segment_id?: string | null
+          created_at?: string
+          detail?: Json
+          exception_type?: Database["public"]["Enums"]["attendance_exception_type"]
+          id?: string
+          minutes?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_exceptions_tenant_id_attendance_day_id_fkey"
+            columns: ["tenant_id", "attendance_day_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_days"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_exceptions_tenant_id_attendance_segment_id_fkey"
+            columns: ["tenant_id", "attendance_segment_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_segments"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_exceptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_rule_sets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          early_leave_grace_minutes: number
+          effective_from: string
+          id: string
+          late_grace_minutes: number
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          early_leave_grace_minutes?: number
+          effective_from: string
+          id?: string
+          late_grace_minutes?: number
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          early_leave_grace_minutes?: number
+          effective_from?: string
+          id?: string
+          late_grace_minutes?: number
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_rule_sets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_segments: {
+        Row: {
+          actual_minutes: number
+          attendance_day_id: string
+          clock_in_correction_id: string | null
+          clock_in_punch_id: string | null
+          clock_out_correction_id: string | null
+          clock_out_punch_id: string | null
+          created_at: string
+          early_leave_minutes: number
+          effective_clock_in_at: string | null
+          effective_clock_out_at: string | null
+          id: string
+          late_minutes: number
+          scheduled_end_at: string
+          scheduled_start_at: string
+          segment_order: number
+          tenant_id: string
+        }
+        Insert: {
+          actual_minutes?: number
+          attendance_day_id: string
+          clock_in_correction_id?: string | null
+          clock_in_punch_id?: string | null
+          clock_out_correction_id?: string | null
+          clock_out_punch_id?: string | null
+          created_at?: string
+          early_leave_minutes?: number
+          effective_clock_in_at?: string | null
+          effective_clock_out_at?: string | null
+          id?: string
+          late_minutes?: number
+          scheduled_end_at: string
+          scheduled_start_at: string
+          segment_order: number
+          tenant_id: string
+        }
+        Update: {
+          actual_minutes?: number
+          attendance_day_id?: string
+          clock_in_correction_id?: string | null
+          clock_in_punch_id?: string | null
+          clock_out_correction_id?: string | null
+          clock_out_punch_id?: string | null
+          created_at?: string
+          early_leave_minutes?: number
+          effective_clock_in_at?: string | null
+          effective_clock_out_at?: string | null
+          id?: string
+          late_minutes?: number
+          scheduled_end_at?: string
+          scheduled_start_at?: string
+          segment_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_segments_tenant_id_attendance_day_id_fkey"
+            columns: ["tenant_id", "attendance_day_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_days"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_in_correction_id_fkey"
+            columns: ["tenant_id", "clock_in_correction_id"]
+            isOneToOne: false
+            referencedRelation: "punch_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_in_punch_id_fkey"
+            columns: ["tenant_id", "clock_in_punch_id"]
+            isOneToOne: false
+            referencedRelation: "punch_records"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_out_correction_id_fkey"
+            columns: ["tenant_id", "clock_out_correction_id"]
+            isOneToOne: false
+            referencedRelation: "punch_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_out_punch_id_fkey"
+            columns: ["tenant_id", "clock_out_punch_id"]
+            isOneToOne: false
+            referencedRelation: "punch_records"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -360,6 +514,67 @@ export type Database = {
           },
         ]
       }
+      employee_compensation_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          effective_from: string
+          employee_id: string
+          hourly_rate_cents: number
+          id: string
+          monthly_base_cents: number
+          note: string | null
+          pay_basis: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          effective_from: string
+          employee_id: string
+          hourly_rate_cents?: number
+          id?: string
+          monthly_base_cents: number
+          note?: string | null
+          pay_basis?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          employee_id?: string
+          hourly_rate_cents?: number
+          id?: string
+          monthly_base_cents?: number
+          note?: string | null
+          pay_basis?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_compensation_versions_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_compensation_versions_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_compensation_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_contacts: {
         Row: {
           created_at: string
@@ -475,6 +690,79 @@ export type Database = {
           },
           {
             foreignKeyName: "employee_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_statutory_profile_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          effective_from: string
+          employee_id: string
+          employment_insured_salary_cents: number
+          health_dependent_count: number
+          health_insured_salary_cents: number
+          id: string
+          income_tax_withholding_cents: number
+          labor_insured_salary_cents: number
+          note: string | null
+          pension_salary_cents: number
+          pension_voluntary_rate_ppm: number
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          effective_from: string
+          employee_id: string
+          employment_insured_salary_cents: number
+          health_dependent_count: number
+          health_insured_salary_cents: number
+          id?: string
+          income_tax_withholding_cents: number
+          labor_insured_salary_cents: number
+          note?: string | null
+          pension_salary_cents: number
+          pension_voluntary_rate_ppm: number
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          employee_id?: string
+          employment_insured_salary_cents?: number
+          health_dependent_count?: number
+          health_insured_salary_cents?: number
+          id?: string
+          income_tax_withholding_cents?: number
+          labor_insured_salary_cents?: number
+          note?: string | null
+          pension_salary_cents?: number
+          pension_voluntary_rate_ppm?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_statutory_profile_versions_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_statutory_profile_versions_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_statutory_profile_versions_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -645,6 +933,207 @@ export type Database = {
           },
         ]
       }
+      holiday_calendar_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          holiday_date: string
+          id: string
+          kind: Database["public"]["Enums"]["holiday_kind"]
+          name: string
+          note: string | null
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          holiday_date: string
+          id?: string
+          kind?: Database["public"]["Enums"]["holiday_kind"]
+          name: string
+          note?: string | null
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          holiday_date?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["holiday_kind"]
+          name?: string
+          note?: string | null
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holiday_calendar_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_entitlements: {
+        Row: {
+          employee_id: string
+          entitled_minutes: number
+          entitlement_year: number
+          id: string
+          leave_type_id: string
+          note: string | null
+          tenant_id: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          employee_id: string
+          entitled_minutes: number
+          entitlement_year: number
+          id?: string
+          leave_type_id: string
+          note?: string | null
+          tenant_id: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          employee_id?: string
+          entitled_minutes?: number
+          entitlement_year?: number
+          id?: string
+          leave_type_id?: string
+          note?: string | null
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_entitlements_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "leave_entitlements_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "leave_entitlements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_entitlements_tenant_id_leave_type_id_fkey"
+            columns: ["tenant_id", "leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      leave_pay_rule_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          effective_from: string
+          id: string
+          leave_type_id: string
+          note: string
+          paid_ratio_ppm: number
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          effective_from: string
+          id?: string
+          leave_type_id: string
+          note: string
+          paid_ratio_ppm: number
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          id?: string
+          leave_type_id?: string
+          note?: string
+          paid_ratio_ppm?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_pay_rule_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_pay_rule_versions_tenant_id_leave_type_id_fkey"
+            columns: ["tenant_id", "leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      leave_types: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          requires_proof: boolean
+          tenant_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          requires_proof?: boolean
+          tenant_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          requires_proof?: boolean
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_types_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           code: string
@@ -748,6 +1237,458 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_key: string
+          href: string
+          id: string
+          kind: string
+          read_at: string | null
+          recipient_user_id: string
+          tenant_id: string
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_key: string
+          href: string
+          id?: string
+          kind: string
+          read_at?: string | null
+          recipient_user_id: string
+          tenant_id: string
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_key?: string
+          href?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          recipient_user_id?: string
+          tenant_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_components: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["payroll_item_kind"]
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind: Database["public"]["Enums"]["payroll_item_kind"]
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["payroll_item_kind"]
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_components_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_entries: {
+        Row: {
+          compensation_version_id: string | null
+          created_at: string
+          deduction_cents: number
+          employee_id: string
+          gross_cents: number
+          id: string
+          net_cents: number
+          payroll_period_id: string
+          source_snapshot: Json
+          statutory_profile_version_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          compensation_version_id?: string | null
+          created_at?: string
+          deduction_cents?: number
+          employee_id: string
+          gross_cents?: number
+          id?: string
+          net_cents?: number
+          payroll_period_id: string
+          source_snapshot?: Json
+          statutory_profile_version_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          compensation_version_id?: string | null
+          created_at?: string
+          deduction_cents?: number
+          employee_id?: string
+          gross_cents?: number
+          id?: string
+          net_cents?: number
+          payroll_period_id?: string
+          source_snapshot?: Json
+          statutory_profile_version_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_entries_tenant_id_compensation_version_id_fkey"
+            columns: ["tenant_id", "compensation_version_id"]
+            isOneToOne: false
+            referencedRelation: "employee_compensation_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "payroll_entries_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "payroll_entries_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "payroll_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_entries_tenant_id_payroll_period_id_fkey"
+            columns: ["tenant_id", "payroll_period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "payroll_entry_statutory_profile_fk"
+            columns: ["tenant_id", "statutory_profile_version_id"]
+            isOneToOne: false
+            referencedRelation: "employee_statutory_profile_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      payroll_items: {
+        Row: {
+          amount_cents: number
+          code: string
+          component_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          idempotency_key: string | null
+          kind: Database["public"]["Enums"]["payroll_item_kind"]
+          name: string
+          note: string | null
+          payroll_entry_id: string
+          source: string
+          tenant_id: string
+        }
+        Insert: {
+          amount_cents: number
+          code: string
+          component_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind: Database["public"]["Enums"]["payroll_item_kind"]
+          name: string
+          note?: string | null
+          payroll_entry_id: string
+          source: string
+          tenant_id: string
+        }
+        Update: {
+          amount_cents?: number
+          code?: string
+          component_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind?: Database["public"]["Enums"]["payroll_item_kind"]
+          name?: string
+          note?: string | null
+          payroll_entry_id?: string
+          source?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_items_tenant_id_component_id_fkey"
+            columns: ["tenant_id", "component_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_components"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "payroll_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_items_tenant_id_payroll_entry_id_fkey"
+            columns: ["tenant_id", "payroll_entry_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_entries"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      payroll_periods: {
+        Row: {
+          calculated_at: string | null
+          calculated_by: string | null
+          created_at: string
+          id: string
+          locked_at: string | null
+          locked_by: string | null
+          pay_date: string | null
+          period_end: string
+          period_month: string
+          period_start: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rule_version_id: string | null
+          settings_snapshot: Json
+          status: Database["public"]["Enums"]["payroll_period_status"]
+          statutory_rule_version_id: string | null
+          statutory_settings_snapshot: Json
+          tenant_id: string
+        }
+        Insert: {
+          calculated_at?: string | null
+          calculated_by?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          pay_date?: string | null
+          period_end: string
+          period_month: string
+          period_start: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rule_version_id?: string | null
+          settings_snapshot?: Json
+          status?: Database["public"]["Enums"]["payroll_period_status"]
+          statutory_rule_version_id?: string | null
+          statutory_settings_snapshot?: Json
+          tenant_id: string
+        }
+        Update: {
+          calculated_at?: string | null
+          calculated_by?: string | null
+          created_at?: string
+          id?: string
+          locked_at?: string | null
+          locked_by?: string | null
+          pay_date?: string | null
+          period_end?: string
+          period_month?: string
+          period_start?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rule_version_id?: string | null
+          settings_snapshot?: Json
+          status?: Database["public"]["Enums"]["payroll_period_status"]
+          statutory_rule_version_id?: string | null
+          statutory_settings_snapshot?: Json
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_period_rule_fk"
+            columns: ["tenant_id", "rule_version_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_rule_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "payroll_period_statutory_rule_fk"
+            columns: ["tenant_id", "statutory_rule_version_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_statutory_rule_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "payroll_periods_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_rule_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          effective_from: string
+          id: string
+          rules: Json
+          source_note: string | null
+          tenant_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          effective_from: string
+          id?: string
+          rules?: Json
+          source_note?: string | null
+          tenant_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          id?: string
+          rules?: Json
+          source_note?: string | null
+          tenant_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_rule_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_statutory_rule_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          effective_from: string
+          employment_employee_share_ppm: number
+          employment_insurance_rate_ppm: number
+          health_employee_share_ppm: number
+          health_insurance_rate_ppm: number
+          id: string
+          labor_employee_share_ppm: number
+          labor_insurance_rate_ppm: number
+          monthly_hour_divisor: number
+          overtime_tier_1_minutes: number
+          overtime_tier_1_multiplier_ppm: number
+          overtime_tier_2_minutes: number
+          overtime_tier_2_multiplier_ppm: number
+          overtime_tier_3_minutes: number
+          overtime_tier_3_multiplier_ppm: number
+          pension_employer_rate_ppm: number
+          source_note: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          effective_from: string
+          employment_employee_share_ppm: number
+          employment_insurance_rate_ppm: number
+          health_employee_share_ppm: number
+          health_insurance_rate_ppm: number
+          id?: string
+          labor_employee_share_ppm: number
+          labor_insurance_rate_ppm: number
+          monthly_hour_divisor: number
+          overtime_tier_1_minutes: number
+          overtime_tier_1_multiplier_ppm: number
+          overtime_tier_2_minutes: number
+          overtime_tier_2_multiplier_ppm: number
+          overtime_tier_3_minutes: number
+          overtime_tier_3_multiplier_ppm: number
+          pension_employer_rate_ppm: number
+          source_note: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          employment_employee_share_ppm?: number
+          employment_insurance_rate_ppm?: number
+          health_employee_share_ppm?: number
+          health_insurance_rate_ppm?: number
+          id?: string
+          labor_employee_share_ppm?: number
+          labor_insurance_rate_ppm?: number
+          monthly_hour_divisor?: number
+          overtime_tier_1_minutes?: number
+          overtime_tier_1_multiplier_ppm?: number
+          overtime_tier_2_minutes?: number
+          overtime_tier_2_multiplier_ppm?: number
+          overtime_tier_3_minutes?: number
+          overtime_tier_3_multiplier_ppm?: number
+          pension_employer_rate_ppm?: number
+          source_note?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_statutory_rule_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           code: string
@@ -804,6 +1745,220 @@ export type Database = {
           },
         ]
       }
+      punch_correction_decisions: {
+        Row: {
+          correction_request_id: string
+          decided_at: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["punch_correction_decision_type"]
+          id: string
+          review_note: string | null
+          tenant_id: string
+        }
+        Insert: {
+          correction_request_id: string
+          decided_at?: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["punch_correction_decision_type"]
+          id?: string
+          review_note?: string | null
+          tenant_id: string
+        }
+        Update: {
+          correction_request_id?: string
+          decided_at?: string
+          decided_by?: string
+          decision?: Database["public"]["Enums"]["punch_correction_decision_type"]
+          id?: string
+          review_note?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_correction_decisions_tenant_id_correction_request_id_fkey"
+            columns: ["tenant_id", "correction_request_id"]
+            isOneToOne: false
+            referencedRelation: "punch_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_correction_decisions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      punch_correction_requests: {
+        Row: {
+          employee_id: string
+          id: string
+          idempotency_key: string
+          proposed_event_type: Database["public"]["Enums"]["punch_event_type"]
+          proposed_occurred_at: string
+          reason: string
+          requested_at: string
+          requested_by: string
+          tenant_id: string
+          timezone: string
+          work_date: string
+        }
+        Insert: {
+          employee_id: string
+          id?: string
+          idempotency_key: string
+          proposed_event_type: Database["public"]["Enums"]["punch_event_type"]
+          proposed_occurred_at: string
+          reason: string
+          requested_at?: string
+          requested_by: string
+          tenant_id: string
+          timezone: string
+          work_date: string
+        }
+        Update: {
+          employee_id?: string
+          id?: string
+          idempotency_key?: string
+          proposed_event_type?: Database["public"]["Enums"]["punch_event_type"]
+          proposed_occurred_at?: string
+          reason?: string
+          requested_at?: string
+          requested_by?: string
+          tenant_id?: string
+          timezone?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_correction_requests_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_correction_requests_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_correction_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      punch_records: {
+        Row: {
+          accuracy_m: number | null
+          client_occurred_at: string
+          created_at: string
+          created_by: string
+          employee_id: string
+          event_type: Database["public"]["Enums"]["punch_event_type"]
+          id: string
+          idempotency_key: string
+          latitude: number | null
+          location_consent_at: string | null
+          location_distance_m: number | null
+          location_id: string | null
+          location_verification: Database["public"]["Enums"]["punch_location_verification"]
+          longitude: number | null
+          occurred_at: string
+          source: Database["public"]["Enums"]["punch_source"]
+          tenant_id: string
+          timezone: string
+          work_date: string
+          workplace_setting_version_id: string | null
+        }
+        Insert: {
+          accuracy_m?: number | null
+          client_occurred_at: string
+          created_at?: string
+          created_by: string
+          employee_id: string
+          event_type: Database["public"]["Enums"]["punch_event_type"]
+          id?: string
+          idempotency_key: string
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_distance_m?: number | null
+          location_id?: string | null
+          location_verification?: Database["public"]["Enums"]["punch_location_verification"]
+          longitude?: number | null
+          occurred_at?: string
+          source: Database["public"]["Enums"]["punch_source"]
+          tenant_id: string
+          timezone: string
+          work_date: string
+          workplace_setting_version_id?: string | null
+        }
+        Update: {
+          accuracy_m?: number | null
+          client_occurred_at?: string
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          event_type?: Database["public"]["Enums"]["punch_event_type"]
+          id?: string
+          idempotency_key?: string
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_distance_m?: number | null
+          location_id?: string | null
+          location_verification?: Database["public"]["Enums"]["punch_location_verification"]
+          longitude?: number | null
+          occurred_at?: string
+          source?: Database["public"]["Enums"]["punch_source"]
+          tenant_id?: string
+          timezone?: string
+          work_date?: string
+          workplace_setting_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_location_id_fkey"
+            columns: ["tenant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_workplace_version_fk"
+            columns: ["tenant_id", "workplace_setting_version_id"]
+            isOneToOne: false
+            referencedRelation: "workplace_setting_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -847,183 +2002,6 @@ export type Database = {
           },
         ]
       }
-      punch_records: {
-        Row: {
-          accuracy_m: number | null
-          client_occurred_at: string
-          created_at: string
-          created_by: string
-          employee_id: string
-          event_type: Database["public"]["Enums"]["punch_event_type"]
-          id: string
-          idempotency_key: string
-          latitude: number | null
-          location_consent_at: string | null
-          location_id: string | null
-          location_distance_m: number | null
-          location_verification: Database["public"]["Enums"]["punch_location_verification"]
-          longitude: number | null
-          occurred_at: string
-          source: Database["public"]["Enums"]["punch_source"]
-          tenant_id: string
-          timezone: string
-          workplace_setting_version_id: string | null
-          work_date: string
-        }
-        Insert: {
-          accuracy_m?: number | null
-          client_occurred_at: string
-          created_at?: string
-          created_by: string
-          employee_id: string
-          event_type: Database["public"]["Enums"]["punch_event_type"]
-          id?: string
-          idempotency_key: string
-          latitude?: number | null
-          location_consent_at?: string | null
-          location_id?: string | null
-          location_distance_m?: number | null
-          location_verification?: Database["public"]["Enums"]["punch_location_verification"]
-          longitude?: number | null
-          occurred_at?: string
-          source: Database["public"]["Enums"]["punch_source"]
-          tenant_id: string
-          timezone: string
-          workplace_setting_version_id?: string | null
-          work_date: string
-        }
-        Update: {
-          accuracy_m?: number | null
-          client_occurred_at?: string
-          created_at?: string
-          created_by?: string
-          employee_id?: string
-          event_type?: Database["public"]["Enums"]["punch_event_type"]
-          id?: string
-          idempotency_key?: string
-          latitude?: number | null
-          location_consent_at?: string | null
-          location_id?: string | null
-          location_distance_m?: number | null
-          location_verification?: Database["public"]["Enums"]["punch_location_verification"]
-          longitude?: number | null
-          occurred_at?: string
-          source?: Database["public"]["Enums"]["punch_source"]
-          tenant_id?: string
-          timezone?: string
-          workplace_setting_version_id?: string | null
-          work_date?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
-            columns: ["tenant_id", "employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["tenant_id", "id"]
-          },
-          {
-            foreignKeyName: "punch_records_tenant_id_location_id_fkey"
-            columns: ["tenant_id", "location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["tenant_id", "id"]
-          },
-          {
-            foreignKeyName: "punch_records_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      punch_correction_decisions: SimpleTable<{
-        correction_request_id: string
-        decided_at: string
-        decided_by: string
-        decision: Database["public"]["Enums"]["punch_correction_decision_type"]
-        id: string
-        review_note: string | null
-        tenant_id: string
-      }>
-      punch_correction_requests: SimpleTable<{
-        employee_id: string
-        id: string
-        idempotency_key: string
-        proposed_event_type: Database["public"]["Enums"]["punch_event_type"]
-        proposed_occurred_at: string
-        reason: string
-        requested_at: string
-        requested_by: string
-        tenant_id: string
-        timezone: string
-        work_date: string
-      }>
-      holiday_calendar_entries: SimpleTable<{
-        created_at: string
-        created_by: string | null
-        holiday_date: string
-        id: string
-        kind: Database["public"]["Enums"]["holiday_kind"]
-        name: string
-        note: string | null
-        tenant_id: string
-        updated_at: string
-        updated_by: string | null
-      }>
-      leave_types: SimpleTable<{
-        code: string
-        created_at: string
-        description: string | null
-        id: string
-        is_active: boolean
-        name: string
-        requires_proof: boolean
-        tenant_id: string
-      }>
-      work_request_attachments: SimpleTable<{
-        content_type: string
-        created_at: string
-        file_name: string
-        id: string
-        object_path: string
-        size_bytes: number
-        tenant_id: string
-        uploaded_by: string | null
-        work_request_id: string
-      }>
-      work_request_decisions: SimpleTable<{
-        decided_at: string
-        decided_by: string
-        decision: Database["public"]["Enums"]["work_request_decision_type"]
-        id: string
-        review_note: string | null
-        tenant_id: string
-        work_request_id: string
-      }>
-      work_request_withdrawals: SimpleTable<{
-        id: string
-        tenant_id: string
-        work_request_id: string
-        withdrawn_at: string
-        withdrawn_by: string
-      }>
-      work_requests: SimpleTable<{
-        employee_id: string
-        ends_at: string
-        id: string
-        idempotency_key: string
-        leave_type_id: string | null
-        reason: string
-        request_type: Database["public"]["Enums"]["work_request_type"]
-        requested_at: string
-        requested_by: string
-        requested_minutes: number
-        starts_at: string
-        tenant_id: string
-        timezone: string
-      }>
       roles: {
         Row: {
           code: string
@@ -1104,8 +2082,22 @@ export type Database = {
             foreignKeyName: "schedule_assignments_tenant_id_employee_id_fkey"
             columns: ["tenant_id", "employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "schedule_assignments_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "schedule_assignments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "schedule_assignments_tenant_id_schedule_version_id_fkey"
@@ -1120,13 +2112,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "shifts"
             referencedColumns: ["tenant_id", "id"]
-          },
-          {
-            foreignKeyName: "schedule_assignments_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -1210,18 +2195,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "shift_segments_tenant_id_shift_id_fkey"
-            columns: ["tenant_id", "shift_id"]
-            isOneToOne: false
-            referencedRelation: "shifts"
-            referencedColumns: ["tenant_id", "id"]
-          },
-          {
             foreignKeyName: "shift_segments_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_segments_tenant_id_shift_id_fkey"
+            columns: ["tenant_id", "shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["tenant_id", "id"]
           },
         ]
       }
@@ -1334,6 +2319,271 @@ export type Database = {
         }
         Relationships: []
       }
+      work_request_attachments: {
+        Row: {
+          content_type: string
+          created_at: string
+          file_name: string
+          id: string
+          object_path: string
+          size_bytes: number
+          tenant_id: string
+          uploaded_by: string | null
+          work_request_id: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          file_name: string
+          id?: string
+          object_path: string
+          size_bytes: number
+          tenant_id: string
+          uploaded_by?: string | null
+          work_request_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          object_path?: string
+          size_bytes?: number
+          tenant_id?: string
+          uploaded_by?: string | null
+          work_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_request_attachments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_request_attachments_tenant_id_work_request_id_fkey"
+            columns: ["tenant_id", "work_request_id"]
+            isOneToOne: false
+            referencedRelation: "work_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      work_request_decisions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["work_request_decision_type"]
+          id: string
+          review_note: string | null
+          tenant_id: string
+          work_request_id: string
+        }
+        Insert: {
+          decided_at?: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["work_request_decision_type"]
+          id?: string
+          review_note?: string | null
+          tenant_id: string
+          work_request_id: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          decision?: Database["public"]["Enums"]["work_request_decision_type"]
+          id?: string
+          review_note?: string | null
+          tenant_id?: string
+          work_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_request_decisions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_request_decisions_tenant_id_work_request_id_fkey"
+            columns: ["tenant_id", "work_request_id"]
+            isOneToOne: false
+            referencedRelation: "work_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      work_request_withdrawals: {
+        Row: {
+          id: string
+          tenant_id: string
+          withdrawn_at: string
+          withdrawn_by: string
+          work_request_id: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          withdrawn_at?: string
+          withdrawn_by: string
+          work_request_id: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          withdrawn_at?: string
+          withdrawn_by?: string
+          work_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_request_withdrawals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_request_withdrawals_tenant_id_work_request_id_fkey"
+            columns: ["tenant_id", "work_request_id"]
+            isOneToOne: false
+            referencedRelation: "work_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      work_requests: {
+        Row: {
+          employee_id: string
+          ends_at: string
+          id: string
+          idempotency_key: string
+          leave_type_id: string | null
+          reason: string
+          request_type: Database["public"]["Enums"]["work_request_type"]
+          requested_at: string
+          requested_by: string
+          requested_minutes: number
+          starts_at: string
+          tenant_id: string
+          timezone: string
+        }
+        Insert: {
+          employee_id: string
+          ends_at: string
+          id?: string
+          idempotency_key: string
+          leave_type_id?: string | null
+          reason: string
+          request_type: Database["public"]["Enums"]["work_request_type"]
+          requested_at?: string
+          requested_by: string
+          requested_minutes: number
+          starts_at: string
+          tenant_id: string
+          timezone: string
+        }
+        Update: {
+          employee_id?: string
+          ends_at?: string
+          id?: string
+          idempotency_key?: string
+          leave_type_id?: string | null
+          reason?: string
+          request_type?: Database["public"]["Enums"]["work_request_type"]
+          requested_at?: string
+          requested_by?: string
+          requested_minutes?: number
+          starts_at?: string
+          tenant_id?: string
+          timezone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_requests_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "work_requests_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "work_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_requests_tenant_id_leave_type_id_fkey"
+            columns: ["tenant_id", "leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      workplace_setting_versions: {
+        Row: {
+          address: string
+          created_at: string
+          created_by: string
+          effective_from: string
+          id: string
+          latitude: number
+          longitude: number
+          max_accuracy_m: number
+          mode: string
+          name: string
+          radius_m: number
+          tenant_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          created_by: string
+          effective_from: string
+          id?: string
+          latitude: number
+          longitude: number
+          max_accuracy_m: number
+          mode: string
+          name: string
+          radius_m: number
+          tenant_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          max_accuracy_m?: number
+          mode?: string
+          name?: string
+          radius_m?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workplace_setting_versions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       employee_master_current: {
@@ -1383,38 +2633,26 @@ export type Database = {
     }
     Functions: {
       add_payroll_adjustment: {
-        Args: { p_amount_cents: number; p_entry_id: string; p_kind: Database["public"]["Enums"]["payroll_item_kind"]; p_name: string; p_note: string; p_tenant_id: string }
+        Args: {
+          p_amount_cents: number
+          p_entry_id: string
+          p_kind: Database["public"]["Enums"]["payroll_item_kind"]
+          p_name: string
+          p_note: string
+          p_tenant_id: string
+        }
         Returns: string
       }
       add_payroll_adjustment_once: {
-        Args: { p_amount_cents: number; p_entry_id: string; p_idempotency_key: string; p_kind: Database["public"]["Enums"]["payroll_item_kind"]; p_name: string; p_note: string; p_tenant_id: string }
-        Returns: string
-      }
-      remove_payroll_adjustment: { Args: { p_item_id: string; p_tenant_id: string }; Returns: undefined }
-      review_payroll_period: { Args: { p_period_id: string; p_review_note: string; p_tenant_id: string }; Returns: undefined }
-      save_employee_compensation: {
-        Args: { p_effective_from: string; p_employee_id: string; p_note: string; p_pay_basis: string; p_rate_cents: number; p_tenant_id: string }
-        Returns: string
-      }
-      save_payroll_settings: {
-        Args: { p_closing_day: number; p_default_basis: string; p_effective_from: string; p_note: string; p_pay_day: number; p_pay_month_offset: number; p_tenant_id: string }
-        Returns: string
-      }
-      save_workplace_settings: {
-        Args: { p_address: string; p_effective_from: string; p_latitude: number; p_longitude: number; p_max_accuracy_m: number; p_mode: string; p_name: string; p_radius_m: number; p_tenant_id: string }
-        Returns: string
-      }
-      can_read_locked_payroll: { Args: { p_employee_id?: string | null; p_period_id: string; p_tenant_id: string }; Returns: boolean }
-      calculate_payroll_draft: { Args: { p_period_id: string; p_tenant_id: string }; Returns: number }
-      create_payroll_period: { Args: { p_pay_date: string; p_period_month: string; p_tenant_id: string }; Returns: string }
-      set_payroll_period_status: { Args: { p_period_id: string; p_status: Database["public"]["Enums"]["payroll_period_status"]; p_tenant_id: string }; Returns: undefined }
-      upsert_employee_compensation: { Args: { p_effective_from: string; p_employee_id: string; p_monthly_base_cents: number; p_note: string; p_tenant_id: string }; Returns: string }
-      calculate_attendance: {
-        Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
-        Returns: string
-      }
-      calculate_attendance_v1: {
-        Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
+        Args: {
+          p_amount_cents: number
+          p_entry_id: string
+          p_idempotency_key: string
+          p_kind: Database["public"]["Enums"]["payroll_item_kind"]
+          p_name: string
+          p_note: string
+          p_tenant_id: string
+        }
         Returns: string
       }
       assign_schedule_shift: {
@@ -1425,6 +2663,46 @@ export type Database = {
           p_shift_id: string
           p_tenant_id: string
           p_work_date: string
+        }
+        Returns: string
+      }
+      attach_work_request_proof: {
+        Args: {
+          p_content_type: string
+          p_file_name: string
+          p_object_path: string
+          p_request_id: string
+          p_size_bytes: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      calculate_attendance: {
+        Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
+        Returns: string
+      }
+      calculate_attendance_v1: {
+        Args: { p_date_from: string; p_date_to: string; p_tenant_id: string }
+        Returns: string
+      }
+      calculate_payroll_draft: {
+        Args: { p_period_id: string; p_tenant_id: string }
+        Returns: number
+      }
+      can_read_locked_payroll: {
+        Args: {
+          p_employee_id?: string
+          p_period_id: string
+          p_tenant_id: string
+        }
+        Returns: boolean
+      }
+      create_attendance_rule_set: {
+        Args: {
+          p_early_leave_grace_minutes: number
+          p_effective_from: string
+          p_late_grace_minutes: number
+          p_tenant_id: string
         }
         Returns: string
       }
@@ -1470,6 +2748,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_payroll_period: {
+        Args: {
+          p_pay_date: string
+          p_period_month: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       create_schedule_draft: {
         Args: {
           p_period_end: string
@@ -1478,20 +2764,11 @@ export type Database = {
         }
         Returns: string
       }
-      create_attendance_rule_set: {
-        Args: {
-          p_early_leave_grace_minutes: number
-          p_effective_from: string
-          p_late_grace_minutes: number
-          p_tenant_id: string
-        }
-        Returns: string
-      }
       create_work_request: {
         Args: {
           p_ends_local: string
           p_idempotency_key: string
-          p_leave_type_id: string | null
+          p_leave_type_id: string
           p_reason: string
           p_request_type: Database["public"]["Enums"]["work_request_type"]
           p_starts_local: string
@@ -1503,87 +2780,7 @@ export type Database = {
         Args: { p_permission_code: string; p_tenant_id: string }
         Returns: boolean
       }
-      attach_work_request_proof: {
-        Args: {
-          p_content_type: string
-          p_file_name: string
-          p_object_path: string
-          p_request_id: string
-          p_size_bytes: number
-          p_tenant_id: string
-        }
-        Returns: string
-      }
-      upsert_holiday_entry: {
-        Args: {
-          p_holiday_date: string
-          p_kind: Database["public"]["Enums"]["holiday_kind"]
-          p_name: string
-          p_note: string
-          p_tenant_id: string
-        }
-        Returns: string
-      }
-      delete_holiday_entry: {
-        Args: { p_holiday_id: string; p_tenant_id: string }
-        Returns: undefined
-      }
       current_user_tenant_ids: { Args: never; Returns: string[] }
-      get_current_workspace_context: {
-        Args: never
-        Returns: {
-          can_manage_attendance: boolean
-          can_manage_employee: boolean
-          can_manage_request: boolean
-          can_manage_schedule: boolean
-          can_manage_payroll: boolean
-          can_manage_settings: boolean
-          can_read_audit: boolean
-          email: string
-          employee_id: string | null
-          tenant_id: string | null
-          tenant_name: string | null
-          user_id: string
-          user_metadata: Json
-        }[]
-      }
-      get_my_attendance_overview: {
-        Args: {
-          p_day_limit?: number
-          p_punch_limit?: number
-          p_request_limit?: number
-        }
-        Returns: Json
-      }
-      get_my_punch_policy: { Args: never; Returns: Json }
-      get_audit_log_page: {
-        Args: { p_before?: string | null; p_limit?: number; p_tenant_id: string }
-        Returns: {
-          id: number
-          actor_user_id: string | null
-          actor_email: string
-          action: string
-          entity_type: string
-          entity_id: string | null
-          request_id: string | null
-          before_data: Json | null
-          after_data: Json | null
-          occurred_at: string
-        }[]
-      }
-      get_my_published_schedule: {
-        Args: { p_date_from: string; p_date_to: string }
-        Returns: {
-          employee_id: string
-          end_minute: number
-          segment_order: number
-          shift_code: string
-          shift_id: string
-          shift_name: string
-          start_minute: number
-          work_date: string
-        }[]
-      }
       decide_punch_correction: {
         Args: {
           p_decision: Database["public"]["Enums"]["punch_correction_decision_type"]
@@ -1602,21 +2799,79 @@ export type Database = {
         }
         Returns: string
       }
-      upsert_leave_entitlement: {
+      delete_holiday_entry: {
+        Args: { p_holiday_id: string; p_tenant_id: string }
+        Returns: undefined
+      }
+      enqueue_notification: {
         Args: {
-          p_employee_id: string
-          p_entitled_minutes: number
-          p_entitlement_year: number
-          p_leave_type_id: string
-          p_note: string
+          p_body: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_key: string
+          p_href: string
+          p_kind: string
+          p_recipient_user_id: string
           p_tenant_id: string
+          p_title: string
         }
-        Returns: string
+        Returns: undefined
       }
-      withdraw_work_request: {
-        Args: { p_request_id: string; p_tenant_id: string }
-        Returns: string
+      get_audit_log_page: {
+        Args: { p_before?: string; p_limit?: number; p_tenant_id: string }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_user_id: string
+          after_data: Json
+          before_data: Json
+          entity_id: string
+          entity_type: string
+          id: number
+          occurred_at: string
+          request_id: string
+        }[]
       }
+      get_current_workspace_context: {
+        Args: never
+        Returns: {
+          can_manage_attendance: boolean
+          can_manage_employee: boolean
+          can_manage_payroll: boolean
+          can_manage_request: boolean
+          can_manage_schedule: boolean
+          can_manage_settings: boolean
+          can_read_audit: boolean
+          email: string
+          employee_id: string
+          tenant_id: string
+          tenant_name: string
+          user_id: string
+          user_metadata: Json
+        }[]
+      }
+      get_my_attendance_overview: {
+        Args: {
+          p_day_limit?: number
+          p_punch_limit?: number
+          p_request_limit?: number
+        }
+        Returns: Json
+      }
+      get_my_published_schedule: {
+        Args: { p_date_from: string; p_date_to: string }
+        Returns: {
+          employee_id: string
+          end_minute: number
+          segment_order: number
+          shift_code: string
+          shift_id: string
+          shift_name: string
+          start_minute: number
+          work_date: string
+        }[]
+      }
+      get_my_punch_policy: { Args: never; Returns: Json }
       link_employee_auth_account: {
         Args: {
           p_auth_user_id: string
@@ -1626,12 +2881,50 @@ export type Database = {
         }
         Returns: undefined
       }
-      record_employee_password_reset: {
-        Args: { p_employee_id: string; p_tenant_id: string }
+      mark_all_notifications_read: {
+        Args: { p_tenant_id: string }
+        Returns: number
+      }
+      mark_notification_read: {
+        Args: { p_notification_id: string }
         Returns: undefined
       }
-      record_self_password_change: {
-        Args: { p_tenant_id: string }
+      notify_permission_holders: {
+        Args: {
+          p_body: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_key: string
+          p_href: string
+          p_kind: string
+          p_permission_code: string
+          p_tenant_id: string
+          p_title: string
+        }
+        Returns: undefined
+      }
+      payroll_premium_cents: {
+        Args: {
+          p_insured_cents: number
+          p_rate_ppm: number
+          p_share_ppm: number
+        }
+        Returns: number
+      }
+      payroll_prorated_cents: {
+        Args: {
+          p_hourly_cents: number
+          p_minutes: number
+          p_multiplier_ppm: number
+        }
+        Returns: number
+      }
+      publish_schedule: {
+        Args: { p_schedule_version_id: string; p_tenant_id: string }
+        Returns: undefined
+      }
+      record_employee_password_reset: {
+        Args: { p_employee_id: string; p_tenant_id: string }
         Returns: undefined
       }
       record_gps_punch: {
@@ -1647,6 +2940,14 @@ export type Database = {
         }
         Returns: string
       }
+      record_self_password_change: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
+      }
+      remove_payroll_adjustment: {
+        Args: { p_item_id: string; p_tenant_id: string }
+        Returns: undefined
+      }
       request_punch_correction: {
         Args: {
           p_event_type: Database["public"]["Enums"]["punch_event_type"]
@@ -1659,9 +2960,106 @@ export type Database = {
         }
         Returns: string
       }
-      publish_schedule: {
-        Args: { p_schedule_version_id: string; p_tenant_id: string }
+      review_payroll_period: {
+        Args: {
+          p_period_id: string
+          p_review_note: string
+          p_tenant_id: string
+        }
         Returns: undefined
+      }
+      save_employee_compensation: {
+        Args: {
+          p_effective_from: string
+          p_employee_id: string
+          p_note: string
+          p_pay_basis: string
+          p_rate_cents: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      save_employee_statutory_profile: {
+        Args: {
+          p_effective_from: string
+          p_employee_id: string
+          p_employment_insured_salary_cents: number
+          p_health_dependent_count: number
+          p_health_insured_salary_cents: number
+          p_income_tax_withholding_cents: number
+          p_labor_insured_salary_cents: number
+          p_note: string
+          p_pension_salary_cents: number
+          p_pension_voluntary_rate_ppm: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      save_leave_pay_rule: {
+        Args: {
+          p_effective_from: string
+          p_leave_type_id: string
+          p_note: string
+          p_paid_ratio_ppm: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      save_payroll_settings: {
+        Args: {
+          p_closing_day: number
+          p_default_basis: string
+          p_effective_from: string
+          p_note: string
+          p_pay_day: number
+          p_pay_month_offset: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      save_payroll_statutory_settings: {
+        Args: {
+          p_effective_from: string
+          p_employment_employee_share_ppm: number
+          p_employment_insurance_rate_ppm: number
+          p_health_employee_share_ppm: number
+          p_health_insurance_rate_ppm: number
+          p_labor_employee_share_ppm: number
+          p_labor_insurance_rate_ppm: number
+          p_monthly_hour_divisor: number
+          p_overtime_tier_1_minutes: number
+          p_overtime_tier_1_multiplier_ppm: number
+          p_overtime_tier_2_minutes: number
+          p_overtime_tier_2_multiplier_ppm: number
+          p_overtime_tier_3_minutes: number
+          p_overtime_tier_3_multiplier_ppm: number
+          p_pension_employer_rate_ppm: number
+          p_source_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      save_schedule_assignments: {
+        Args: {
+          p_assignments: Json
+          p_schedule_version_id: string
+          p_tenant_id: string
+        }
+        Returns: number
+      }
+      save_workplace_settings: {
+        Args: {
+          p_address: string
+          p_effective_from: string
+          p_latitude: number
+          p_longitude: number
+          p_max_accuracy_m: number
+          p_mode: string
+          p_name: string
+          p_radius_m: number
+          p_tenant_id: string
+        }
+        Returns: string
       }
       set_employee_auth_account_status: {
         Args: {
@@ -1679,13 +3077,13 @@ export type Database = {
         }
         Returns: undefined
       }
-      save_schedule_assignments: {
+      set_payroll_period_status: {
         Args: {
-          p_assignments: Json
-          p_schedule_version_id: string
+          p_period_id: string
+          p_status: Database["public"]["Enums"]["payroll_period_status"]
           p_tenant_id: string
         }
-        Returns: number
+        Returns: undefined
       }
       update_employee: {
         Args: {
@@ -1731,6 +3129,37 @@ export type Database = {
         }
         Returns: undefined
       }
+      upsert_employee_compensation: {
+        Args: {
+          p_effective_from: string
+          p_employee_id: string
+          p_monthly_base_cents: number
+          p_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      upsert_holiday_entry: {
+        Args: {
+          p_holiday_date: string
+          p_kind: Database["public"]["Enums"]["holiday_kind"]
+          p_name: string
+          p_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      upsert_leave_entitlement: {
+        Args: {
+          p_employee_id: string
+          p_entitled_minutes: number
+          p_entitlement_year: number
+          p_leave_type_id: string
+          p_note: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       upsert_shift_template: {
         Args: {
           p_code: string
@@ -1740,10 +3169,12 @@ export type Database = {
         }
         Returns: string
       }
+      withdraw_work_request: {
+        Args: { p_request_id: string; p_tenant_id: string }
+        Returns: string
+      }
     }
     Enums: {
-      payroll_item_kind: "earning" | "deduction"
-      payroll_period_status: "draft" | "reviewed" | "locked"
       attendance_day_status: "complete" | "exception" | "unscheduled" | "leave"
       attendance_exception_type:
         | "missing_clock_in"
@@ -1764,6 +3195,9 @@ export type Database = {
       holiday_kind: "national" | "company" | "makeup_workday"
       membership_status: "invited" | "active" | "suspended" | "revoked"
       organization_status: "active" | "inactive" | "archived"
+      payroll_item_kind: "earning" | "deduction"
+      payroll_period_status: "draft" | "reviewed" | "locked"
+      punch_correction_decision_type: "approved" | "rejected"
       punch_event_type: "clock_in" | "clock_out"
       punch_location_verification:
         | "not_configured"
@@ -1771,7 +3205,6 @@ export type Database = {
         | "outside_geofence"
         | "unavailable"
       punch_source: "web_gps" | "qr"
-      punch_correction_decision_type: "approved" | "rejected"
       role_scope_type: "tenant" | "company" | "location" | "department" | "self"
       schedule_version_status: "draft" | "published" | "superseded"
       work_request_decision_type: "approved" | "rejected"
@@ -1791,12 +3224,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1820,11 +3253,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1845,11 +3278,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1870,11 +3303,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1887,11 +3320,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1922,8 +3355,12 @@ export const Constants = {
         "temporary",
       ],
       gender_type: ["male", "female", "non_binary", "undisclosed"],
+      holiday_kind: ["national", "company", "makeup_workday"],
       membership_status: ["invited", "active", "suspended", "revoked"],
       organization_status: ["active", "inactive", "archived"],
+      payroll_item_kind: ["earning", "deduction"],
+      payroll_period_status: ["draft", "reviewed", "locked"],
+      punch_correction_decision_type: ["approved", "rejected"],
       punch_event_type: ["clock_in", "clock_out"],
       punch_location_verification: [
         "not_configured",
@@ -1932,7 +3369,6 @@ export const Constants = {
         "unavailable",
       ],
       punch_source: ["web_gps", "qr"],
-      punch_correction_decision_type: ["approved", "rejected"],
       role_scope_type: ["tenant", "company", "location", "department", "self"],
       schedule_version_status: ["draft", "published", "superseded"],
       work_request_decision_type: ["approved", "rejected"],

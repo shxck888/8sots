@@ -3,11 +3,55 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/admin";
-import { payrollSettingsSchema, workplaceSettingsSchema } from "@/lib/operations-settings";
+import {
+  multiplierToPpm, payrollSettingsSchema, payrollStatutorySettingsSchema,
+  percentageToPpm, workplaceSettingsSchema,
+} from "@/lib/operations-settings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-function destination(kind: "workplace" | "payroll", error?: string): never {
+function destination(kind: "workplace" | "payroll" | "statutory", error?: string): never {
   redirect(`/admin/settings?${error ? `error=${error}` : `saved=${kind}`}`);
+}
+
+export async function savePayrollStatutorySettings(formData: FormData) {
+  const parsed = payrollStatutorySettingsSchema.safeParse({
+    effectiveFrom: formData.get("effectiveFrom"),
+    laborInsuranceRate: formData.get("laborInsuranceRate"), laborEmployeeShare: formData.get("laborEmployeeShare"),
+    employmentInsuranceRate: formData.get("employmentInsuranceRate"), employmentEmployeeShare: formData.get("employmentEmployeeShare"),
+    healthInsuranceRate: formData.get("healthInsuranceRate"), healthEmployeeShare: formData.get("healthEmployeeShare"),
+    pensionEmployerRate: formData.get("pensionEmployerRate"), monthlyHourDivisor: formData.get("monthlyHourDivisor"),
+    overtimeTier1Minutes: formData.get("overtimeTier1Minutes"), overtimeTier1Multiplier: formData.get("overtimeTier1Multiplier"),
+    overtimeTier2Minutes: formData.get("overtimeTier2Minutes"), overtimeTier2Multiplier: formData.get("overtimeTier2Multiplier"),
+    overtimeTier3Minutes: formData.get("overtimeTier3Minutes"), overtimeTier3Multiplier: formData.get("overtimeTier3Multiplier"),
+    sourceNote: formData.get("sourceNote"),
+  });
+  if (!parsed.success) destination("statutory", "statutory-input");
+  const admin = await getAdminContext("payroll.manage");
+  if (!admin) destination("statutory", "permission");
+  const supabase = await createSupabaseServerClient();
+  const data = parsed.data;
+  const { error } = await supabase.rpc("save_payroll_statutory_settings", {
+    p_tenant_id: admin.tenantId, p_effective_from: data.effectiveFrom,
+    p_labor_insurance_rate_ppm: percentageToPpm(data.laborInsuranceRate),
+    p_labor_employee_share_ppm: percentageToPpm(data.laborEmployeeShare),
+    p_employment_insurance_rate_ppm: percentageToPpm(data.employmentInsuranceRate),
+    p_employment_employee_share_ppm: percentageToPpm(data.employmentEmployeeShare),
+    p_health_insurance_rate_ppm: percentageToPpm(data.healthInsuranceRate),
+    p_health_employee_share_ppm: percentageToPpm(data.healthEmployeeShare),
+    p_pension_employer_rate_ppm: percentageToPpm(data.pensionEmployerRate),
+    p_monthly_hour_divisor: data.monthlyHourDivisor,
+    p_overtime_tier_1_minutes: data.overtimeTier1Minutes,
+    p_overtime_tier_1_multiplier_ppm: multiplierToPpm(data.overtimeTier1Multiplier),
+    p_overtime_tier_2_minutes: data.overtimeTier2Minutes,
+    p_overtime_tier_2_multiplier_ppm: multiplierToPpm(data.overtimeTier2Multiplier),
+    p_overtime_tier_3_minutes: data.overtimeTier3Minutes,
+    p_overtime_tier_3_multiplier_ppm: multiplierToPpm(data.overtimeTier3Multiplier),
+    p_source_note: data.sourceNote,
+  });
+  if (error) destination("statutory", error.code === "42501" ? "permission" : "save");
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin/payroll");
+  destination("statutory");
 }
 
 export async function saveWorkplaceSettings(formData: FormData) {

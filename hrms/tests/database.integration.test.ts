@@ -106,7 +106,26 @@ describe("database migrations and critical workflows", () => {
   it("runs payroll lifecycle, preserves adjustments, and exposes only locked self data", async () => {
     await setUser(fixtureIds.admin);
     await db.query("select public.save_payroll_settings($1,$2,25,5,1,'monthly',$3)", [fixtureIds.tenant, "2026-01-01", "測試規則"]);
+    await db.query(`select public.save_payroll_statutory_settings(
+      $1,$2,115000,200000,10000,200000,51700,300000,60000,240,
+      120,1333333,120,1666667,0,2000000,$3)`, [fixtureIds.tenant, "2026-01-01", "測試用法定費率與平日加班級距"]);
     await db.query("select public.save_employee_compensation($1,$2,$3,'monthly',3600000,$4)", [fixtureIds.tenant, fixtureIds.employee, "2026-01-01", "月薪 36,000"]);
+    await db.query(`select public.save_employee_statutory_profile(
+      $1,$2,$3,3600000,3600000,3600000,0,3600000,0,0,$4)`,
+      [fixtureIds.tenant, fixtureIds.employee, "2026-01-01", "測試員工投保級距"]);
+    await db.query("insert into public.leave_types(tenant_id,code,name) values($1,'PERSONAL','事假')", [fixtureIds.tenant]);
+    const leaveType = await db.query<{ id: string }>("select id from public.leave_types where tenant_id=$1 and code='PERSONAL'", [fixtureIds.tenant]);
+    await db.query("select public.save_leave_pay_rule($1,$2,$3,0,$4)", [fixtureIds.tenant, leaveType.rows[0].id, "2026-01-01", "事假測試設定為不給薪"]);
+    await setUser(fixtureIds.employeeUser);
+    const leaveRequest = await db.query<{ id: string }>(`select public.create_work_request(
+      $1,'leave',$2,'2026-09-08 10:00','2026-09-08 12:00','薪資連動測試請假',$3) id`,
+      [fixtureIds.tenant, leaveType.rows[0].id, crypto.randomUUID()]);
+    const overtimeRequest = await db.query<{ id: string }>(`select public.create_work_request(
+      $1,'overtime',null,'2026-09-09 21:00','2026-09-09 23:00','薪資連動測試加班',$2) id`,
+      [fixtureIds.tenant, crypto.randomUUID()]);
+    await setUser(fixtureIds.admin);
+    await db.query("select public.decide_work_request($1,$2,'approved','薪資整合測試核准')", [fixtureIds.tenant, leaveRequest.rows[0].id]);
+    await db.query("select public.decide_work_request($1,$2,'approved','薪資整合測試核准')", [fixtureIds.tenant, overtimeRequest.rows[0].id]);
     const period = await db.query<{ id: string }>("select public.create_payroll_period($1,$2,null) id", [fixtureIds.tenant, "2026-09-01"]);
     const periodId = period.rows[0].id;
     await db.query("select public.calculate_payroll_draft($1,$2)", [fixtureIds.tenant, periodId]);
@@ -114,11 +133,22 @@ describe("database migrations and critical workflows", () => {
     const adjustmentKey = crypto.randomUUID();
     await db.query("select public.add_payroll_adjustment_once($1,$2,'earning','測試津貼',10000,$3,$4)", [fixtureIds.tenant, entry.rows[0].id, "保留人工調整", adjustmentKey]);
     await db.query("select public.calculate_payroll_draft($1,$2)", [fixtureIds.tenant, periodId]);
-    const totals = await db.query<{ gross_cents: number; manual_items: number }>(
-      `select pe.gross_cents,(select count(*)::integer from public.payroll_items pi where pi.payroll_entry_id=pe.id and pi.source='manual') manual_items
+    const totals = await db.query<{ gross_cents: number; deduction_cents: number; manual_items: number }>(
+      `select pe.gross_cents,pe.deduction_cents,(select count(*)::integer from public.payroll_items pi where pi.payroll_entry_id=pe.id and pi.source='manual') manual_items
        from public.payroll_entries pe where pe.id=$1`, [entry.rows[0].id],
     );
-    expect(totals.rows[0]).toEqual({ gross_cents: 3_610_000, manual_items: 1 });
+    expect(totals.rows[0]).toEqual({ gross_cents: 3_650_000, deduction_cents: 175_800, manual_items: 1 });
+    const linkedItems = await db.query<{ code: string; amount_cents: number }>(
+      "select code,amount_cents from public.payroll_items where payroll_entry_id=$1 and code in ('OVERTIME','UNPAID_LEAVE','LABOR_INSURANCE','EMPLOYMENT_INSURANCE','HEALTH_INSURANCE') order by code",
+      [entry.rows[0].id],
+    );
+    expect(linkedItems.rows).toEqual([
+      { code: "EMPLOYMENT_INSURANCE", amount_cents: 7_200 },
+      { code: "HEALTH_INSURANCE", amount_cents: 55_800 },
+      { code: "LABOR_INSURANCE", amount_cents: 82_800 },
+      { code: "OVERTIME", amount_cents: 40_000 },
+      { code: "UNPAID_LEAVE", amount_cents: 30_000 },
+    ]);
     await db.query("select public.review_payroll_period($1,$2,$3)", [fixtureIds.tenant, periodId, "已逐筆核對薪資設定與人工調整"]);
     await db.query("select public.set_payroll_period_status($1,$2,'locked')", [fixtureIds.tenant, periodId]);
     await expect(db.query("select public.add_payroll_adjustment($1,$2,'earning','鎖定後修改',1,'')", [fixtureIds.tenant, entry.rows[0].id])).rejects.toThrow();
@@ -127,6 +157,8 @@ describe("database migrations and critical workflows", () => {
     await setUser(fixtureIds.employeeUser);
     const employeeRows = await db.query<{ count: number }>("select count(*)::integer count from public.payroll_entries");
     expect(employeeRows.rows[0].count).toBe(1);
+    const employeeNotifications = await db.query<{ title: string }>("select title from public.notifications where recipient_user_id=$1", [fixtureIds.employeeUser]);
+    expect(employeeNotifications.rows.map((row) => row.title)).toEqual(expect.arrayContaining(["申請已核准", "薪資單已發布"]));
     await setUser(fixtureIds.outsider);
     const outsiderRows = await db.query<{ count: number }>("select count(*)::integer count from public.payroll_entries");
     expect(outsiderRows.rows[0].count).toBe(0);

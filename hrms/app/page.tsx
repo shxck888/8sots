@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { PunchPanel } from "@/app/punch/punch-panel";
 import { getMyPublishedSchedule } from "@/lib/my-schedule";
+import { getUnreadNotificationCount } from "@/lib/notifications";
 import { getEmployeePunchContext } from "@/lib/punches";
 import { formatScheduledHours, getMonthBounds, taipeiDateKey } from "@/lib/schedule-display";
 import { shiftMinuteLabel } from "@/lib/schedules";
@@ -24,12 +25,12 @@ export default async function Home() {
 
   const now = new Date();
   const today = taipeiDateKey(now);
-  const [schedule, punches] = workspace.tenantId
+  const [schedule, punches, unreadNotifications] = workspace.tenantId
       ? await Promise.all([getMyPublishedSchedule({
         ...getMonthBounds(today),
         employeeId: workspace.employeeId,
-      }), getEmployeePunchContext({ employeeId: workspace.employeeId, tenantId: workspace.tenantId })])
-    : [{ employeeId: null, entries: [] }, { employeeId: null, records: [], policy: { configured: false } }];
+      }), getEmployeePunchContext({ employeeId: workspace.employeeId, tenantId: workspace.tenantId }), getUnreadNotificationCount(workspace.tenantId)])
+    : [{ employeeId: null, entries: [] }, { employeeId: null, records: [], policy: { configured: false } }, 0];
   const todaySchedule = schedule.entries.find((entry) => entry.workDate === today);
   const scheduledMinutes = schedule.entries.reduce((total, entry) => total + entry.totalMinutes, 0);
   const todayLabel = new Intl.DateTimeFormat("zh-TW", {
@@ -47,12 +48,13 @@ export default async function Home() {
       displayName={workspace.displayName}
       email={workspace.email}
       tenantName={workspace.tenantName}
+      notificationUnreadCount={unreadNotifications}
     >
       <header className="topbar">
         <div><span className="date-label">{todayLabel}</span><h1>你好，{workspace.displayName}</h1></div>
         <div className="topbar-actions">
           {workspace.canManage ? <Link className="admin-entry" href="/admin"><Settings size={17} /> 進入管理後台</Link> : null}
-          <button className="icon-button" aria-label="通知功能尚未上線" disabled><Bell size={21} /></button>
+          <Link className="icon-button" aria-label={`通知中心${unreadNotifications ? `，${unreadNotifications} 則未讀` : ""}`} href="/notifications"><Bell size={21} />{unreadNotifications ? <i>{Math.min(unreadNotifications, 99)}</i> : null}</Link>
         </div>
       </header>
 
