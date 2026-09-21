@@ -39,7 +39,6 @@ export default async function LoginPage({
           <p className="login-intro">請使用您的員工帳號登入。</p>
           {passwordChanged === "1" ? <p className="login-success" role="status">密碼已變更，請使用新密碼重新登入。{warning ? " 若舊裝置仍保持登入，請聯絡系統管理員檢查稽核紀錄。" : ""}</p> : null}
           <LoginForm nextPath={sanitizeNextPath(next)} />
-          <p className="login-help">尚未取得帳號或忘記密碼？請聯絡門市主管或 HR。</p>
         </div>
       </section>
     </main>

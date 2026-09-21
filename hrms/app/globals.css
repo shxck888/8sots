@@ -59,7 +59,6 @@ button { color: inherit; }
 .login-success { margin: 0 0 18px; padding: 11px 13px; border: 1px solid #bcd9c9; border-radius: 10px; color: #24634f; background: #eaf6ef; font-size: 11px; line-height: 1.55; }
 .login-submit { height: 52px; margin-top: 25px; border: 0; border-radius: 13px; padding: 0 18px; display: flex; align-items: center; justify-content: center; gap: 9px; color: white; background: var(--green); font-weight: 700; cursor: pointer; box-shadow: 0 12px 26px rgba(21,74,64,.19); }
 .login-submit:disabled { cursor: wait; opacity: .65; }
-.login-help { margin: 22px 0 0; padding-top: 19px; border-top: 1px solid #ecebe5; color: var(--muted); font-size: 11px; line-height: 1.65; text-align: center; }
 
 .content { min-width: 0; padding: 34px clamp(24px, 4vw, 62px) 50px; }
 .topbar { display: flex; align-items: center; justify-content: space-between; max-width: 1180px; margin: 0 auto 28px; }
@@ -408,7 +407,7 @@ button { color: inherit; }
   .schedule-readonly-shift, .schedule-readonly-empty { font-size: 15px; }
   .schedule-grid tbody th small { font-size: 14px; }
 
-  .login-intro, .login-help { font-size: 15px; line-height: 1.6; }
+  .login-intro { font-size: 15px; line-height: 1.6; }
   .login-form > label { font-size: 16px; }
   .login-input { height: 56px; }
   .login-input input { font-size: 17px; }
@@ -591,7 +590,7 @@ td { font-size: 15px; line-height: 1.5; }
 code { font-size: 14px !important; line-height: 1.55; }
 
 .login-kicker,.eyebrow,.admin-eyebrow { font-size: 12px; line-height: 1.45; }
-.login-intro,.login-help,.field-error,.login-error,.login-success { font-size: 14px; }
+.login-intro,.field-error,.login-error,.login-success { font-size: 14px; }
 .login-form > label { font-size: 15px !important; }
 .login-input input { font-size: 16px !important; }
 .login-submit { font-size: 16px; }
