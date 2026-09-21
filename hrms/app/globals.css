@@ -41,6 +41,7 @@ button { color: inherit; }
 .login-panel { position: relative; z-index: 1; width: 100%; display: grid; place-items: center; }
 .login-card { width: min(100%, 460px); padding: clamp(30px, 5vw, 50px); border: 1px solid rgba(23,63,54,.12); border-radius: 26px; background: rgba(255,253,248,.96); box-shadow: 0 26px 80px rgba(31,57,48,.13); backdrop-filter: blur(16px); }
 .login-card-brand { margin-bottom: 34px; display: flex; align-items: center; gap: 13px; }
+.login-card-brand .brand-mark { flex: none; width: 44px; height: 44px; }
 .login-card-brand > div { display: grid; gap: 1px; }
 .login-card-brand strong { color: var(--ink); font-size: 21px; letter-spacing: .04em; }
 .login-card-brand span:last-child { color: var(--muted); font-size: 13px; }
