@@ -1,4 +1,4 @@
-import { Plus, Search, UserRoundCheck, UsersRound } from "lucide-react";
+import { Archive, Plus, Search, UserRoundCheck, UsersRound } from "lucide-react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,26 +9,31 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export default async function EmployeesPage({ searchParams }: {
-  searchParams: Promise<{ q?: string; created?: string; updated?: string; photoError?: string }>;
+  searchParams: Promise<{ q?: string; view?: string; created?: string; updated?: string; deleted?: string; photoError?: string; cleanupWarning?: string }>;
 }) {
   const params = await searchParams;
   const admin = await getAdminContext();
   if (!admin) redirect("/");
 
   const supabase = await createSupabaseServerClient();
+  const view = params.view === "archived" ? "archived" : params.view === "all" ? "all" : "current";
   let query = supabase.from("employee_master_current").select("*")
     .eq("tenant_id", admin.tenantId).order("employee_no");
+  if (view === "current") query = query.is("archived_at", null);
+  if (view === "archived") query = query.not("archived_at", "is", null);
   const keyword = params.q?.trim();
   if (keyword) query = query.or(`employee_no.ilike.%${keyword}%,full_name.ilike.%${keyword}%,department_name.ilike.%${keyword}%,position_name.ilike.%${keyword}%`);
 
   const { data, error } = await query;
+  const { data: lifecycleRows } = await supabase.from("employees").select("status, archived_at").eq("tenant_id", admin.tenantId);
   const employees = (data ?? []) as EmployeeMasterRecord[];
   const employeesWithPhotos = await Promise.all(employees.map(async (employee) => {
     if (!employee.photo_path) return employee;
     const { data: signed } = await supabase.storage.from("employee-photos").createSignedUrl(employee.photo_path, 600);
     return { ...employee, photo_url: signed?.signedUrl ?? null };
   }));
-  const activeCount = employees.filter((employee) => employee.status === "active").length;
+  const activeCount = (lifecycleRows ?? []).filter((employee) => employee.status === "active" && !employee.archived_at).length;
+  const archivedCount = (lifecycleRows ?? []).filter((employee) => Boolean(employee.archived_at)).length;
 
   return (
     <>
@@ -38,15 +43,19 @@ export default async function EmployeesPage({ searchParams }: {
       </header>
       {params.created ? <div className="admin-success">員工已新增。</div> : null}
       {params.updated ? <div className="admin-success">員工資料已更新。</div> : null}
+      {params.deleted ? <div className="admin-success">誤建員工資料已永久刪除。</div> : null}
+      {params.cleanupWarning ? <div className="admin-form-error">員工主檔已刪除，但照片或 Auth 帳號清理未完成，請聯絡系統管理員檢查。</div> : null}
       {params.photoError ? <div className="admin-form-error">員工資料已儲存，但照片上傳失敗，請重新編輯上傳。</div> : null}
 
       <section className="admin-stats">
-        <article><span><UsersRound size={19} /></span><div><small>員工總數</small><strong>{employees.length}</strong></div></article>
+        <article><span><UsersRound size={19} /></span><div><small>員工總數</small><strong>{lifecycleRows?.length ?? employees.length}</strong></div></article>
         <article><span><UserRoundCheck size={19} /></span><div><small>目前在職</small><strong>{activeCount}</strong></div></article>
+        <article><span><Archive size={19} /></span><div><small>已封存</small><strong>{archivedCount}</strong></div></article>
       </section>
 
       <section className="admin-panel">
-        <div className="admin-toolbar"><form className="admin-search" action="/admin/employees"><Search size={17} /><input aria-label="搜尋員工" defaultValue={keyword} name="q" placeholder="搜尋編號、姓名、部門或職位" /></form><span>共 {employees.length} 筆</span></div>
+        <div className="employee-view-tabs"><Link className={view === "current" ? "active" : ""} href="/admin/employees">現有員工</Link><Link className={view === "archived" ? "active" : ""} href="/admin/employees?view=archived">已封存</Link><Link className={view === "all" ? "active" : ""} href="/admin/employees?view=all">全部</Link></div>
+        <div className="admin-toolbar"><form className="admin-search" action="/admin/employees">{view !== "current" ? <input name="view" type="hidden" value={view}/> : null}<Search size={17} /><input aria-label="搜尋員工" defaultValue={keyword} name="q" placeholder="搜尋編號、姓名、部門或職位" /></form><span>共 {employees.length} 筆</span></div>
         {error ? <div className="admin-empty"><strong>員工資料尚未就緒</strong><p>請確認最新 database migration 已完成。</p></div> : employees.length === 0 ? (
           <div className="admin-empty"><UsersRound size={30} /><strong>尚未建立員工</strong><p>從新增第一位員工開始建立人員主檔。</p><Link className="admin-button primary" href="/admin/employees/new">新增員工</Link></div>
         ) : (
@@ -58,8 +67,8 @@ export default async function EmployeesPage({ searchParams }: {
                 <td>{employee.employment_type ? employmentTypeLabels[employee.employment_type] : "—"}</td>
                 <td><div className="contact-cell"><span>{employee.mobile ?? "—"}</span><small>{employee.email ?? "未填 Email"}</small></div></td>
                 <td>{employee.hire_date ?? "—"}</td>
-                <td>{employee.status ? <span className={`employee-status ${employee.status}`}>{employeeStatusLabels[employee.status]}</span> : "—"}</td>
-                <td><Link className="table-action" href={`/admin/employees/${employee.id}`}>編輯</Link></td>
+                <td>{employee.archived_at ? <span className="employee-status archived">已封存</span> : employee.status ? <span className={`employee-status ${employee.status}`}>{employeeStatusLabels[employee.status]}</span> : "—"}</td>
+                <td><Link className="table-action" href={`/admin/employees/${employee.id}`}>{employee.archived_at ? "查看" : "編輯"}</Link></td>
               </tr>
             ))}
           </tbody></table></div>

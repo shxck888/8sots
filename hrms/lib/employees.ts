@@ -53,6 +53,14 @@ export type EmployeeFormState = {
   fieldErrors?: Partial<Record<keyof z.input<typeof employeeFormSchema>, string[]>>;
 };
 
+export type EmployeeLifecycleState = { message?: string };
+
+export type EmployeeDeletionEligibility = {
+  eligible: boolean;
+  archived: boolean;
+  blockers: string[];
+};
+
 type GeneratedEmployeeMasterRecord = Tables<"employee_master_current">;
 
 export type EmployeeMasterRecord = Omit<

@@ -244,4 +244,43 @@ describe("database migrations and critical workflows", () => {
       [fixtureIds.tenant, fixtureIds.employee, crypto.randomUUID(), fixtureIds.employeeUser],
     )).rejects.toThrow(/punch rate limit exceeded/);
   });
+
+  it("archives employees and only permanently deletes records without retained history", async () => {
+    const cleanUser = "10000000-0000-4000-8000-000000000008";
+    const cleanEmployee = "10000000-0000-4000-8000-000000000009";
+    await db.query("insert into auth.users(id,email) values($1,$2)", [cleanUser, "clean-employee@example.test"]);
+    await db.query("insert into public.tenant_memberships(tenant_id,user_id,status) values($1,$2,'active')", [fixtureIds.tenant, cleanUser]);
+    await db.query(`insert into public.employees(id,tenant_id,auth_user_id,employee_no,full_name,hire_date,status)
+      values($1,$2,$3,'E-CLEAN','誤建員工','2026-09-01','active')`, [cleanEmployee, fixtureIds.tenant, cleanUser]);
+    await db.query("insert into public.employee_profiles(employee_id,tenant_id) values($1,$2)", [cleanEmployee, fixtureIds.tenant]);
+    await db.query("insert into public.employee_contacts(employee_id,tenant_id) values($1,$2)", [cleanEmployee, fixtureIds.tenant]);
+    await db.query(`insert into public.employment_records(tenant_id,employee_id,employment_type,hire_date,status,effective_from)
+      values($1,$2,'full_time','2026-09-01','active','2026-09-01')`, [fixtureIds.tenant, cleanEmployee]);
+    await db.query(`insert into public.employee_auth_accounts(employee_id,tenant_id,auth_user_id,username)
+      values($1,$2,$3,'clean_employee')`, [cleanEmployee, fixtureIds.tenant, cleanUser]);
+
+    await setUser(fixtureIds.admin);
+    await db.query("select public.archive_employee($1,$2,$3)", [fixtureIds.tenant, cleanEmployee, "整合測試誤建員工封存"]);
+    const archived = await db.query<{ status: string; archived: boolean; account_status: string; membership_status: string }>(`
+      select e.status,e.archived_at is not null archived,eaa.status account_status,tm.status membership_status
+      from public.employees e join public.employee_auth_accounts eaa on eaa.employee_id=e.id
+      join public.tenant_memberships tm on tm.tenant_id=e.tenant_id and tm.user_id=e.auth_user_id
+      where e.id=$1`, [cleanEmployee]);
+    expect(archived.rows[0]).toEqual({ status: "terminated", archived: true, account_status: "suspended", membership_status: "suspended" });
+    const eligible = await db.query<{ result: { eligible: boolean; blockers: string[] } }>(
+      "select public.get_employee_deletion_eligibility($1,$2) result", [fixtureIds.tenant, cleanEmployee],
+    );
+    expect(eligible.rows[0].result).toMatchObject({ eligible: true, blockers: [] });
+    await db.query("select public.delete_unreferenced_employee($1,$2)", [fixtureIds.tenant, cleanEmployee]);
+    const deleted = await db.query<{ count: number }>("select count(*)::integer count from public.employees where id=$1", [cleanEmployee]);
+    expect(deleted.rows[0].count).toBe(0);
+    const revoked = await db.query<{ status: string }>("select status from public.tenant_memberships where tenant_id=$1 and user_id=$2", [fixtureIds.tenant, cleanUser]);
+    expect(revoked.rows[0].status).toBe("revoked");
+
+    const retained = await db.query<{ result: { eligible: boolean; blockers: string[] } }>(
+      "select public.get_employee_deletion_eligibility($1,$2) result", [fixtureIds.tenant, fixtureIds.employee],
+    );
+    expect(retained.rows[0].result.eligible).toBe(false);
+    expect(retained.rows[0].result.blockers).toEqual(expect.arrayContaining(["打卡紀錄", "薪資紀錄", "特休台帳"]));
+  });
 });

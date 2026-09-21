@@ -1018,6 +1018,9 @@ export type Database = {
       }
       employees: {
         Row: {
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           auth_user_id: string | null
           created_at: string
           created_by: string | null
@@ -1034,6 +1037,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           auth_user_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1050,6 +1056,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           auth_user_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -2835,6 +2844,9 @@ export type Database = {
       employee_master_current: {
         Row: {
           address: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           auth_user_id: string | null
           birth_date: string | null
           created_at: string | null
@@ -2915,6 +2927,10 @@ export type Database = {
         Returns: number
       }
       annual_leave_statutory_tiers: { Args: never; Returns: Json }
+      archive_employee: {
+        Args: { p_employee_id: string; p_reason: string; p_tenant_id: string }
+        Returns: Json
+      }
       assign_schedule_shift: {
         Args: {
           p_employee_id: string
@@ -3063,6 +3079,14 @@ export type Database = {
         Args: { p_holiday_id: string; p_tenant_id: string }
         Returns: undefined
       }
+      delete_unreferenced_employee: {
+        Args: { p_employee_id: string; p_tenant_id: string }
+        Returns: Json
+      }
+      employee_deletion_blockers: {
+        Args: { p_employee_id: string; p_tenant_id: string }
+        Returns: string[]
+      }
       enqueue_notification: {
         Args: {
           p_body: string
@@ -3113,6 +3137,10 @@ export type Database = {
           user_id: string
           user_metadata: Json
         }[]
+      }
+      get_employee_deletion_eligibility: {
+        Args: { p_employee_id: string; p_tenant_id: string }
+        Returns: Json
       }
       get_my_annual_leave_balance: { Args: { p_as_of?: string }; Returns: Json }
       get_my_attendance_overview: {
@@ -3224,6 +3252,10 @@ export type Database = {
           p_work_date: string
         }
         Returns: string
+      }
+      restore_archived_employee: {
+        Args: { p_employee_id: string; p_tenant_id: string }
+        Returns: Json
       }
       review_payroll_period: {
         Args: {

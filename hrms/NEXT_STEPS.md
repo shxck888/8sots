@@ -12,6 +12,8 @@ Production migrations `033`–`034` are applied. The in-app notification center 
 
 Production migration `035` is applied. Anniversary-based statutory annual leave is generated from each employee's hire date, deducted only after approval, protected from over-approval, and retained as grant/usage/adjustment history. Employees can see their balance and expiry in `/requests`; managers can configure the effective date and standard-day minutes in `/admin/settings`, then inspect or sync all employee balances in `/admin/requests`. Expired unused grants are marked pending settlement for payroll review; automatic cash-out posting is not yet enabled.
 
+Production migration `036` is applied. Employee records now support audited archive/restore lifecycle management. Archiving terminates and hides the employee from current operational lists while suspending the linked account and membership. Permanent deletion is limited to archived records with no retained schedule, punch, attendance, request, payroll, statutory, annual-leave, supervisor or management-role history and requires explicit employee-number confirmation.
+
 No workplace coordinates, insurance brackets, withholding amounts or legal rates were invented. Administrators must create the applicable versions in `/admin/settings` and `/admin/payroll`; locked periods preserve the versions and snapshots used.
 
 ## Current Phase
@@ -65,7 +67,7 @@ No workplace coordinates, insurance brackets, withholding amounts or legal rates
 ## Known Issues / Risks
 
 - `017`–`020` 已完成 production 驗證；真實手機 GPS、附件上傳、撤回與審核 E2E 仍需 `hs001` 實際操作。
-- `lib/database.types.ts` 已由套用 `035` 後的 production schema 重新產生。
+- `lib/database.types.ts` 已由套用 `036` 後的 production schema 重新產生。
 - 到期未休特休目前會進入「待結清」台帳，不會自行產生薪資加項；需在實際薪資流程核對並以人工調整結清，之後可再補自動折算與結清憑證。
 - Rule V2 的 0／0 分鐘是使用者確認的海之星政策，自 2026-08-26 生效；V1 保留為歷史技術基線。
 - 尚無 Location/geofence；GPS 只保存 evidence。
