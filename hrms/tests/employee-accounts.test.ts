@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { employeeAccountCredentialsSchema, employeePasswordSchema } from "../lib/employee-accounts";
+import { employeeAccountCredentialsSchema, employeePasswordSchema, employeeUsernameSchema } from "../lib/employee-accounts";
 
 describe("employee account credentials", () => {
   it("normalizes a valid username and accepts an alphanumeric password", () => {
@@ -22,5 +22,10 @@ describe("employee account credentials", () => {
   it("uses the same password policy for resets", () => {
     expect(employeePasswordSchema.safeParse({ password: "reset0708" }).success).toBe(true);
     expect(employeePasswordSchema.safeParse({ password: "short" }).success).toBe(false);
+  });
+
+  it("accepts a mobile number as a replacement login username", () => {
+    expect(employeeUsernameSchema.parse({ username: "0916354222" }).username).toBe("0916354222");
+    expect(employeeUsernameSchema.safeParse({ username: "0916-354-222" }).success).toBe(false);
   });
 });

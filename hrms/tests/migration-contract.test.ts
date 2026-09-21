@@ -137,6 +137,11 @@ const overlappingRequestMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const usernameChangeMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202609220037_employee_username_change.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -371,6 +376,13 @@ describe("foundation migration contract", () => {
   it("prevents administrators from changing their own login status", () => {
     expect(preventSelfSuspensionMigration).toContain("v_account.auth_user_id = (select auth.uid())");
     expect(preventSelfSuspensionMigration).toContain("cannot change own account status");
+  });
+
+  it("changes employee usernames through a permission-checked audited RPC", () => {
+    expect(usernameChangeMigration).toContain("change_employee_account_username");
+    expect(usernameChangeMigration).toContain("employee.manage");
+    expect(usernameChangeMigration).toContain("employee.username_changed");
+    expect(usernameChangeMigration).toContain("for update");
   });
 
   it("models tenant-wide shifts as ordered segments and supports cross-midnight offsets", () => {

@@ -11,6 +11,10 @@ export const employeePasswordSchema = z.object({
   password: loginFormSchema.shape.password,
 });
 
+export const employeeUsernameSchema = z.object({
+  username: loginFormSchema.shape.username,
+});
+
 export type EmployeeAccountState = {
   message?: string;
   success?: string;

@@ -6,6 +6,7 @@ import { usernameToAuthEmail } from "@/lib/auth";
 import {
   employeeAccountCredentialsSchema,
   employeePasswordSchema,
+  employeeUsernameSchema,
   type EmployeeAccountState,
 } from "@/lib/employee-accounts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -97,6 +98,60 @@ export async function resetEmployeePassword(
   });
   if (auditError) return { message: "密碼已更新，但稽核紀錄失敗，請立即聯絡系統管理員。" };
   return { success: "密碼已重設。" };
+}
+
+export async function changeEmployeeUsername(
+  employeeId: string, _state: EmployeeAccountState, formData: FormData,
+): Promise<EmployeeAccountState> {
+  const parsed = employeeUsernameSchema.safeParse({ username: formData.get("username") });
+  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  const context = await contextForEmployee(employeeId);
+  if (!context) return { message: "員工或管理員權限驗證失敗。" };
+  const account = await getAccount(employeeId, context.admin.tenantId);
+  if (!account) return { message: "這位員工尚未建立登入帳號。" };
+  if (account.username === parsed.data.username) return { success: "登入帳號沒有變更。" };
+  const authAdmin = adminClientOrNull();
+  if (!authAdmin) return { message: "帳號管理服務尚未設定，請聯絡系統管理員。" };
+
+  const previousEmail = usernameToAuthEmail(account.username);
+  const { error: authError } = await authAdmin.auth.admin.updateUserById(account.auth_user_id, {
+    email: usernameToAuthEmail(parsed.data.username),
+    email_confirm: true,
+  });
+  if (authError) {
+    console.error("employee Auth username change failed", {
+      code: authError.code, status: authError.status, message: authError.message,
+    });
+    return {
+      message: authError.code === "email_exists" || authError.message.toLowerCase().includes("already")
+        ? "這個帳號已被使用。"
+        : "登入帳號變更失敗，請稍後再試。",
+    };
+  }
+
+  const { error: databaseError } = await context.supabase.rpc("change_employee_account_username", {
+    p_tenant_id: context.admin.tenantId,
+    p_employee_id: employeeId,
+    p_username: parsed.data.username,
+  });
+  if (databaseError) {
+    const { error: rollbackError } = await authAdmin.auth.admin.updateUserById(account.auth_user_id, {
+      email: previousEmail,
+      email_confirm: true,
+    });
+    if (rollbackError) {
+      console.error("employee Auth username rollback failed", {
+        code: rollbackError.code, status: rollbackError.status, message: rollbackError.message,
+      });
+      return { message: "帳號資料同步失敗且無法自動還原，請立即聯絡系統管理員。" };
+    }
+    return {
+      message: databaseError.code === "23505" ? "這個帳號已被使用。" : "帳號資料同步失敗，登入帳號已還原。",
+    };
+  }
+
+  revalidatePath(`/admin/employees/${employeeId}`);
+  return { success: `登入帳號已變更為 ${parsed.data.username}，原密碼保持不變。` };
 }
 
 export async function setEmployeeAccountStatus(

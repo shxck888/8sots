@@ -2973,6 +2973,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      change_employee_account_username: {
+        Args: { p_employee_id: string; p_tenant_id: string; p_username: string }
+        Returns: undefined
+      }
       create_attendance_rule_set: {
         Args: {
           p_early_leave_grace_minutes: number
