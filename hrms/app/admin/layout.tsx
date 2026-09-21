@@ -1,4 +1,5 @@
-import { Building2, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
@@ -21,8 +22,8 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     <main className="admin-shell">
       <aside className="admin-sidebar">
         <Link className="admin-brand" href="/admin/employees">
-          <span><Building2 size={20} /></span>
-          <div><strong>餐飲 eHR</strong><small>管理後台</small></div>
+          <span><Image alt="" height={38} priority src="/haizhixing-logo-icon.png" width={38} /></span>
+          <div><strong>海之星</strong><small>管理後台</small></div>
         </Link>
         <AdminNav permissions={admin.permissions} />
         <div className="admin-tenant"><small>目前組織</small><strong>{admin.tenantName}</strong></div>

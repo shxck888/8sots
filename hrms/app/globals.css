@@ -21,7 +21,8 @@ button { color: inherit; }
 .sidebar { position: sticky; top: 0; height: 100vh; padding: 30px 22px 22px; background: #113d35; color: #f4f5ed; display: flex; flex-direction: column; }
 .brand { display: flex; align-items: center; gap: 11px; font-size: 20px; letter-spacing: .02em; padding: 0 8px 32px; }
 .brand strong { color: #bfe1cc; }
-.brand-mark { width: 34px; height: 34px; display: grid; place-items: center; color: #153c35; background: #c9e3d3; border-radius: 11px 11px 11px 4px; }
+.brand-mark { width: 34px; height: 34px; overflow: hidden; display: grid; place-items: center; background: white; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.32); }
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; }
 .side-nav { display: grid; gap: 7px; }
 .nav-item { display: flex; gap: 13px; align-items: center; padding: 12px 14px; color: #bad0c9; border-radius: 12px; font-size: 14px; }
 .nav-item.active { color: #fff; background: rgba(255,255,255,.11); box-shadow: inset 3px 0 #bfe1cc; }
@@ -227,7 +228,8 @@ button { color: inherit; }
 .admin-shell { min-height: 100vh; display: grid; grid-template-columns: 235px 1fr; background: #f4f2ec; }
 .admin-sidebar { position: sticky; top: 0; height: 100vh; padding: 27px 18px 20px; display: flex; flex-direction: column; color: #eaf1ed; background: #133f37; }
 .admin-brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 27px; }
-.admin-brand > span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px 12px 12px 4px; color: #164238; background: #cde4d5; }
+.admin-brand > span { width: 38px; height: 38px; overflow: hidden; display: grid; place-items: center; border-radius: 50%; background: white; }
+.admin-brand > span img { width: 100%; height: 100%; object-fit: contain; }
 .admin-brand > div { display: grid; gap: 2px; }.admin-brand strong { font-size: 15px; }.admin-brand small { color: #9dbab1; font-size: 10px; }
 .admin-nav { display: grid; gap: 6px; }.admin-nav a { padding: 12px 13px; display: flex; align-items: center; gap: 11px; border-radius: 11px; color: #b7ccc5; font-size: 13px; }
 .admin-nav a:hover, .admin-nav a.active { color: white; background: rgba(255,255,255,.1); }.admin-nav a.active { box-shadow: inset 3px 0 #bfe1cc; }

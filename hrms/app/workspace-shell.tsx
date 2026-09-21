@@ -1,6 +1,7 @@
 import {
-  Banknote, Bell, CalendarDays, Clock3, LayoutDashboard, LogOut, MapPin, ReceiptText, Settings, Sparkles,
+  Banknote, Bell, CalendarDays, Clock3, LayoutDashboard, LogOut, MapPin, ReceiptText, Settings,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
 
@@ -28,7 +29,7 @@ export function WorkspaceShell({
   return (
     <main className="app-shell">
       <aside className="sidebar" aria-label="主要導覽">
-        <div className="brand"><span className="brand-mark"><Sparkles size={20} /></span><span>餐飲 <strong>eHR</strong></span></div>
+        <div className="brand"><span className="brand-mark"><Image alt="" height={34} priority src="/haizhixing-logo-icon.png" width={34} /></span><span><strong>海之星</strong></span></div>
         <nav className="side-nav">
           {nav.map(({ label, icon: Icon, href }) => (
             <Link className={activePath === href ? "nav-item active" : "nav-item"} href={href} key={label}><Icon size={19} /><span>{label}</span>{href === "/notifications" && notificationUnreadCount > 0 ? <i className="nav-badge">{Math.min(notificationUnreadCount, 99)}</i> : null}</Link>

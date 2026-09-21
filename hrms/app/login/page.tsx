@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Star } from "lucide-react";
+import Image from "next/image";
 import { sanitizeNextPath } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LoginForm } from "./login-form";
@@ -32,7 +32,7 @@ export default async function LoginPage({
       <section className="login-panel" aria-label="海之星員工登入">
         <div className="login-card">
           <div className="login-card-brand">
-            <span className="brand-mark"><Star aria-hidden="true" size={20} /></span>
+            <span className="brand-mark"><Image alt="" height={34} priority src="/haizhixing-logo-icon.png" width={34} /></span>
             <div><strong>海之星</strong><span>員工工作台</span></div>
           </div>
           <h1>員工登入</h1>
