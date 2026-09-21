@@ -35,8 +35,6 @@ export default async function LoginPage({
             <span className="brand-mark"><Image alt="" height={34} priority src="/haizhixing-logo-icon.png" width={34} /></span>
             <div><strong>海之星</strong><span>員工工作台</span></div>
           </div>
-          <h1>員工登入</h1>
-          <p className="login-intro">請使用您的員工帳號登入。</p>
           {passwordChanged === "1" ? <p className="login-success" role="status">密碼已變更，請使用新密碼重新登入。{warning ? " 若舊裝置仍保持登入，請聯絡系統管理員檢查稽核紀錄。" : ""}</p> : null}
           <LoginForm nextPath={sanitizeNextPath(next)} />
         </div>

@@ -45,8 +45,6 @@ button { color: inherit; }
 .login-card-brand > div { display: grid; gap: 1px; }
 .login-card-brand strong { color: var(--ink); font-size: 21px; letter-spacing: .04em; }
 .login-card-brand span:last-child { color: var(--muted); font-size: 13px; }
-.login-card h1 { margin: 0 0 8px; font: 600 32px/1.25 Georgia, 'Noto Serif TC', serif; }
-.login-intro { margin: 0 0 30px; color: var(--muted); font-size: 13px; }
 .login-form { display: grid; }
 .login-form > label { margin: 0 0 8px; font-size: 12px; font-weight: 700; }
 .login-form > label:not(:first-of-type) { margin-top: 19px; }
@@ -407,7 +405,6 @@ button { color: inherit; }
   .schedule-readonly-shift, .schedule-readonly-empty { font-size: 15px; }
   .schedule-grid tbody th small { font-size: 14px; }
 
-  .login-intro { font-size: 15px; line-height: 1.6; }
   .login-form > label { font-size: 16px; }
   .login-input { height: 56px; }
   .login-input input { font-size: 17px; }
@@ -590,7 +587,7 @@ td { font-size: 15px; line-height: 1.5; }
 code { font-size: 14px !important; line-height: 1.55; }
 
 .login-kicker,.eyebrow,.admin-eyebrow { font-size: 12px; line-height: 1.45; }
-.login-intro,.field-error,.login-error,.login-success { font-size: 14px; }
+.field-error,.login-error,.login-success { font-size: 14px; }
 .login-form > label { font-size: 15px !important; }
 .login-input input { font-size: 16px !important; }
 .login-submit { font-size: 16px; }
