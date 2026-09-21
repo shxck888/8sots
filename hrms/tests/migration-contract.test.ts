@@ -142,6 +142,11 @@ const usernameChangeMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const auditReaderFixMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202609220038_fix_audit_log_reader.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -383,6 +388,13 @@ describe("foundation migration contract", () => {
     expect(usernameChangeMigration).toContain("employee.manage");
     expect(usernameChangeMigration).toContain("employee.username_changed");
     expect(usernameChangeMigration).toContain("for update");
+  });
+
+  it("casts auth email to the audit RPC's declared text return type", () => {
+    expect(auditReaderFixMigration).toContain("get_audit_log_page");
+    expect(auditReaderFixMigration).toContain("coalesce(u.email, '')::text");
+    expect(auditReaderFixMigration).toContain("security.audit permission required");
+    expect(auditReaderFixMigration).toContain("grant execute");
   });
 
   it("models tenant-wide shifts as ordered segments and supports cross-midnight offsets", () => {
