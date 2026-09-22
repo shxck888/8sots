@@ -4,6 +4,7 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
+import { LiveClock } from "@/app/live-clock";
 import { PunchPanel } from "@/app/punch/punch-panel";
 import { getMyPublishedSchedule } from "@/lib/my-schedule";
 import { getUnreadNotificationCount } from "@/lib/notifications";
@@ -36,9 +37,6 @@ export default async function Home() {
   const todayLabel = new Intl.DateTimeFormat("zh-TW", {
     day: "numeric", month: "numeric", timeZone: "Asia/Taipei", weekday: "long",
   }).format(now);
-  const timeLabel = new Intl.DateTimeFormat("zh-TW", {
-    hour: "2-digit", hour12: false, minute: "2-digit", timeZone: "Asia/Taipei",
-  }).format(now);
   const shortDate = `${Number(today.slice(5, 7))}/${Number(today.slice(8, 10))}`;
 
   return (
@@ -62,18 +60,14 @@ export default async function Home() {
         <section className="clock-card">
           <div className="clock-copy">
             <span className="status-pill"><span /> 已同步發布班表</span>
-            <p className="time">{timeLabel}</p>
+            <LiveClock initialTimestamp={now.toISOString()} />
             <p className="shift-note">{todaySchedule ? `今日班別：${todaySchedule.shiftName}` : "今日沒有已發布的排班"}</p>
+            <p className="location-label"><MapPin size={15} />{punches.policy.configured
+              ? `${punches.policy.name ?? "門市"} · ${punches.policy.mode === "enforced" ? `範圍 ${punches.policy.radius_m ?? "—"}m` : "記錄定位"}`
+              : "店址圍欄尚未設定"}</p>
             <PunchPanel enabled={Boolean(punches.employeeId)} lastEventType={punches.records[0]?.event_type ?? null}
               scheduledPunchCount={todaySchedule ? punches.records.filter((record) => record.work_date === today).length : null}
               hasLunchBreak={todaySchedule?.shiftCode === "WEEKDAY_SPLIT" && todaySchedule.segments.length === 2} />
-          </div>
-          <div className="location-orbit" aria-hidden="true">
-            <div className="orbit outer" /><div className="orbit inner" />
-            <div className="pin"><MapPin size={25} /></div>
-            <span className="location-label">{punches.policy.configured
-              ? `${punches.policy.name ?? "門市"} · ${punches.policy.mode === "enforced" ? `範圍 ${punches.policy.radius_m ?? "—"}m` : "記錄定位"}`
-              : "店址圍欄尚未設定"}</span>
           </div>
         </section>
 

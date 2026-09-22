@@ -65,24 +65,22 @@ button { color: inherit; }
 .icon-button { position: relative; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.5); cursor: pointer; }
 .icon-button i { position: absolute; top: -2px; right: -1px; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: white; background: #d2634b; font-size: 10px; font-style: normal; border: 2px solid var(--cream); }
 .nav-item,.mobile-nav a { position: relative; }.nav-badge { margin-left:auto; min-width:20px; height:20px; padding:0 5px; display:grid; place-items:center; border-radius:10px; background:#d2634b; color:#fff; font-size:10px; font-style:normal; }.mobile-nav .nav-badge { position:absolute; top:5px; right:calc(50% - 22px); min-width:17px; height:17px; font-size:9px; }
-.dashboard-grid { max-width: 1180px; margin: auto; display: grid; grid-template-columns: 1.14fr .86fr; gap: 20px; }
+.dashboard-grid { max-width: 1180px; margin: auto; display: grid; grid-template-columns: 1fr; gap: 20px; }
 .clock-card, .summary-card, .schedule-card { border: 1px solid rgba(23,63,54,.11); border-radius: 22px; overflow: hidden; box-shadow: 0 10px 35px rgba(31,57,48,.055); }
-.clock-card { min-height: 330px; background: var(--green); color: white; position: relative; display: grid; grid-template-columns: 1fr .8fr; padding: clamp(27px, 4vw, 46px); }
+.clock-card { min-height: 390px; background: var(--green); color: white; position: relative; container-type: inline-size; padding: clamp(25px, 4vw, 46px); }
 .clock-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 85% 20%, rgba(198,229,210,.17), transparent 38%), linear-gradient(120deg, transparent 65%, rgba(255,255,255,.025)); }
-.clock-copy { position: relative; z-index: 2; }
+.clock-copy { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .status-pill { width: max-content; display: flex; gap: 8px; align-items: center; font-size: 12px; color: #d0e7dd; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 7px 11px; }
 .status-pill span { width: 7px; height: 7px; border-radius: 50%; background: #8ed0ad; box-shadow: 0 0 0 4px rgba(142,208,173,.12); }
-.time { margin: 18px 0 0; font-family: Georgia, serif; font-size: clamp(58px, 7vw, 82px); line-height: 1; letter-spacing: -.05em; }
-.shift-note { color: #bcd2ca; font-size: 13px; margin: 8px 0 24px; }
+.time { max-width: 100%; margin: 20px 0 0; display: block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(48px, 20cqw, 200px); font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1; letter-spacing: -.06em; white-space: nowrap; }
+.clock-source { margin: 9px 0 0; color: #c8e1d5; font-size: 13px; }
+.shift-note { color: #d6e7df; font-size: 15px; margin: 20px 0 8px; }
 .clock-button { border: 0; border-radius: 13px; padding: 14px 22px; background: #d7eadf; color: #123f36; font-weight: 700; display: inline-flex; align-items: center; gap: 9px; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.16); }
 .qr-button { display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; color: #cadcd5; padding: 12px; cursor: pointer; font-size: 12px; }
-.location-orbit { position: relative; display: grid; place-items: center; min-height: 220px; }
-.orbit { position: absolute; border: 1px solid rgba(204,232,216,.2); border-radius: 50%; }
-.orbit.outer { width: 210px; height: 210px; background: rgba(214,235,222,.025); }
-.orbit.inner { width: 125px; height: 125px; background: rgba(203,230,215,.05); box-shadow: 0 0 50px rgba(190,229,207,.08); }
-.pin { z-index: 2; width: 54px; height: 54px; display: grid; place-items: center; border-radius: 18px 18px 18px 6px; color: #153f36; background: #d6e8dc; transform: rotate(45deg); }
-.pin svg { transform: rotate(-45deg); }
-.location-label { position: absolute; bottom: 2px; font-size: 11px; color: #b8cec5; background: rgba(10,43,36,.65); border-radius: 999px; padding: 6px 10px; }
+.location-label { max-width: 100%; margin: 0 0 22px; padding: 7px 11px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; color: #d1e6db; background: rgba(10,43,36,.6); font-size: 12px; }
+.clock-card .punch-panel { justify-items: center; text-align: center; }
+.clock-card .punch-panel > div { justify-content: center; }
+.clock-card .punch-message { max-width: 500px; }
 .summary-card, .schedule-card { background: var(--paper); padding: 25px; }
 .schedule-card { grid-column: 1 / -1; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -280,12 +278,12 @@ button { color: inherit; }
   .sidebar { padding-inline: 14px; align-items: center; }
   .brand { padding-inline: 0; }.brand > span:last-child, .nav-item span, .store-card, .profile-mini div:nth-child(2) { display: none; }
   .nav-item { justify-content: center; padding: 14px; }.profile-mini { margin-top: auto; display: block; padding: 16px 0 0; }
-  .clock-card { grid-template-columns: 1fr; }.location-orbit { position: absolute; right: 20px; top: 40px; opacity: .72; }
+  .clock-card { min-height: 0; }
 }
 @media (max-width: 720px) {
   .app-shell { display: block; }.sidebar { display: none; }.content { padding: 23px 16px 92px; }.topbar { margin-bottom: 20px; }
-  .dashboard-grid { grid-template-columns: 1fr; gap: 14px; }.clock-card { min-height: 345px; padding: 26px; }.location-orbit { right: -50px; top: 68px; opacity: .42; }
-  .clock-copy { display: flex; flex-direction: column; align-items: flex-start; }.qr-button { margin-top: 3px; }.summary-card, .schedule-card { padding: 21px; }
+  .dashboard-grid { gap: 14px; }.clock-card { padding: 28px 20px; }
+  .qr-button { margin-top: 3px; }.summary-card, .schedule-card { padding: 21px; }
   .mobile-nav { position: fixed; z-index: 20; left: 12px; right: 12px; bottom: 10px; height: 68px; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; border: 1px solid rgba(20,60,50,.13); border-radius: 19px; background: rgba(255,253,248,.94); backdrop-filter: blur(18px); box-shadow: 0 12px 35px rgba(25,55,47,.16); }
   .mobile-nav a, .mobile-nav button { width: 100%; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #82908b; background: transparent; cursor: pointer; font-size: 9px; }.mobile-nav a.active { color: var(--green); }.mobile-nav button { color: #8a5b50; }
   .admin-shell { display: block; }.admin-sidebar { position: static; width: 100%; height: auto; padding: 15px 16px; display: grid; grid-template-columns: 1fr auto; align-items: center; }.admin-brand { padding: 0; }.admin-tenant { display: none; }.admin-nav { grid-column: 1 / -1; display: flex; gap: 5px; margin-top: 12px; overflow-x: auto; }.admin-nav a { flex: 0 0 auto; padding: 9px 11px; white-space: nowrap; }.admin-nav a.active { box-shadow: inset 0 -2px #bfe1cc; }.admin-logout { margin: 0; }.admin-content { padding: 27px 15px 45px; }
@@ -332,7 +330,7 @@ button { color: inherit; }
   .icon-button { width: 48px; height: 48px; }
 
   .status-pill { padding: 8px 12px; font-size: 15px; }
-  .shift-note { font-size: 16px; line-height: 1.55; }
+  .clock-source, .shift-note { font-size: 16px; line-height: 1.55; }
   .clock-button { min-height: 52px; padding: 14px 22px; font-size: 18px; }
   .qr-button { min-height: 48px; font-size: 15px; }
   .location-label, .location-consent, .punch-message { font-size: 15px; line-height: 1.55; }
