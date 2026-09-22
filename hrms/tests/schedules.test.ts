@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   assignmentFieldName,
   buildWeekDates,
+  defaultShiftCodeForDate,
+  getScheduleDayKind,
   getWeekStart,
   parseScheduleAssignments,
   schedulePeriodSchema,
@@ -29,6 +31,19 @@ describe("schedule week helpers", () => {
   it("formats ordinary and cross-midnight minute offsets", () => {
     expect(shiftMinuteLabel(600)).toBe("10:00");
     expect(shiftMinuteLabel(1560)).toBe("翌日 02:00");
+  });
+
+  it("uses the restaurant default shift for each operating day", () => {
+    expect(getScheduleDayKind("2026-09-28")).toBe("closed");
+    expect(defaultShiftCodeForDate("2026-09-29")).toBe("WEEKDAY_SPLIT");
+    expect(defaultShiftCodeForDate("2026-10-03")).toBe("HOLIDAY_CONTINUOUS");
+    expect(defaultShiftCodeForDate("2026-10-04")).toBe("HOLIDAY_CONTINUOUS");
+  });
+
+  it("lets the holiday calendar override the weekday default", () => {
+    expect(defaultShiftCodeForDate("2026-10-06", "national")).toBe("HOLIDAY_CONTINUOUS");
+    expect(defaultShiftCodeForDate("2026-10-03", "makeup_workday")).toBe("WEEKDAY_SPLIT");
+    expect(defaultShiftCodeForDate("2026-10-06", "company")).toBeNull();
   });
 });
 

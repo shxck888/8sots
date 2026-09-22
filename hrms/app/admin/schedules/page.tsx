@@ -5,9 +5,12 @@ import { getAdminContext } from "@/lib/admin";
 import {
   assignmentFieldName,
   buildWeekDates,
+  defaultShiftCodeForDate,
   getWeekStart,
+  HOLIDAY_SHIFT_CODE,
   shiftMinuteLabel,
   toIsoDate,
+  WEEKDAY_SHIFT_CODE,
 } from "@/lib/schedules";
 import { computeScheduleWarnings, type ScheduleWarning } from "@/lib/schedule-warnings";
 import type { HolidayKind } from "@/lib/holidays";
@@ -89,6 +92,7 @@ export default async function SchedulesPage({ searchParams }: {
     name: entry.name,
     kind: entry.kind as HolidayKind,
   }));
+  const holidayKindByDate = new Map(holidays.map((entry) => [entry.holiday_date, entry.kind]));
   const draft = versions.find((version) => version.status === "draft") ?? null;
   const published = versions.find((version) => version.status === "published") ?? null;
   const selectedVersion = draft ?? published;
@@ -109,6 +113,9 @@ export default async function SchedulesPage({ searchParams }: {
       .map((segment) => `${shiftMinuteLabel(segment.start_minute)}–${shiftMinuteLabel(segment.end_minute)}`);
     return [shift.id, `${shift.name} · ${parts.join("、")}`];
   }));
+  const defaultShifts = new Map(shifts
+    .filter((shift) => shift.code === WEEKDAY_SHIFT_CODE || shift.code === HOLIDAY_SHIFT_CODE)
+    .map((shift) => [shift.code, shift]));
   const loadError = employeesResult.error || shiftsResult.error || segmentsResult.error
     || versionsResult.error || assignmentsResult.error;
 
@@ -123,7 +130,7 @@ export default async function SchedulesPage({ searchParams }: {
         </div>
       </header>
 
-      {params.draft ? <div className="admin-success">排班草稿已建立。</div> : null}
+      {params.draft ? <div className="admin-success">排班草稿已建立，預設班別已自動套用。</div> : null}
       {params.saved ? <div className="admin-success">排班草稿已儲存。</div> : null}
       {params.published ? <div className="admin-success">班表已發布並鎖定。</div> : null}
       {params.error ? <div className="admin-form-error schedule-message">{errorMessages[params.error] ?? errorMessages.save}</div> : null}
@@ -137,14 +144,14 @@ export default async function SchedulesPage({ searchParams }: {
 
       {loadError ? (
         <section className="admin-panel admin-empty"><strong>排班資料讀取失敗</strong><p>請確認最新 database migration 已完成。</p></section>
-      ) : shifts.length === 0 ? (
-        <section className="admin-panel admin-empty"><strong>尚未建立班別</strong><p>請先建立平日班與假日班。</p></section>
+      ) : !defaultShifts.has(WEEKDAY_SHIFT_CODE) || !defaultShifts.has(HOLIDAY_SHIFT_CODE) ? (
+        <section className="admin-panel admin-empty"><strong>預設班別尚未完整建立</strong><p>請先建立平日班與假日班。</p></section>
       ) : employees.length === 0 ? (
         <section className="admin-panel admin-empty"><strong>沒有可排班的在職員工</strong><p>請先在員工管理建立在職員工。</p></section>
       ) : !draft && !published ? (
         <section className="admin-panel schedule-empty">
           <CalendarDays size={34} /><strong>本週尚未建立排班</strong>
-          <p>先建立草稿，再為每位員工選擇每日班別。</p>
+          <p>建立後會自動套用平日班與假日班，主管只需調整未排班員工。</p>
           <form action={createScheduleDraft}>
             <input name="periodStart" type="hidden" value={weekStart} />
             <input name="periodEnd" type="hidden" value={weekEnd} />
@@ -191,7 +198,7 @@ export default async function SchedulesPage({ searchParams }: {
             <input name="scheduleVersionId" type="hidden" value={draft!.id} />
             <input name="weekStart" type="hidden" value={weekStart} />
             <div className="schedule-toolbar">
-              <div><strong>草稿 V{draft!.version}</strong><span>未排班不等於休假；假別將由後續假勤模組處理。</span></div>
+              <div><strong>草稿 V{draft!.version}</strong><span>已自動套用預設班別；主管只需將個別休假日改為未排班。</span></div>
               <button className="admin-button primary" type="submit"><Save size={16} /> 儲存草稿</button>
             </div>
             <div className="schedule-grid-wrap">
@@ -200,18 +207,22 @@ export default async function SchedulesPage({ searchParams }: {
                 <tbody>{employees.map((employee) => (
                   <tr key={employee.id}>
                     <th><strong>{employee.full_name}</strong><small>{employee.employee_no}</small></th>
-                    {weekDates.map((date) => (
-                      <td key={date}>
-                        <select
-                          aria-label={`${employee.full_name} ${date} 班別`}
-                          defaultValue={assignmentMap.get(`${employee.id}:${date}`) ?? ""}
-                          name={assignmentFieldName(employee.id, date)}
-                        >
-                          <option value="">未排班</option>
-                          {shifts.map((shift) => <option key={shift.id} value={shift.id}>{shiftLabels.get(shift.id)}</option>)}
-                        </select>
-                      </td>
-                    ))}
+                    {weekDates.map((date) => {
+                      const shiftCode = defaultShiftCodeForDate(date, holidayKindByDate.get(date));
+                      const defaultShift = shiftCode ? defaultShifts.get(shiftCode) : null;
+                      return (
+                        <td key={date}>
+                          <select
+                            aria-label={`${employee.full_name} ${date} 班別`}
+                            defaultValue={assignmentMap.get(`${employee.id}:${date}`) ?? ""}
+                            name={assignmentFieldName(employee.id, date)}
+                          >
+                            {defaultShift ? <option value={defaultShift.id}>{shiftLabels.get(defaultShift.id)}</option> : null}
+                            <option value="">{shiftCode ? "未排班" : "店休（未排班）"}</option>
+                          </select>
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}</tbody>
               </table>

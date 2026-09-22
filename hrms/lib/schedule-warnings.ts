@@ -40,9 +40,8 @@ function shortDate(iso: string): string {
 
 /**
  * Advisory pre-publish integrity checks for a weekly schedule. All findings are
- * advisory: whether a date is treated as a holiday for scheduling is still the
- * scheduler's decision (ADR-017). Warnings never block publishing; they surface
- * likely mistakes so the scheduler can confirm intent before locking the week.
+ * advisory. Default weekday/holiday shifts are enforced while editing; warnings
+ * surface remaining coverage concerns before the manager locks the week.
  */
 export function computeScheduleWarnings(input: ScheduleWarningInput): ScheduleWarning[] {
   const { weekDates, employees, holidays, assignments } = input;
@@ -88,7 +87,7 @@ export function computeScheduleWarnings(input: ScheduleWarningInput): ScheduleWa
           message: `${shortDate(holiday.holiday_date)} 為${label}（${holiday.name}），目前尚未排班。`,
         });
       }
-    } else if (count > 0) {
+    } else if (holiday.kind === "company" && count > 0) {
       warnings.push({
         level: "info",
         code: "holiday_scheduled",

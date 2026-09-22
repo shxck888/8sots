@@ -1,7 +1,12 @@
 import { z } from "zod";
+import type { HolidayKind } from "./holidays";
 
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 const assignmentFieldPattern = /^assignment:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/i;
+
+export const WEEKDAY_SHIFT_CODE = "WEEKDAY_SPLIT";
+export const HOLIDAY_SHIFT_CODE = "HOLIDAY_CONTINUOUS";
+export type ScheduleDayKind = "closed" | "weekday" | "holiday";
 
 export const schedulePeriodSchema = z.object({
   periodStart: z.string().regex(isoDatePattern),
@@ -52,6 +57,24 @@ export function buildWeekDates(weekStart: string): string[] {
     date.setUTCDate(start.getUTCDate() + index);
     return toIsoDate(date);
   });
+}
+
+export function getScheduleDayKind(date: string, holidayKind?: HolidayKind): ScheduleDayKind {
+  const parsed = parseIsoDate(date);
+  if (!parsed) throw new Error("Invalid schedule date");
+  if (holidayKind === "company") return "closed";
+  if (holidayKind === "makeup_workday") return "weekday";
+  if (holidayKind === "national") return "holiday";
+  const weekday = parsed.getUTCDay();
+  if (weekday === 1) return "closed";
+  if (weekday === 0 || weekday === 6) return "holiday";
+  return "weekday";
+}
+
+export function defaultShiftCodeForDate(date: string, holidayKind?: HolidayKind): string | null {
+  const kind = getScheduleDayKind(date, holidayKind);
+  if (kind === "closed") return null;
+  return kind === "holiday" ? HOLIDAY_SHIFT_CODE : WEEKDAY_SHIFT_CODE;
 }
 
 export function shiftMinuteLabel(minute: number): string {

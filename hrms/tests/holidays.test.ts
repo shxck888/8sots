@@ -69,7 +69,7 @@ describe("schedule pre-publish warnings", () => {
     expect(w?.message).not.toContain("王小明");
   });
 
-  it("flags a national holiday that still has assignments as an advisory notice", () => {
+  it("accepts national-holiday staffing because the holiday shift is now the default", () => {
     const warnings = computeScheduleWarnings({
       weekDates, employees,
       holidays: [{ holiday_date: "2026-08-25", name: "測試假日", kind: "national" }],
@@ -78,9 +78,16 @@ describe("schedule pre-publish warnings", () => {
         { employee_id: employees[1].id, work_date: "2026-08-25", shift_id: "s1" },
       ],
     });
-    const w = warnings.find((x) => x.code === "holiday_scheduled");
-    expect(w?.level).toBe("info");
-    expect(w?.message).toContain("測試假日");
+    expect(warnings.some((x) => x.code === "holiday_scheduled")).toBe(false);
+  });
+
+  it("flags assignments on a company closure", () => {
+    const warnings = computeScheduleWarnings({
+      weekDates, employees,
+      holidays: [{ holiday_date: "2026-08-25", name: "公司店休", kind: "company" }],
+      assignments: [{ employee_id: employees[0].id, work_date: "2026-08-25", shift_id: "s1" }],
+    });
+    expect(warnings.find((x) => x.code === "holiday_scheduled")?.message).toContain("公司店休");
   });
 
   it("notes a make-up workday that has not been scheduled", () => {

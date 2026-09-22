@@ -12,6 +12,8 @@ const fixtureIds = {
   company: "10000000-0000-4000-8000-000000000005",
   role: "10000000-0000-4000-8000-000000000006",
   employee: "10000000-0000-4000-8000-000000000007",
+  weekdayShift: "10000000-0000-4000-8000-000000000010",
+  holidayShift: "10000000-0000-4000-8000-000000000011",
 };
 
 let db: PGlite;
@@ -70,6 +72,13 @@ beforeAll(async () => {
       values('${fixtureIds.employee}','${fixtureIds.tenant}','${fixtureIds.employeeUser}','employee001','active');
     insert into public.employment_records(tenant_id,employee_id,employment_type,hire_date,status,effective_from)
       values('${fixtureIds.tenant}','${fixtureIds.employee}','full_time','2026-01-01','active','2026-01-01');
+    insert into public.shifts(id,tenant_id,code,name,status) values
+      ('${fixtureIds.weekdayShift}','${fixtureIds.tenant}','WEEKDAY_SPLIT','平日班','active'),
+      ('${fixtureIds.holidayShift}','${fixtureIds.tenant}','HOLIDAY_CONTINUOUS','假日班','active');
+    insert into public.shift_segments(tenant_id,shift_id,segment_order,start_minute,end_minute) values
+      ('${fixtureIds.tenant}','${fixtureIds.weekdayShift}',1,600,840),
+      ('${fixtureIds.tenant}','${fixtureIds.weekdayShift}',2,960,1260),
+      ('${fixtureIds.tenant}','${fixtureIds.holidayShift}',1,600,1260);
   `);
   await setUser(fixtureIds.admin);
 }, 60_000);
@@ -120,6 +129,46 @@ describe("database migrations and critical workflows", () => {
       [fixtureIds.employee],
     );
     expect(audit.rows[0].count).toBe(2);
+  });
+
+  it("builds a weekly draft from default shifts and only needs rest-day removals", async () => {
+    await setUser(fixtureIds.admin);
+    await db.query(`insert into public.holiday_calendar_entries(tenant_id,holiday_date,name,kind) values
+      ($1,'2026-11-04','測試國定假日','national'),
+      ($1,'2026-11-05','測試公司休假','company'),
+      ($1,'2026-11-07','測試補班日','makeup_workday')`, [fixtureIds.tenant]);
+    const draft = await db.query<{ id: string }>(
+      "select public.create_schedule_draft($1,'2026-11-02','2026-11-08') id",
+      [fixtureIds.tenant],
+    );
+    const defaults = await db.query<{ work_date: string; code: string }>(`
+      select sa.work_date::text,s.code from public.schedule_assignments sa
+      join public.shifts s on s.id=sa.shift_id
+      where sa.schedule_version_id=$1 order by sa.work_date`, [draft.rows[0].id]);
+    expect(defaults.rows).toEqual([
+      { work_date: "2026-11-03", code: "WEEKDAY_SPLIT" },
+      { work_date: "2026-11-04", code: "HOLIDAY_CONTINUOUS" },
+      { work_date: "2026-11-06", code: "WEEKDAY_SPLIT" },
+      { work_date: "2026-11-07", code: "WEEKDAY_SPLIT" },
+      { work_date: "2026-11-08", code: "HOLIDAY_CONTINUOUS" },
+    ]);
+
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant,
+      draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-03", shift_id: null }]),
+    ]);
+    const remaining = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.schedule_assignments where schedule_version_id=$1",
+      [draft.rows[0].id],
+    );
+    expect(remaining.rows[0].count).toBe(4);
+
+    await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant,
+      draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-08", shift_id: fixtureIds.weekdayShift }]),
+    ])).rejects.toThrow(/shift does not match date default/);
   });
 
   it("versions workplace settings and enforces the configured geofence", async () => {

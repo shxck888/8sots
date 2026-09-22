@@ -54,7 +54,7 @@ export default async function HolidaysPage({ searchParams }: {
         <div>
           <span className="admin-eyebrow">HOLIDAYS</span>
           <h1>假日曆</h1>
-          <p>維護國定假日、公司休假與補班日；發布班表前會依此提示排班是否落在假日。</p>
+          <p>維護國定假日、公司休假與補班日；新排班草稿會依假日類型自動套用預設班別。</p>
         </div>
         <div className="schedule-week-nav">
           <Link aria-label="前一年" href={`/admin/holidays?year=${year - 1}`}><ChevronLeft size={17} /></Link>

@@ -152,6 +152,11 @@ const supervisorPermissionMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const defaultScheduleMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202609220040_default_schedule_assignments.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -456,6 +461,19 @@ describe("foundation migration contract", () => {
     expect(scheduleBatchMigration).toContain("insert into public.audit_logs");
     expect(scheduleBatchMigration).toContain("schedule_versions_one_draft_period_idx");
     expect(scheduleBatchMigration).toContain("copied_assignments");
+  });
+
+  it("automatically assigns the restaurant defaults while preserving schedule history", () => {
+    expect(defaultScheduleMigration).toContain("'weekday_split'");
+    expect(defaultScheduleMigration).toContain("'holiday_continuous'");
+    expect(defaultScheduleMigration).toContain("extract(isodow from day.work_date) = 1");
+    expect(defaultScheduleMigration).toContain("h.kind = 'national'");
+    expect(defaultScheduleMigration).toContain("h.kind = 'company'");
+    expect(defaultScheduleMigration).toContain("h.kind = 'makeup_workday'");
+    expect(defaultScheduleMigration).toContain("shift does not match date default");
+    expect(defaultScheduleMigration).toContain("and not exists (");
+    expect(defaultScheduleMigration).toContain("schedule.defaults_applied");
+    expect(defaultScheduleMigration).not.toMatch(/update\s+public\.schedule_assignments/);
   });
 
   it("versions the actual Seastar weekday and holiday shift templates", () => {
