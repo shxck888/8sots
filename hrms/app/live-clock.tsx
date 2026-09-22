@@ -5,6 +5,20 @@ import { estimateServerEpochAtReceipt, formatTaipeiClock } from "@/lib/live-cloc
 
 type ClockSource = "syncing" | "server" | "device";
 
+const digitSegments: Record<string, string> = {
+  "0": "abcdef",
+  "1": "bc",
+  "2": "abdeg",
+  "3": "abcdg",
+  "4": "bcfg",
+  "5": "acdfg",
+  "6": "acdefg",
+  "7": "abc",
+  "8": "abcdefg",
+  "9": "abcdfg",
+};
+const segmentPositions = ["a", "b", "c", "d", "e", "f", "g"];
+
 export function LiveClock({ initialTimestamp }: { initialTimestamp: string }) {
   const [now, setNow] = useState(() => Date.parse(initialTimestamp));
   const [source, setSource] = useState<ClockSource>("syncing");
@@ -75,7 +89,13 @@ export function LiveClock({ initialTimestamp }: { initialTimestamp: string }) {
 
   return (
     <>
-      <time className="time" dateTime={new Date(now).toISOString()} role="timer" aria-label={`台北時間 ${time}`} aria-live="off">{time}</time>
+      <time className="time led-clock" dateTime={new Date(now).toISOString()} role="timer" aria-label={`台北時間 ${time}`} aria-live="off">
+        {Array.from(time).map((character, index) => character === ":"
+          ? <span className="led-colon" aria-hidden="true" key={index}><span /><span /></span>
+          : <span className="led-digit" aria-hidden="true" key={index}>
+            {segmentPositions.map((position) => <span className={`led-segment led-${position}${digitSegments[character]?.includes(position) ? " on" : ""}`} key={position} />)}
+          </span>)}
+      </time>
       <p className="clock-source">{sourceLabel}</p>
     </>
   );

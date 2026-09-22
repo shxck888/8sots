@@ -72,7 +72,17 @@ button { color: inherit; }
 .clock-copy { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .status-pill { width: max-content; display: flex; gap: 8px; align-items: center; font-size: 12px; color: #d0e7dd; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 7px 11px; }
 .status-pill span { width: 7px; height: 7px; border-radius: 50%; background: #8ed0ad; box-shadow: 0 0 0 4px rgba(142,208,173,.12); }
-.time { max-width: 100%; margin: 20px 0 0; display: block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(48px, 20cqw, 200px); font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1; letter-spacing: -.06em; white-space: nowrap; }
+.time.led-clock { --led-height: clamp(52px, 24cqw, 205px); width: 100%; height: var(--led-height); margin: 22px 0 0; display: flex; align-items: center; justify-content: center; gap: calc(var(--led-height) * .025); }
+.led-digit { width: calc(var(--led-height) * .58); height: 100%; position: relative; flex: 0 0 auto; }
+.led-segment { position: absolute; display: block; opacity: .12; background: #c9fbd6; }
+.led-segment.on { opacity: 1; background: #d9ffe4; box-shadow: 0 0 calc(var(--led-height) * .1) rgba(162,255,193,.53), 0 0 calc(var(--led-height) * .035) rgba(210,255,221,.8); }
+.led-a, .led-g, .led-d { left: 15%; width: 70%; height: 8%; clip-path: polygon(9% 0, 91% 0, 100% 50%, 91% 100%, 9% 100%, 0 50%); }
+.led-a { top: 0; }.led-g { top: 46%; }.led-d { bottom: 0; }
+.led-b, .led-c, .led-e, .led-f { width: 15%; height: 40%; clip-path: polygon(50% 0, 100% 9%, 100% 91%, 50% 100%, 0 91%, 0 9%); }
+.led-b { top: 6%; right: 0; }.led-c { right: 0; bottom: 6%; }.led-e { left: 0; bottom: 6%; }.led-f { top: 6%; left: 0; }
+.led-colon { width: calc(var(--led-height) * .16); height: 100%; position: relative; flex: 0 0 auto; }
+.led-colon span { width: 58%; height: 9%; position: absolute; left: 21%; border-radius: 50%; background: #d9ffe4; box-shadow: 0 0 calc(var(--led-height) * .09) rgba(162,255,193,.6); }
+.led-colon span:first-child { top: 28%; }.led-colon span:last-child { bottom: 28%; }
 .clock-source { margin: 9px 0 0; color: #c8e1d5; font-size: 13px; }
 .shift-note { color: #d6e7df; font-size: 15px; margin: 20px 0 8px; }
 .clock-button { border: 0; border-radius: 13px; padding: 14px 22px; background: #d7eadf; color: #123f36; font-weight: 700; display: inline-flex; align-items: center; gap: 9px; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.16); }
