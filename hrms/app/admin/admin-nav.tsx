@@ -4,7 +4,7 @@ import { Banknote, Bell, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, Fi
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type PermissionKey = "employees" | "schedules" | "attendance" | "requests" | "payroll" | "settings" | "audit";
+type PermissionKey = "employees" | "schedules" | "attendance" | "requests" | "payroll" | "settings" | "audit" | "access";
 const items: Array<{ href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; permission?: PermissionKey }> = [
   { href: "/", label: "工作台", icon: LayoutDashboard, exact: true },
   { href: "/notifications", label: "通知中心", icon: Bell },

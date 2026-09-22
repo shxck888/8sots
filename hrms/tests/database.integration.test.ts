@@ -66,6 +66,8 @@ beforeAll(async () => {
       select '${fixtureIds.tenant}','${fixtureIds.role}',id from public.permissions on conflict do nothing;
     insert into public.employees(id,tenant_id,auth_user_id,employee_no,full_name,hire_date,status)
       values('${fixtureIds.employee}','${fixtureIds.tenant}','${fixtureIds.employeeUser}','E001','測試員工','2026-01-01','active');
+    insert into public.employee_auth_accounts(employee_id,tenant_id,auth_user_id,username,status)
+      values('${fixtureIds.employee}','${fixtureIds.tenant}','${fixtureIds.employeeUser}','employee001','active');
     insert into public.employment_records(tenant_id,employee_id,employment_type,hire_date,status,effective_from)
       values('${fixtureIds.tenant}','${fixtureIds.employee}','full_time','2026-01-01','active','2026-01-01');
   `);
@@ -78,6 +80,46 @@ describe("database migrations and critical workflows", () => {
   it("applies every migration to a real PostgreSQL-compatible engine", async () => {
     const result = await db.query<{ count: number }>("select count(*)::integer count from public.payroll_periods");
     expect(result.rows[0].count).toBe(0);
+  });
+
+  it("grants only selected supervisor permissions and protects permission management", async () => {
+    await setUser(fixtureIds.admin);
+    await db.query("select public.set_employee_admin_permissions($1,$2,$3)", [
+      fixtureIds.tenant, fixtureIds.employee, ["schedule.manage", "request.manage"],
+    ]);
+    const access = await db.query<{ result: { account_linked: boolean; permissions: string[] } }>(
+      "select public.get_employee_admin_permissions($1,$2) result",
+      [fixtureIds.tenant, fixtureIds.employee],
+    );
+    expect(access.rows[0].result).toMatchObject({
+      account_linked: true,
+      permissions: ["request.manage", "schedule.manage"],
+    });
+
+    await setUser(fixtureIds.employeeUser);
+    const workspace = await db.query<{
+      can_manage_schedule: boolean;
+      can_manage_request: boolean;
+      can_manage_employee: boolean;
+      can_manage_access: boolean;
+    }>("select can_manage_schedule,can_manage_request,can_manage_employee,can_manage_access from public.get_current_workspace_context()");
+    expect(workspace.rows[0]).toEqual({
+      can_manage_schedule: true,
+      can_manage_request: true,
+      can_manage_employee: false,
+      can_manage_access: false,
+    });
+    await expect(db.query("select public.set_employee_admin_permissions($1,$2,$3)", [
+      fixtureIds.tenant, fixtureIds.employee, ["payroll.manage"],
+    ])).rejects.toThrow(/access.manage permission required/);
+
+    await setUser(fixtureIds.admin);
+    await db.query("select public.set_employee_admin_permissions($1,$2,$3)", [fixtureIds.tenant, fixtureIds.employee, []]);
+    const audit = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.audit_logs where entity_id=$1 and action='employee.admin_permissions_changed'",
+      [fixtureIds.employee],
+    );
+    expect(audit.rows[0].count).toBe(2);
   });
 
   it("versions workplace settings and enforces the configured geofence", async () => {

@@ -46,5 +46,6 @@ test.describe("administrator browser journey", () => {
     await expect(firstEdit).toBeVisible();
     await firstEdit.click();
     await expect(page.getByRole("heading", { name: "封存員工資料", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "主管後台權限", exact: true })).toBeVisible();
   });
 });

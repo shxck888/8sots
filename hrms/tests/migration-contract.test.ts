@@ -147,6 +147,11 @@ const auditReaderFixMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const supervisorPermissionMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202609220039_supervisor_admin_permissions.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -395,6 +400,20 @@ describe("foundation migration contract", () => {
     expect(auditReaderFixMigration).toContain("coalesce(u.email, '')::text");
     expect(auditReaderFixMigration).toContain("security.audit permission required");
     expect(auditReaderFixMigration).toContain("grant execute");
+  });
+
+  it("delegates supervisor permissions without delegating permission management", () => {
+    expect(supervisorPermissionMigration).toContain("'access.manage'");
+    expect(supervisorPermissionMigration).toContain("get_employee_admin_permissions");
+    expect(supervisorPermissionMigration).toContain("set_employee_admin_permissions");
+    expect(supervisorPermissionMigration).toContain("cannot change own admin permissions");
+    expect(supervisorPermissionMigration).toContain("platform administrator permissions cannot be changed here");
+    expect(supervisorPermissionMigration).toContain("employee.admin_permissions_changed");
+    expect(supervisorPermissionMigration).toContain("can_manage_access boolean");
+    const delegated = supervisorPermissionMigration.match(/v_allowed constant text\[\] := array\[([\s\S]*?)\]::text\[\]/)?.[1];
+    expect(delegated).toBeDefined();
+    expect(delegated).not.toContain("access.manage");
+    expect(delegated).not.toContain("platform.admin");
   });
 
   it("models tenant-wide shifts as ordered segments and supports cross-midnight offsets", () => {

@@ -3,10 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminContext } from "@/lib/admin";
 import type { EmployeeDeletionEligibility, EmployeeMasterRecord } from "@/lib/employees";
+import { parseEmployeeAdminAccess } from "@/lib/supervisor-permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EmployeeForm } from "../employee-form";
 import { EmployeeAccountPanel } from "./account-panel";
 import { EmployeeLifecyclePanel } from "./employee-lifecycle-panel";
+import { EmployeePermissionPanel } from "./permission-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,12 @@ export default async function EditEmployeePage({ params, searchParams }: {
     .eq("tenant_id", admin.tenantId).eq("status", "active").order("employee_no");
   const { data: account } = await supabase.from("employee_auth_accounts").select("*")
     .eq("tenant_id", admin.tenantId).eq("employee_id", id).maybeSingle();
+  const { data: accessData } = admin.permissions.access
+    ? await supabase.rpc("get_employee_admin_permissions", {
+      p_tenant_id: admin.tenantId,
+      p_employee_id: id,
+    })
+    : { data: null };
   const { data: eligibilityData } = await supabase.rpc("get_employee_deletion_eligibility", {
     p_tenant_id: admin.tenantId, p_employee_id: id,
   });
@@ -54,6 +62,9 @@ export default async function EditEmployeePage({ params, searchParams }: {
       {!employee.archived_at ? <>
         <section className="admin-panel form-panel"><EmployeeForm employee={employee} supervisors={supervisors ?? []} /></section>
         <EmployeeAccountPanel employeeId={id} account={account} />
+        {admin.permissions.access
+          ? <EmployeePermissionPanel employeeId={id} access={parseEmployeeAdminAccess(accessData)} />
+          : null}
       </> : null}
       <EmployeeLifecyclePanel employeeId={id} employeeNo={employee.employee_no}
         archivedAt={employee.archived_at} archiveReason={employee.archive_reason} eligibility={eligibility}/>

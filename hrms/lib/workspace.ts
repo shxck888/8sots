@@ -18,6 +18,7 @@ export type WorkspaceContext = {
   canManagePayroll: boolean;
   canManageSettings: boolean;
   canReadAudit: boolean;
+  canManageAccess: boolean;
   canManage: boolean;
 };
 
@@ -36,6 +37,7 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
   const canManagePayroll = data.can_manage_payroll === true;
   const canManageSettings = data.can_manage_settings === true;
   const canReadAudit = data.can_read_audit === true;
+  const canManageAccess = data.can_manage_access === true;
 
   return {
     userId: data.user_id,
@@ -51,6 +53,7 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
     canManagePayroll,
     canManageSettings,
     canReadAudit,
-    canManage: canManageEmployees || canManageSchedules || canManageAttendance || canManageRequests || canManagePayroll || canManageSettings || canReadAudit,
+    canManageAccess,
+    canManage: canManageEmployees || canManageSchedules || canManageAttendance || canManageRequests || canManagePayroll || canManageSettings || canReadAudit || canManageAccess,
   };
 });

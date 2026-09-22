@@ -14,6 +14,7 @@ export type AdminContext = {
     payroll: boolean;
     settings: boolean;
     audit: boolean;
+    access: boolean;
   };
 };
 
@@ -25,6 +26,7 @@ const permissionFields = {
   "payroll.manage": "canManagePayroll",
   "settings.manage": "canManageSettings",
   "security.audit": "canReadAudit",
+  "access.manage": "canManageAccess",
 } as const;
 type AdminPermissionCode = keyof typeof permissionFields;
 
@@ -40,6 +42,7 @@ export async function getAdminContext(
       attendance: workspace.canManageAttendance, requests: workspace.canManageRequests,
       payroll: workspace.canManagePayroll, settings: workspace.canManageSettings,
       audit: workspace.canReadAudit,
+      access: workspace.canManageAccess,
     },
   };
 }
@@ -54,6 +57,7 @@ export async function getAdminShellContext(): Promise<AdminContext | null> {
       attendance: workspace.canManageAttendance, requests: workspace.canManageRequests,
       payroll: workspace.canManagePayroll, settings: workspace.canManageSettings,
       audit: workspace.canReadAudit,
+      access: workspace.canManageAccess,
     },
   };
 }

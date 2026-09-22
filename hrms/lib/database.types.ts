@@ -3127,6 +3127,7 @@ export type Database = {
       get_current_workspace_context: {
         Args: never
         Returns: {
+          can_manage_access: boolean
           can_manage_attendance: boolean
           can_manage_employee: boolean
           can_manage_payroll: boolean
@@ -3141,6 +3142,10 @@ export type Database = {
           user_id: string
           user_metadata: Json
         }[]
+      }
+      get_employee_admin_permissions: {
+        Args: { p_employee_id: string; p_tenant_id: string }
+        Returns: Json
       }
       get_employee_deletion_eligibility: {
         Args: { p_employee_id: string; p_tenant_id: string }
@@ -3378,6 +3383,14 @@ export type Database = {
           p_tenant_id: string
         }
         Returns: undefined
+      }
+      set_employee_admin_permissions: {
+        Args: {
+          p_employee_id: string
+          p_permission_codes: string[]
+          p_tenant_id: string
+        }
+        Returns: Json
       }
       set_employee_photo: {
         Args: {
