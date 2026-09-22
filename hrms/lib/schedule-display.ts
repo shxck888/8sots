@@ -21,6 +21,27 @@ export function getMonthBounds(dateKey: string): { dateFrom: string; dateTo: str
   };
 }
 
+export function shiftCalendarMonth(monthKey: string, months: number): string {
+  if (!/^(?:[1-9]\d{3})-(?:0[1-9]|1[0-2])$/.test(monthKey)) throw new Error("Invalid month key");
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1 + months, 1)).toISOString().slice(0, 7);
+}
+
+export function getMonthCalendarDates(monthKey: string): string[] {
+  if (!/^(?:[1-9]\d{3})-(?:0[1-9]|1[0-2])$/.test(monthKey)) throw new Error("Invalid month key");
+  const { dateFrom, dateTo } = getMonthBounds(`${monthKey}-01`);
+  const first = new Date(`${dateFrom}T00:00:00.000Z`);
+  const mondayOffset = (first.getUTCDay() + 6) % 7;
+  first.setUTCDate(first.getUTCDate() - mondayOffset);
+  const last = new Date(`${dateTo}T00:00:00.000Z`);
+  const days = Math.ceil((Math.round((last.getTime() - first.getTime()) / 86400000) + 1) / 7) * 7;
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(first);
+    date.setUTCDate(first.getUTCDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
+}
+
 export function formatScheduledHours(totalMinutes: number): string {
   const hours = totalMinutes / 60;
   return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
