@@ -83,7 +83,9 @@ export function EmployeeForm({
       }
     }
 
-    const firstInvalidField = Object.keys(fieldErrors)[0] as EmployeeFormField | undefined;
+    const firstInvalidField = Array.from(form.elements)
+      .map((control) => (control as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).name as EmployeeFormField)
+      .find((field) => Boolean(field && fieldErrors[field]));
     if (firstInvalidField) {
       setClientErrors(fieldErrors);
       requestAnimationFrame(() => focusField(form, firstInvalidField));
