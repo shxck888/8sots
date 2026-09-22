@@ -11,6 +11,7 @@ function safeMessage(message: string): string {
   if (message.includes("invalid GPS")) return "定位資料或精度不符合要求，請移至訊號較好的位置再試。";
   if (message.includes("location consent")) return "必須同意本次使用裝置定位才能打卡。";
   if (message.includes("punch cooldown")) return "剛剛已完成打卡，請等待 30 秒後再操作。";
+  if (message.includes("scheduled punch sequence complete")) return "這個班次的打卡已完成，若有缺卡請至出勤紀錄申請補卡。";
   if (message.includes("geofence rejected")) return "目前位置不在允許打卡範圍內，或定位誤差過大；請連上定位服務並移至門市範圍內再試。";
   if (message.includes("rate limit")) return "短時間內打卡次數過多，請稍後再試。";
   return "打卡未完成，請稍後再試。";

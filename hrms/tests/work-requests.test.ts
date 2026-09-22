@@ -44,13 +44,17 @@ describe("work request center", () => {
     }).success).toBe(false);
   });
 
-  it("allows leave only on one Tuesday-through-Friday date", () => {
+  it("keeps leave single-date validation in the shared contract and defers schedule eligibility to the database", () => {
     expect(coveredLeaveDates("2026-09-01T10:00", "2026-09-02T14:00")).toEqual(["2026-09-01", "2026-09-02"]);
     expect(leaveRequestUsesSingleDate("2026-09-01T10:00", "2026-09-01T14:00")).toBe(true);
     expect(leaveRequestUsesSingleDate("2026-09-01T10:00", "2026-09-02T14:00")).toBe(false);
     expect(leaveDatesUseAllowedWeekdays("2026-09-04T10:00", "2026-09-05T00:00")).toBe(true);
     expect(leaveDatesUseAllowedWeekdays("2026-09-04T10:00", "2026-09-05T00:01")).toBe(false);
     expect(leaveDatesUseAllowedWeekdays("2026-09-07T10:00", "2026-09-07T14:00")).toBe(false);
+    expect(workRequestInputSchema.safeParse({
+      requestType: "leave", leaveTypeId: crypto.randomUUID(), startsLocal: "2026-09-07T10:00",
+      endsLocal: "2026-09-07T14:00", reason: "依已發布特殊班表提出請假", idempotencyKey: crypto.randomUUID(),
+    }).success).toBe(true);
   });
 
   it("rejects a multi-date leave request in the shared server contract", () => {

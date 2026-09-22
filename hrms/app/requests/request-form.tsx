@@ -3,15 +3,14 @@
 import { CalendarPlus, Send, Timer } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { createWorkRequest } from "./actions";
-import { coveredLeaveDates, leaveDatesUseAllowedWeekdays, leaveRequestUsesSingleDate } from "@/lib/work-request-contract";
+import { leaveRequestUsesSingleDate } from "@/lib/work-request-contract";
 
 type LeaveType = { id: string; name: string; description: string | null };
 
-export function RequestForm({ blockedHolidayDates = [], enabled, leaveTypes, requestType }: {
+export function RequestForm({ enabled, leaveTypes, requestType }: {
   enabled: boolean;
   leaveTypes: LeaveType[];
   requestType: "leave" | "overtime";
-  blockedHolidayDates?: string[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState("");
@@ -28,14 +27,6 @@ export function RequestForm({ blockedHolidayDates = [], enabled, leaveTypes, req
       : String(formData.get("endsLocal") ?? "");
     if (isLeave && !leaveRequestUsesSingleDate(startsLocal, endsLocal)) {
       setMessage("每筆請假只能選一個日期；多日請假請分開送出多筆申請。");
-      return;
-    }
-    if (isLeave && !leaveDatesUseAllowedWeekdays(startsLocal, endsLocal)) {
-      setMessage("請假只能排週二至週五；週一公休，週末不可排休。");
-      return;
-    }
-    if (isLeave && coveredLeaveDates(startsLocal, endsLocal).some((date) => blockedHolidayDates.includes(date))) {
-      setMessage("所選期間包含國定或公司假日，假日不可排休。");
       return;
     }
     if (!isLeave) {
@@ -78,7 +69,7 @@ export function RequestForm({ blockedHolidayDates = [], enabled, leaveTypes, req
       </form>
       {!isLeave ? <p className="work-request-policy-note">單筆最多 8 小時；可跨日，但以起訖時間合計。</p> : null}
       <p aria-live="polite" className="correction-message">{message}</p>
-      {isLeave ? <p className="work-request-policy-note">每筆限單一日期；多日請分筆申請。僅週二至週五可排休，假日禁休。</p> : null}
+      {isLeave ? <p className="work-request-policy-note">每筆限單一日期；多日請分筆申請。特殊營業日須先有已發布班表。</p> : null}
     </article>
   );
 }

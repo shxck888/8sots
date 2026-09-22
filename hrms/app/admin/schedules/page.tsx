@@ -109,9 +109,13 @@ export default async function SchedulesPage({ searchParams }: {
     weekDates, employees, holidays, assignments: assignmentRows,
   });
   const shiftLabels = new Map(shifts.map((shift) => {
-    const parts = segments.filter((segment) => segment.shift_id === shift.id)
+    const shiftSegments = segments.filter((segment) => segment.shift_id === shift.id);
+    const parts = shiftSegments
       .map((segment) => `${shiftMinuteLabel(segment.start_minute)}–${shiftMinuteLabel(segment.end_minute)}`);
-    return [shift.id, `${shift.name} · ${parts.join("、")}`];
+    const lunch = shift.code === "WEEKDAY_SPLIT" && shiftSegments.length === 2
+      ? ` · 午休 ${shiftMinuteLabel(shiftSegments[0].end_minute)}–${shiftMinuteLabel(shiftSegments[1].start_minute)}`
+      : "";
+    return [shift.id, `${shift.name} · ${parts.join("、")}${lunch}`];
   }));
   const defaultShifts = new Map(shifts
     .filter((shift) => shift.code === WEEKDAY_SHIFT_CODE || shift.code === HOLIDAY_SHIFT_CODE)

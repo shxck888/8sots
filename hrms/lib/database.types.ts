@@ -315,6 +315,7 @@ export type Database = {
           employee_id: string
           exception_count: number
           id: string
+          rule_set_id: string
           schedule_assignment_id: string | null
           scheduled_minutes: number
           status: Database["public"]["Enums"]["attendance_day_status"]
@@ -330,6 +331,7 @@ export type Database = {
           employee_id: string
           exception_count?: number
           id?: string
+          rule_set_id: string
           schedule_assignment_id?: string | null
           scheduled_minutes?: number
           status: Database["public"]["Enums"]["attendance_day_status"]
@@ -345,6 +347,7 @@ export type Database = {
           employee_id?: string
           exception_count?: number
           id?: string
+          rule_set_id?: string
           schedule_assignment_id?: string | null
           scheduled_minutes?: number
           status?: Database["public"]["Enums"]["attendance_day_status"]
@@ -352,6 +355,13 @@ export type Database = {
           work_date?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_days_rule_set_fk"
+            columns: ["tenant_id", "rule_set_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_rule_sets"
+            referencedColumns: ["tenant_id", "id"]
+          },
           {
             foreignKeyName: "attendance_days_tenant_id_calculation_run_id_fkey"
             columns: ["tenant_id", "calculation_run_id"]

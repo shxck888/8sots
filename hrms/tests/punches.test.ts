@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextPunchLabel, punchInputSchema } from "../lib/punch-contract";
+import { nextPunchLabel, punchDisplayLabel, punchInputSchema, scheduledPunchLabel } from "../lib/punch-contract";
 
 const validInput = {
   accuracyM: 18.4,
@@ -29,5 +29,17 @@ describe("GPS punch contract", () => {
     expect(nextPunchLabel(null)).toBe("上班打卡");
     expect(nextPunchLabel("clock_in")).toBe("下班打卡");
     expect(nextPunchLabel("clock_out")).toBe("上班打卡");
+  });
+
+  it("requires lunch punches only for the published lunch shift", () => {
+    expect([0, 1, 2, 3, 4].map((count) => scheduledPunchLabel(count, true))).toEqual([
+      "上班打卡", "開始午休打卡", "結束午休打卡", "下班打卡", null,
+    ]);
+    expect([0, 1, 2].map((count) => scheduledPunchLabel(count, false))).toEqual([
+      "上班打卡", "下班打卡", null,
+    ]);
+    expect(punchDisplayLabel("clock_out", 1, true)).toBe("開始午休");
+    expect(punchDisplayLabel("clock_in", 2, true)).toBe("結束午休");
+    expect(punchDisplayLabel("clock_out", 1, false)).toBe("下班");
   });
 });

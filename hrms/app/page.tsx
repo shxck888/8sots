@@ -64,7 +64,9 @@ export default async function Home() {
             <span className="status-pill"><span /> 已同步發布班表</span>
             <p className="time">{timeLabel}</p>
             <p className="shift-note">{todaySchedule ? `今日班別：${todaySchedule.shiftName}` : "今日沒有已發布的排班"}</p>
-            <PunchPanel enabled={Boolean(punches.employeeId)} lastEventType={punches.records[0]?.event_type ?? null} />
+            <PunchPanel enabled={Boolean(punches.employeeId)} lastEventType={punches.records[0]?.event_type ?? null}
+              scheduledPunchCount={todaySchedule ? punches.records.filter((record) => record.work_date === today).length : null}
+              hasLunchBreak={todaySchedule?.shiftCode === "WEEKDAY_SPLIT" && todaySchedule.segments.length === 2} />
           </div>
           <div className="location-orbit" aria-hidden="true">
             <div className="orbit outer" /><div className="orbit inner" />

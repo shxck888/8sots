@@ -42,9 +42,6 @@ export const workRequestInputSchema = z.object({
   if (value.endsLocal <= value.startsLocal) {
     context.addIssue({ code: "custom", message: "結束時間必須晚於開始時間", path: ["endsLocal"] });
   }
-  if (value.requestType === "leave" && !leaveDatesUseAllowedWeekdays(value.startsLocal, value.endsLocal)) {
-    context.addIssue({ code: "custom", message: "請假日期只能選週二至週五", path: ["endsLocal"] });
-  }
   if (value.requestType === "leave" && !leaveRequestUsesSingleDate(value.startsLocal, value.endsLocal)) {
     context.addIssue({ code: "custom", message: "每筆請假只能選一個日期", path: ["endsLocal"] });
   }

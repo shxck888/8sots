@@ -4,7 +4,8 @@ import { CorrectionForm } from "@/app/attendance/correction-form";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { attendanceStatusLabels } from "@/lib/attendance-contract";
 import { getMyAttendanceOverview } from "@/lib/attendance-overview";
-import { locationVerificationLabels, punchEventLabels, punchSourceLabels } from "@/lib/punch-contract";
+import { getMyPublishedSchedule } from "@/lib/my-schedule";
+import { locationVerificationLabels, punchDisplayLabel, punchEventLabels, punchSourceLabels } from "@/lib/punch-contract";
 import { formatTaipeiDateTime } from "@/lib/schedule-display";
 import { getWorkspaceContext } from "@/lib/workspace";
 
@@ -20,6 +21,12 @@ export default async function AttendancePage() {
     punchesByWorkDate.set(punch.work_date, [...(punchesByWorkDate.get(punch.work_date) ?? []), punch]);
   }
   const workDates = [...new Set([...dayByWorkDate.keys(), ...punchesByWorkDate.keys()])].sort().reverse();
+  const schedule = workDates.length && workspace.employeeId
+    ? await getMyPublishedSchedule({ dateFrom: workDates[workDates.length - 1], dateTo: workDates[0], employeeId: workspace.employeeId })
+    : { entries: [] };
+  const lunchByWorkDate = new Map(schedule.entries.map((entry) => [
+    entry.workDate, entry.shiftCode === "WEEKDAY_SPLIT" && entry.segments.length === 2,
+  ]));
 
   return (
     <WorkspaceShell activePath="/attendance" canManage={workspace.canManage} displayName={workspace.displayName} email={workspace.email} tenantName={workspace.tenantName}>
@@ -35,6 +42,7 @@ export default async function AttendancePage() {
           {workDates.map((workDate) => {
             const day = dayByWorkDate.get(workDate);
             const punches = punchesByWorkDate.get(workDate) ?? [];
+            const chronologicalPunches = [...punches].sort((left, right) => left.occurred_at.localeCompare(right.occurred_at));
             return <article className="attendance-daily-card" key={workDate}>
               <div className="attendance-daily-result">
                 <strong>{workDate}</strong>
@@ -42,7 +50,7 @@ export default async function AttendancePage() {
               </div>
               <div className="attendance-daily-punches">
                 {punches.length ? punches.map((record) => <div className="attendance-daily-punch" key={record.id}>
-                  <span className={`attendance-event ${record.event_type}`}>{punchEventLabels[record.event_type]}</span>
+                  <span className={`attendance-event ${record.event_type}`}>{punchDisplayLabel(record.event_type, chronologicalPunches.findIndex((item) => item.id === record.id), lunchByWorkDate.get(workDate) === true)}</span>
                   <div><strong>{formatTaipeiDateTime(record.occurred_at)}</strong><small>{punchSourceLabels[record.source]}</small></div>
                   <div className="attendance-evidence"><span><MapPin size={14} /> {locationVerificationLabels[record.location_verification]}</span><small>GPS 誤差約 {Number(record.accuracy_m ?? 0).toFixed(0)} 公尺{record.location_distance_m != null ? ` · 距門市約 ${Number(record.location_distance_m).toFixed(0)} 公尺` : ""}</small></div>
                 </div>) : <p className="attendance-no-punch">此工作日沒有原始打卡</p>}

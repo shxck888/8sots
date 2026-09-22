@@ -18,6 +18,7 @@ const errors: Record<string, string> = {
   review: "請填寫至少 10 個字的核對說明。",
   "statutory-profile": "員工投保／扣繳資料格式不正確。",
   "leave-rule": "假別給薪比例格式不正確。",
+  attendance: "時薪員工仍有排班或打卡日期尚未產生出勤結果；請先完成出勤重算，再重新計算薪資。",
   "1": "操作失敗；請確認薪資設定、員工薪資版本與目前狀態。",
 };
 

@@ -12,8 +12,11 @@ const fixtureIds = {
   company: "10000000-0000-4000-8000-000000000005",
   role: "10000000-0000-4000-8000-000000000006",
   employee: "10000000-0000-4000-8000-000000000007",
+  overnightUser: "10000000-0000-4000-8000-000000000020",
+  overnightEmployee: "10000000-0000-4000-8000-000000000021",
   weekdayShift: "10000000-0000-4000-8000-000000000010",
   holidayShift: "10000000-0000-4000-8000-000000000011",
+  overnightShift: "10000000-0000-4000-8000-000000000012",
 };
 
 let db: PGlite;
@@ -74,11 +77,15 @@ beforeAll(async () => {
       values('${fixtureIds.tenant}','${fixtureIds.employee}','full_time','2026-01-01','active','2026-01-01');
     insert into public.shifts(id,tenant_id,code,name,status) values
       ('${fixtureIds.weekdayShift}','${fixtureIds.tenant}','WEEKDAY_SPLIT','平日班','active'),
-      ('${fixtureIds.holidayShift}','${fixtureIds.tenant}','HOLIDAY_CONTINUOUS','假日班','active');
+      ('${fixtureIds.holidayShift}','${fixtureIds.tenant}','HOLIDAY_CONTINUOUS','假日班','active'),
+      ('${fixtureIds.overnightShift}','${fixtureIds.tenant}','OVERNIGHT_TEST','跨日測試班','active');
     insert into public.shift_segments(tenant_id,shift_id,segment_order,start_minute,end_minute) values
       ('${fixtureIds.tenant}','${fixtureIds.weekdayShift}',1,600,840),
       ('${fixtureIds.tenant}','${fixtureIds.weekdayShift}',2,960,1260),
-      ('${fixtureIds.tenant}','${fixtureIds.holidayShift}',1,600,1260);
+      ('${fixtureIds.tenant}','${fixtureIds.holidayShift}',1,600,1260),
+      ('${fixtureIds.tenant}','${fixtureIds.overnightShift}',1,1439,2879);
+    insert into public.attendance_rule_sets(tenant_id,version,late_grace_minutes,early_leave_grace_minutes,effective_from)
+      values('${fixtureIds.tenant}',1,0,0,'2026-01-01');
   `);
   await setUser(fixtureIds.admin);
 }, 60_000);
@@ -89,6 +96,39 @@ describe("database migrations and critical workflows", () => {
   it("applies every migration to a real PostgreSQL-compatible engine", async () => {
     const result = await db.query<{ count: number }>("select count(*)::integer count from public.payroll_periods");
     expect(result.rows[0].count).toBe(0);
+  });
+
+  it("stops a continuous shift after two punches", async () => {
+    await db.exec("begin");
+    try {
+      await setUser(fixtureIds.admin);
+      const version = await db.query<{ id: string }>(`
+        insert into public.schedule_versions(tenant_id,period_start,period_end,version,status,created_by)
+        select $1,d,d,99,'draft',$2
+        from (select (clock_timestamp() at time zone 'Asia/Taipei')::date d) dates
+        returning id`, [fixtureIds.tenant, fixtureIds.admin]);
+      await db.query(`insert into public.schedule_assignments(tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by)
+        select $1,$2,$3,(clock_timestamp() at time zone 'Asia/Taipei')::date,$4,$5`, [
+        fixtureIds.tenant, version.rows[0].id, fixtureIds.employee, fixtureIds.holidayShift, fixtureIds.admin,
+      ]);
+      await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, version.rows[0].id]);
+      await db.query(`insert into public.punch_records(
+        tenant_id,employee_id,work_date,event_type,occurred_at,client_occurred_at,timezone,source,
+        latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by
+      ) values
+        ($1,$2,(clock_timestamp() at time zone 'Asia/Taipei')::date,'clock_in',clock_timestamp()-interval '3 minutes',clock_timestamp()-interval '3 minutes','Asia/Taipei','web_gps',25.1291,121.7841,15,clock_timestamp()-interval '3 minutes',$3,$4),
+        ($1,$2,(clock_timestamp() at time zone 'Asia/Taipei')::date,'clock_out',clock_timestamp()-interval '2 minutes',clock_timestamp()-interval '2 minutes','Asia/Taipei','web_gps',25.1291,121.7841,15,clock_timestamp()-interval '2 minutes',$5,$4)`, [
+        fixtureIds.tenant, fixtureIds.employee, crypto.randomUUID(), fixtureIds.employeeUser, crypto.randomUUID(),
+      ]);
+      await setUser(fixtureIds.employeeUser);
+      await expect(db.query(
+        "select public.record_gps_punch($1,$2,clock_timestamp(),'Asia/Taipei',25.1291,121.7841,15,true)",
+        [fixtureIds.tenant, crypto.randomUUID()],
+      )).rejects.toThrow(/scheduled punch sequence complete/);
+    } finally {
+      await db.exec("rollback");
+      await setUser(fixtureIds.admin);
+    }
   });
 
   it("grants only selected supervisor permissions and protects permission management", async () => {
@@ -171,7 +211,136 @@ describe("database migrations and critical workflows", () => {
     ])).rejects.toThrow(/shift does not match date default/);
   });
 
+  it("keeps an in-progress overnight checkout on the original work date", async () => {
+    await setUser(fixtureIds.admin);
+    await db.query("insert into auth.users(id,email) values($1,'overnight@example.test')", [fixtureIds.overnightUser]);
+    await db.query("insert into public.tenant_memberships(tenant_id,user_id,status) values($1,$2,'active')", [fixtureIds.tenant, fixtureIds.overnightUser]);
+    await db.query(`insert into public.employees(id,tenant_id,auth_user_id,employee_no,full_name,hire_date,status)
+      values($1,$2,$3,'E002','跨日測試員工','2026-12-01','active')`, [fixtureIds.overnightEmployee, fixtureIds.tenant, fixtureIds.overnightUser]);
+    await db.query(`insert into public.employee_auth_accounts(employee_id,tenant_id,auth_user_id,username,status)
+      values($1,$2,$3,'overnight001','active')`, [fixtureIds.overnightEmployee, fixtureIds.tenant, fixtureIds.overnightUser]);
+    await db.query(`insert into public.employment_records(tenant_id,employee_id,employment_type,hire_date,status,effective_from)
+      values($1,$2,'part_time','2026-12-01','active','2026-12-01')`, [fixtureIds.tenant, fixtureIds.overnightEmployee]);
+    const version = await db.query<{ id: string; work_date: string }>(`
+      with dates as (select (clock_timestamp() at time zone 'Asia/Taipei')::date - 1 work_date),
+      version as (
+        insert into public.schedule_versions(
+          tenant_id,period_start,period_end,version,status,created_by
+        ) select $1,work_date,work_date,1,'draft',$2 from dates returning id,period_start
+      ) select id,period_start::text work_date from version`, [fixtureIds.tenant, fixtureIds.admin]);
+    await db.query(`insert into public.schedule_assignments(
+      tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by
+    ) values($1,$2,$3,$4,$5,$6)`, [
+      fixtureIds.tenant, version.rows[0].id, fixtureIds.overnightEmployee,
+      version.rows[0].work_date, fixtureIds.overnightShift, fixtureIds.admin,
+    ]);
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, version.rows[0].id]);
+    await db.query(`insert into public.punch_records(
+      tenant_id,employee_id,work_date,event_type,occurred_at,client_occurred_at,timezone,source,
+      latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by
+    ) values($1,$2,$3,'clock_in',clock_timestamp()-interval '1 minute',clock_timestamp()-interval '1 minute',
+      'Asia/Taipei','web_gps',25.1291,121.7841,15,clock_timestamp()-interval '1 minute',$4,$5)`, [
+      fixtureIds.tenant, fixtureIds.overnightEmployee, version.rows[0].work_date,
+      crypto.randomUUID(), fixtureIds.overnightUser,
+    ]);
+    await setUser(fixtureIds.overnightUser);
+    const checkout = await db.query<{ id: string }>(
+      "select public.record_gps_punch($1,$2,clock_timestamp(),'Asia/Taipei',25.1291,121.7841,15,true) id",
+      [fixtureIds.tenant, crypto.randomUUID()],
+    );
+    const punch = await db.query<{ work_date: string; event_type: string }>(
+      "select work_date::text,event_type::text from public.punch_records where id=$1", [checkout.rows[0].id],
+    );
+    expect(punch.rows[0]).toEqual({ work_date: version.rows[0].work_date, event_type: "clock_out" });
+  });
+
+  it("uses the rule effective on each work date and treats extra corrections as unmatched evidence", async () => {
+    await setUser(fixtureIds.admin);
+    const rule = await db.query<{ id: string }>(
+      "select public.create_attendance_rule_set($1,60,60,'2026-09-09') id", [fixtureIds.tenant],
+    );
+    const version = await db.query<{ id: string }>(`insert into public.schedule_versions(
+      tenant_id,period_start,period_end,version,status,created_by
+    ) values($1,'2026-09-08','2026-09-09',1,'draft',$2) returning id`,
+    [fixtureIds.tenant, fixtureIds.admin]);
+    for (const date of ["2026-09-08", "2026-09-09"]) {
+      await db.query(`insert into public.schedule_assignments(
+        tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by
+      ) values($1,$2,$3,$4,$5,$6)`, [
+        fixtureIds.tenant, version.rows[0].id, fixtureIds.employee, date, fixtureIds.weekdayShift, fixtureIds.admin,
+      ]);
+      for (const [event, time] of [["clock_in", "10:30"], ["clock_out", "14:00"], ["clock_in", "16:00"], ["clock_out", "21:00"]]) {
+        await db.query(`insert into public.punch_records(
+          tenant_id,employee_id,work_date,event_type,occurred_at,client_occurred_at,timezone,source,
+          latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by
+        ) values($1,$2,$3,$4,($3::date+$5::time) at time zone 'Asia/Taipei',
+          ($3::date+$5::time) at time zone 'Asia/Taipei','Asia/Taipei','web_gps',25.1291,121.7841,15,
+          ($3::date+$5::time) at time zone 'Asia/Taipei',$6,$7)`, [
+          fixtureIds.tenant, fixtureIds.employee, date, event, time, crypto.randomUUID(), fixtureIds.employeeUser,
+        ]);
+      }
+    }
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, version.rows[0].id]);
+    const correction = await db.query<{ id: string }>(`insert into public.punch_correction_requests(
+      tenant_id,employee_id,work_date,proposed_event_type,proposed_occurred_at,timezone,reason,idempotency_key,requested_by
+    ) values($1,$2,'2026-09-08','clock_in','2026-09-08 11:00'::timestamp at time zone 'Asia/Taipei',
+      'Asia/Taipei','測試已存在完整卡時的額外補卡',$3,$4) returning id`, [
+      fixtureIds.tenant, fixtureIds.employee, crypto.randomUUID(), fixtureIds.employeeUser,
+    ]);
+    await db.query(`insert into public.punch_correction_decisions(
+      tenant_id,correction_request_id,decision,review_note,decided_by
+    ) values($1,$2,'approved','測試核准額外補卡',$3)`, [fixtureIds.tenant, correction.rows[0].id, fixtureIds.admin]);
+    await setUser(fixtureIds.admin);
+    const run = await db.query<{ id: string }>("select public.calculate_attendance($1,'2026-09-08','2026-09-09') id", [fixtureIds.tenant]);
+    const days = await db.query<{ work_date: string; version: number; late_minutes: number }>(`
+      select ad.work_date::text,ars.version,aseg.late_minutes from public.attendance_days ad
+      join public.attendance_rule_sets ars on ars.id=ad.rule_set_id
+      join public.attendance_segments aseg on aseg.attendance_day_id=ad.id and aseg.segment_order=1
+      where ad.calculation_run_id=$1 order by ad.work_date`, [run.rows[0].id]);
+    expect(days.rows).toEqual([
+      { work_date: "2026-09-08", version: 1, late_minutes: 30 },
+      { work_date: "2026-09-09", version: 2, late_minutes: 0 },
+    ]);
+    expect(rule.rows[0].id).toBeTruthy();
+    const firstSegment = await db.query<{ raw: string | null; correction: string | null; unmatched: number }>(`
+      select aseg.clock_in_punch_id raw,aseg.clock_in_correction_id correction,
+        (select count(*)::integer from public.attendance_exceptions ae
+          where ae.attendance_day_id=ad.id and ae.exception_type='unmatched_punch') unmatched
+      from public.attendance_days ad join public.attendance_segments aseg
+        on aseg.attendance_day_id=ad.id and aseg.segment_order=1
+      where ad.calculation_run_id=$1 and ad.work_date='2026-09-08'`, [run.rows[0].id]);
+    expect(firstSegment.rows[0].raw).not.toBeNull();
+    expect(firstSegment.rows[0].correction).toBeNull();
+    expect(firstSegment.rows[0].unmatched).toBe(1);
+  });
+
+  it("allows leave on a special date only when a published assignment exists", async () => {
+    await setUser(fixtureIds.admin);
+    const version = await db.query<{ id: string }>(`insert into public.schedule_versions(
+      tenant_id,period_start,period_end,version,status,created_by
+    ) values($1,'2026-10-10','2026-10-10',1,'draft',$2) returning id`,
+    [fixtureIds.tenant, fixtureIds.admin]);
+    await db.query(`insert into public.schedule_assignments(
+      tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by
+    ) values($1,$2,$3,'2026-10-10',$4,$5)`, [
+      fixtureIds.tenant, version.rows[0].id, fixtureIds.employee, fixtureIds.holidayShift, fixtureIds.admin,
+    ]);
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, version.rows[0].id]);
+    const leaveType = await db.query<{ id: string }>(
+      "insert into public.leave_types(tenant_id,code,name) values($1,'SPECIAL_TEST','測試假') returning id",
+      [fixtureIds.tenant],
+    );
+    await setUser(fixtureIds.employeeUser);
+    await expect(db.query(`select public.create_work_request(
+      $1,'leave',$2,'2026-10-10 10:00','2026-10-10 11:00','已發布週末班表請假測試',$3)`,
+      [fixtureIds.tenant, leaveType.rows[0].id, crypto.randomUUID()])).resolves.toBeTruthy();
+    await expect(db.query(`select public.create_work_request(
+      $1,'leave',$2,'2026-10-17 10:00','2026-10-17 11:00','未發布週末班表請假測試',$3)`,
+      [fixtureIds.tenant, leaveType.rows[0].id, crypto.randomUUID()])).rejects.toThrow(/published assignment/);
+  });
+
   it("versions workplace settings and enforces the configured geofence", async () => {
+    await setUser(fixtureIds.admin);
     await db.query("select public.save_workplace_settings($1,current_date,$2,$3,$4,$5,$6,$7,$8)", [
       fixtureIds.tenant, "測試門市", "台灣測試地址", 25.129, 121.784, 150, 100, "enforced",
     ]);
@@ -256,6 +425,34 @@ describe("database migrations and critical workflows", () => {
     await db.exec("reset role");
   });
 
+  it("blocks hourly payroll review until scheduled work dates have attendance snapshots", async () => {
+    await setUser(fixtureIds.admin);
+    await db.query("select public.save_employee_compensation($1,$2,'2026-01-01','hourly',20000,'時薪測試')", [
+      fixtureIds.tenant, fixtureIds.overnightEmployee,
+    ]);
+    await db.query(`select public.save_employee_statutory_profile(
+      $1,$2,'2026-01-01',3000000,3000000,3000000,0,3000000,0,0,'時薪投保測試')`, [
+      fixtureIds.tenant, fixtureIds.overnightEmployee,
+    ]);
+    const version = await db.query<{ id: string }>(`insert into public.schedule_versions(
+      tenant_id,period_start,period_end,version,status,created_by
+    ) values($1,'2026-12-08','2026-12-08',1,'draft',$2) returning id`,
+    [fixtureIds.tenant, fixtureIds.admin]);
+    await db.query(`insert into public.schedule_assignments(
+      tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by
+    ) values($1,$2,$3,'2026-12-08',$4,$5)`, [
+      fixtureIds.tenant, version.rows[0].id, fixtureIds.overnightEmployee, fixtureIds.weekdayShift, fixtureIds.admin,
+    ]);
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, version.rows[0].id]);
+    const period = await db.query<{ id: string }>(
+      "select public.create_payroll_period($1,'2026-12-01',null) id", [fixtureIds.tenant],
+    );
+    await db.query("select public.calculate_payroll_draft($1,$2)", [fixtureIds.tenant, period.rows[0].id]);
+    await expect(db.query("select public.review_payroll_period($1,$2,'已檢查時薪員工本期資料完整性')", [
+      fixtureIds.tenant, period.rows[0].id,
+    ])).rejects.toThrow(/missing attendance calculations/);
+  });
+
   it("grants statutory annual leave by anniversary and deducts approved requests", async () => {
     await setUser(fixtureIds.admin);
     await db.query(
@@ -322,7 +519,11 @@ describe("database migrations and critical workflows", () => {
     await expect(db.query("select public.record_self_password_change($1)", [fixtureIds.tenant])).rejects.toThrow(/administrator membership required/);
     await expect(db.query("select * from public.get_audit_log_page($1,100,null)", [fixtureIds.tenant])).rejects.toThrow(/security.audit permission required/);
 
-    for (let index = 0; index < 19; index += 1) {
+    const recentPunches = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.punch_records where tenant_id=$1 and employee_id=$2 and created_at>clock_timestamp()-interval '10 minutes'",
+      [fixtureIds.tenant, fixtureIds.employee],
+    );
+    for (let index = recentPunches.rows[0].count; index < 20; index += 1) {
       await db.query(
         `insert into public.punch_records(tenant_id,employee_id,work_date,event_type,client_occurred_at,timezone,source,idempotency_key,created_by)
          values($1,$2,current_date,'clock_in',clock_timestamp(),'Asia/Taipei','qr',$3,$4)`,

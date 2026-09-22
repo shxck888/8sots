@@ -1,6 +1,14 @@
 # Next Steps
 
-Last Updated: 2026-09-21
+Last Updated: 2026-09-23
+
+## 2026-09-23 午休打卡部署
+
+已套用 production migrations `041`、`042`，並將午休打卡畫面部署至 `hrms.8sots.com.tw`。正式登入頁與健康檢查已通過；仍需由真實員工在週二至週五的已發布兩段班完成四次 GPS 打卡驗收。
+
+## 2026-09-22 local consistency fixes
+
+Migration `041` 已在本機完成並通過 PGlite 整合驗證，修正跨午夜打卡工作日、跨規則生效日重算、特殊營業日請假、額外補卡配對及時薪薪資缺少出勤快照仍可鎖定等問題。已於 2026-09-23 套用 production；仍需以真實員工帳號驗收 GPS 與補卡流程。
 
 ## 2026-09-21 completion update
 

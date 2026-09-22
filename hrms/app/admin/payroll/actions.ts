@@ -93,10 +93,14 @@ export async function reviewPeriod(formData: FormData) {
   if (!parsed.success) redirect("/admin/payroll?error=review");
   const { supabase, tenantId } = await payrollContext();
   const { error } = await supabase.rpc("review_payroll_period", { p_tenant_id: tenantId, p_period_id: parsed.data.periodId, p_review_note: parsed.data.reviewNote });
-  revalidatePath("/admin/payroll"); finish(error, "saved=reviewed");
+  revalidatePath("/admin/payroll");
+  if (error?.message.includes("hourly payroll missing attendance calculations")) redirect("/admin/payroll?error=attendance");
+  finish(error, "saved=reviewed");
 }
 export async function changePeriodStatus(formData: FormData) {
   const parsed = payrollStatusSchema.safeParse({ periodId: formData.get("periodId"), status: formData.get("status") }); if (!parsed.success) redirect("/admin/payroll?error=validation");
   const { supabase, tenantId } = await payrollContext(); const { error } = await supabase.rpc("set_payroll_period_status", { p_tenant_id: tenantId, p_period_id: parsed.data.periodId, p_status: parsed.data.status });
-  revalidatePath("/admin/payroll"); revalidatePath("/payslips"); finish(error, "saved=status");
+  revalidatePath("/admin/payroll"); revalidatePath("/payslips");
+  if (error?.message.includes("hourly payroll missing attendance calculations")) redirect("/admin/payroll?error=attendance");
+  finish(error, "saved=status");
 }

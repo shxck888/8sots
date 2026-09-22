@@ -34,3 +34,16 @@ export const locationVerificationLabels = {
 export function nextPunchLabel(lastEventType: PunchEventType | null): string {
   return lastEventType === "clock_in" ? "下班打卡" : "上班打卡";
 }
+
+export function scheduledPunchLabel(punchCount: number, hasLunchBreak: boolean): string | null {
+  const labels = hasLunchBreak
+    ? ["上班打卡", "開始午休打卡", "結束午休打卡", "下班打卡"]
+    : ["上班打卡", "下班打卡"];
+  return labels[punchCount] ?? null;
+}
+
+export function punchDisplayLabel(eventType: PunchEventType, index: number, hasLunchBreak: boolean): string {
+  if (hasLunchBreak && index === 1 && eventType === "clock_out") return "開始午休";
+  if (hasLunchBreak && index === 2 && eventType === "clock_in") return "結束午休";
+  return punchEventLabels[eventType];
+}

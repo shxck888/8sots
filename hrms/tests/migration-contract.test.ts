@@ -157,6 +157,11 @@ const defaultScheduleMigration = readFileSync(
   "utf8",
 ).toLowerCase();
 
+const attendanceLogicConsistencyMigration = readFileSync(
+  join(process.cwd(), "supabase/migrations/202609220041_attendance_logic_consistency.sql"),
+  "utf8",
+).toLowerCase();
+
 const scheduleSeed = readFileSync(
   join(process.cwd(), "supabase/seeds/8sots_schedule_templates.sql"),
   "utf8",
@@ -225,6 +230,31 @@ describe("attendance correction precedence migration", () => {
     );
     expect(attendanceCorrectionPrecedenceMigration).toContain("interval '30 seconds'");
     expect(attendanceCorrectionPrecedenceMigration).toContain("punch cooldown active");
+  });
+});
+
+describe("attendance and payroll logic consistency migration", () => {
+  it("keeps overnight punches on the open published work date", () => {
+    expect(attendanceLogicConsistencyMigration).toContain("sa.work_date = v_local_date - 1");
+    expect(attendanceLogicConsistencyMigration).toContain("ss.end_minute > 1440");
+    expect(attendanceLogicConsistencyMigration).toContain(") = 'clock_in'");
+  });
+
+  it("selects and records an attendance rule for each work date", () => {
+    expect(attendanceLogicConsistencyMigration).toContain("add column rule_set_id uuid");
+    expect(attendanceLogicConsistencyMigration).toContain("effective_from<=v_item.work_date");
+    expect(attendanceLogicConsistencyMigration).toContain("rule_selected_per_work_date");
+  });
+
+  it("allows special-date leave only with a published assignment", () => {
+    expect(attendanceLogicConsistencyMigration).toContain("regular leave day or published assignment");
+    expect(attendanceLogicConsistencyMigration).toContain("sv.status='published'");
+  });
+
+  it("blocks hourly payroll when an expected work date is absent from the attendance snapshot", () => {
+    expect(attendanceLogicConsistencyMigration).toContain("hourly payroll missing attendance calculations");
+    expect(attendanceLogicConsistencyMigration).toContain("jsonb_array_elements");
+    expect(attendanceLogicConsistencyMigration).toContain("cv.pay_basis='hourly'");
   });
 });
 

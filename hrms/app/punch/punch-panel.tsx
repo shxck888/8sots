@@ -2,7 +2,7 @@
 
 import { Clock3, LoaderCircle, QrCode } from "lucide-react";
 import { useState, useTransition } from "react";
-import { nextPunchLabel, punchEventLabels, type PunchEventType } from "@/lib/punch-contract";
+import { nextPunchLabel, punchDisplayLabel, scheduledPunchLabel, type PunchEventType } from "@/lib/punch-contract";
 import { recordGpsPunch } from "./actions";
 
 function geolocationMessage(error: GeolocationPositionError): string {
@@ -14,14 +14,20 @@ function geolocationMessage(error: GeolocationPositionError): string {
 export function PunchPanel({
   enabled,
   lastEventType,
+  scheduledPunchCount,
+  hasLunchBreak,
 }: {
   enabled: boolean;
   lastEventType: PunchEventType | null;
+  scheduledPunchCount: number | null;
+  hasLunchBreak: boolean;
 }) {
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState(enabled ? "" : "此帳號尚未連結在職員工資料。 ");
   const [latestEvent, setLatestEvent] = useState(lastEventType);
+  const [punchCount, setPunchCount] = useState(scheduledPunchCount);
   const [isPending, startTransition] = useTransition();
+  const nextLabel = punchCount === null ? nextPunchLabel(latestEvent) : scheduledPunchLabel(punchCount, hasLunchBreak);
 
   function submitPunch() {
     setMessage("正在取得裝置定位…");
@@ -50,10 +56,14 @@ export function PunchPanel({
             return;
           }
           setLatestEvent(result.eventType);
+          if (punchCount !== null) setPunchCount((count) => count === null ? null : count + 1);
           const time = new Intl.DateTimeFormat("zh-TW", {
             hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Taipei",
           }).format(new Date(result.occurredAt));
-          setMessage(`${punchEventLabels[result.eventType]}打卡成功，伺服器時間 ${time}。`);
+          const eventLabel = punchCount === null
+            ? (result.eventType === "clock_in" ? "上班" : "下班")
+            : punchDisplayLabel(result.eventType, punchCount, hasLunchBreak);
+          setMessage(`${eventLabel}打卡成功，伺服器時間 ${time}。`);
         });
       },
       (error) => setMessage(geolocationMessage(error)),
@@ -68,8 +78,8 @@ export function PunchPanel({
         <span>我同意本次打卡使用裝置定位</span>
       </label>
       <div>
-        <button className="clock-button" disabled={!enabled || !consent || isPending} onClick={submitPunch} type="button">
-          {isPending ? <LoaderCircle className="spin" size={22} /> : <Clock3 size={22} />} {isPending ? "正在打卡…" : nextPunchLabel(latestEvent)}
+        <button className="clock-button" disabled={!enabled || !consent || isPending || !nextLabel} onClick={submitPunch} type="button">
+          {isPending ? <LoaderCircle className="spin" size={22} /> : <Clock3 size={22} />} {isPending ? "正在打卡…" : nextLabel ?? "今日打卡已完成"}
         </button>
         <button className="qr-button" disabled type="button"><QrCode size={18} /> QR Code 尚未啟用</button>
       </div>

@@ -74,7 +74,7 @@ export default async function MySchedulePage({
                 <article className={isToday ? "my-day-card today" : "my-day-card"} key={dateKey}>
                   <header><div><span>{label.weekday}</span><strong>{label.date}</strong></div>{isToday ? <em>今天</em> : null}</header>
                   {entry ? (
-                    <div className="my-shift"><span className="schedule-status published">已發布</span><h2>{entry.shiftName}</h2><small>{entry.shiftCode}</small><div className="my-segments">{entry.segments.map((segment) => <p key={segment.order}><Clock3 size={15} /><span>{shiftMinuteLabel(segment.startMinute)}–{shiftMinuteLabel(segment.endMinute)}</span></p>)}</div><strong className="my-total">共 {formatScheduledHours(entry.totalMinutes)} 小時</strong></div>
+                    <div className="my-shift"><span className="schedule-status published">已發布</span><h2>{entry.shiftName}</h2><small>{entry.shiftCode}</small><div className="my-segments">{entry.segments.map((segment) => <p key={segment.order}><Clock3 size={15} /><span>{shiftMinuteLabel(segment.startMinute)}–{shiftMinuteLabel(segment.endMinute)}</span></p>)}</div>{entry.shiftCode === "WEEKDAY_SPLIT" && entry.segments.length === 2 ? <p>午休 {shiftMinuteLabel(entry.segments[0].endMinute)}–{shiftMinuteLabel(entry.segments[1].startMinute)}，請打開始及結束午休卡。</p> : null}<strong className="my-total">共 {formatScheduledHours(entry.totalMinutes)} 小時</strong></div>
                   ) : (
                     <div className="my-day-empty"><CalendarDays size={20} /><strong>未排班</strong><span>目前沒有已發布班別</span></div>
                   )}
