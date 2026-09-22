@@ -4,7 +4,13 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/admin";
-import { employeeFormSchema, type EmployeeFormInput, type EmployeeFormState } from "@/lib/employees";
+import {
+  employeeFormSchema,
+  employeeFormValuesFromFormData,
+  type EmployeeFormInput,
+  type EmployeeFormState,
+  type EmployeeFormValues,
+} from "@/lib/employees";
 import { protectNationalId } from "@/lib/pii";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -12,20 +18,8 @@ const photoTypes: Record<string, string> = {
   "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
 };
 
-function parseEmployeeForm(formData: FormData) {
-  return employeeFormSchema.safeParse({
-    employeeNo: formData.get("employeeNo"), fullName: formData.get("fullName"),
-    englishName: formData.get("englishName"), nationalId: formData.get("nationalId"),
-    birthDate: formData.get("birthDate"), gender: formData.get("gender"),
-    address: formData.get("address"), mobile: formData.get("mobile"), email: formData.get("email"),
-    emergencyContactName: formData.get("emergencyContactName"),
-    emergencyContactPhone: formData.get("emergencyContactPhone"),
-    departmentName: formData.get("departmentName"), positionName: formData.get("positionName"),
-    supervisorEmployeeId: formData.get("supervisorEmployeeId"),
-    employmentType: formData.get("employmentType"), hireDate: formData.get("hireDate"),
-    terminationDate: formData.get("terminationDate"), probationEndDate: formData.get("probationEndDate"),
-    status: formData.get("status"), notes: formData.get("notes"),
-  });
+function failure(values: EmployeeFormValues, state: Omit<EmployeeFormState, "values">): EmployeeFormState {
+  return { ...state, values };
 }
 
 function employeeRpcPayload(tenantId: string, data: EmployeeFormInput, protectedId: ReturnType<typeof protectNationalId> | null) {
@@ -84,24 +78,25 @@ async function uploadPhoto(
 export async function createEmployee(
   _previousState: EmployeeFormState, formData: FormData,
 ): Promise<EmployeeFormState> {
-  const parsed = parseEmployeeForm(formData);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
-  if (!parsed.data.nationalId) return { fieldErrors: { nationalId: ["請輸入身分證／居留證字號。"] } };
+  const values = employeeFormValuesFromFormData(formData);
+  const parsed = employeeFormSchema.safeParse(values);
+  if (!parsed.success) return failure(values, { fieldErrors: parsed.error.flatten().fieldErrors });
+  if (!parsed.data.nationalId) return failure(values, { fieldErrors: { nationalId: ["請輸入身分證／居留證字號。"] } });
   const photo = validatePhoto(formData.get("photo"));
-  if (photo.error) return { message: photo.error };
+  if (photo.error) return failure(values, { fieldErrors: { photo: [photo.error] } });
 
   const admin = await getAdminContext();
-  if (!admin) return { message: "管理員權限驗證失敗，請重新登入。" };
+  if (!admin) return failure(values, { message: "管理員權限驗證失敗，請重新登入。" });
 
   let protectedId;
   try { protectedId = protectNationalId(parsed.data.nationalId); }
-  catch { return { message: "敏感資料加密服務尚未設定，請聯絡系統管理員。" }; }
+  catch { return failure(values, { message: "敏感資料加密服務尚未設定，請聯絡系統管理員。" }); }
 
   const supabase = await createSupabaseServerClient();
   const { data: employeeId, error } = await supabase.rpc(
     "create_employee_master", employeeRpcPayload(admin.tenantId, parsed.data, protectedId),
   );
-  if (error || typeof employeeId !== "string") return { message: databaseMessage(error?.code) };
+  if (error || typeof employeeId !== "string") return failure(values, { message: databaseMessage(error?.code) });
 
   const photoOkay = photo.file ? await uploadPhoto(employeeId, admin.tenantId, photo.file) : true;
   revalidatePath("/admin/employees");
@@ -111,18 +106,19 @@ export async function createEmployee(
 export async function updateEmployee(
   employeeId: string, _previousState: EmployeeFormState, formData: FormData,
 ): Promise<EmployeeFormState> {
-  const parsed = parseEmployeeForm(formData);
-  if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
+  const values = employeeFormValuesFromFormData(formData);
+  const parsed = employeeFormSchema.safeParse(values);
+  if (!parsed.success) return failure(values, { fieldErrors: parsed.error.flatten().fieldErrors });
   const photo = validatePhoto(formData.get("photo"));
-  if (photo.error) return { message: photo.error };
+  if (photo.error) return failure(values, { fieldErrors: { photo: [photo.error] } });
 
   const admin = await getAdminContext();
-  if (!admin) return { message: "管理員權限驗證失敗，請重新登入。" };
+  if (!admin) return failure(values, { message: "管理員權限驗證失敗，請重新登入。" });
 
   let protectedId = null;
   if (parsed.data.nationalId) {
     try { protectedId = protectNationalId(parsed.data.nationalId); }
-    catch { return { message: "敏感資料加密服務尚未設定，請聯絡系統管理員。" }; }
+    catch { return failure(values, { message: "敏感資料加密服務尚未設定，請聯絡系統管理員。" }); }
   }
 
   const supabase = await createSupabaseServerClient();
@@ -131,7 +127,7 @@ export async function updateEmployee(
   const { error } = await supabase.rpc("update_employee_master", {
     ...employeeRpcPayload(admin.tenantId, parsed.data, protectedId), p_employee_id: employeeId,
   });
-  if (error) return { message: databaseMessage(error.code) };
+  if (error) return failure(values, { message: databaseMessage(error.code) });
 
   const photoOkay = photo.file
     ? await uploadPhoto(employeeId, admin.tenantId, photo.file, current?.photo_path as string | null)

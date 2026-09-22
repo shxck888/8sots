@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { employeeFormSchema, employeeStatusLabels, employmentTypeLabels, genderLabels } from "../lib/employees";
+import { employeeFormSchema, employeeFormValuesFromFormData, employeeStatusLabels, employmentTypeLabels, genderLabels } from "../lib/employees";
 import { maskNationalId, protectNationalId } from "../lib/pii";
 
 const validEmployee = {
@@ -47,6 +47,18 @@ describe("employee master form", () => {
   it("rejects termination and probation dates before hire date", () => {
     expect(employeeFormSchema.safeParse({ ...validEmployee, terminationDate: "2026-01-01" }).success).toBe(false);
     expect(employeeFormSchema.safeParse({ ...validEmployee, probationEndDate: "2026-01-01" }).success).toBe(false);
+  });
+
+  it("captures raw form values so failed submissions can repopulate every field", () => {
+    const formData = new FormData();
+    for (const [field, value] of Object.entries(validEmployee)) formData.set(field, value);
+    formData.set("fullName", " 測試員工 ");
+    formData.set("notes", "保留這段尚未送出的內容");
+
+    const values = employeeFormValuesFromFormData(formData);
+    expect(values.fullName).toBe(" 測試員工 ");
+    expect(values.notes).toBe("保留這段尚未送出的內容");
+    expect(values.email).toBe(validEmployee.email);
   });
 
   it("defines every persisted label", () => {

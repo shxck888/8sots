@@ -45,13 +45,37 @@ export const employeeFormSchema = z.object({
 });
 
 export type EmployeeFormInput = z.infer<typeof employeeFormSchema>;
+export type EmployeeFormValues = {
+  [Key in keyof z.input<typeof employeeFormSchema>]: string;
+};
+export type EmployeeFormField = keyof EmployeeFormValues | "photo";
 export type EmployeeStatus = EmployeeFormInput["status"];
 export type GenderType = EmployeeFormInput["gender"];
 export type EmploymentType = EmployeeFormInput["employmentType"];
 export type EmployeeFormState = {
   message?: string;
-  fieldErrors?: Partial<Record<keyof z.input<typeof employeeFormSchema>, string[]>>;
+  fieldErrors?: Partial<Record<EmployeeFormField, string[]>>;
+  values?: EmployeeFormValues;
 };
+
+export function employeeFormValuesFromFormData(formData: FormData): EmployeeFormValues {
+  const text = (name: string) => {
+    const value = formData.get(name);
+    return typeof value === "string" ? value : "";
+  };
+  return {
+    employeeNo: text("employeeNo"), fullName: text("fullName"),
+    englishName: text("englishName"), nationalId: text("nationalId"),
+    birthDate: text("birthDate"), gender: text("gender"), address: text("address"),
+    mobile: text("mobile"), email: text("email"),
+    emergencyContactName: text("emergencyContactName"),
+    emergencyContactPhone: text("emergencyContactPhone"),
+    departmentName: text("departmentName"), positionName: text("positionName"),
+    supervisorEmployeeId: text("supervisorEmployeeId"), employmentType: text("employmentType"),
+    hireDate: text("hireDate"), terminationDate: text("terminationDate"),
+    probationEndDate: text("probationEndDate"), status: text("status"), notes: text("notes"),
+  };
+}
 
 export type EmployeeLifecycleState = { message?: string };
 
