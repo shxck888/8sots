@@ -1,5 +1,5 @@
 import {
-  Bell, CalendarDays, CheckCircle2, Clock3, Coffee, MapPin, Settings, UsersRound,
+  Bell, CalendarDays, CheckCircle2, Clock3, Coffee, MapPin, Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -101,12 +101,6 @@ export default async function Home() {
           ) : (
             <div className="dashboard-empty"><CalendarDays size={24} /><strong>{schedule.employeeId ? "今日未排班" : "尚未連結員工資料"}</strong><p>{schedule.employeeId ? "這表示目前沒有已發布排班，不代表已核准休假。" : "請由管理員在員工資料中建立或連結登入帳號。"}</p></div>
           )}
-        </section>
-
-        <section className="team-card">
-          <div className="section-heading"><div><span className="eyebrow">SYSTEM</span><h2>功能進度</h2></div><span className="team-count"><UsersRound size={16} /> 員工端</span></div>
-          <div className="notice"><div className="notice-icon">班</div><div><strong>我的班表已連線</strong><p>只顯示管理員已發布的個人排班；草稿不會提前曝光。</p></div></div>
-          <div className="feature-status"><span><i className="online" /> 登入、班表、GPS 打卡與申請中心</span><span><i className="online" /> 出勤結果與{punches.policy.configured ? "門市定位驗證已啟用" : "門市定位待管理員設定"}</span></div>
         </section>
       </div>
     </WorkspaceShell>
