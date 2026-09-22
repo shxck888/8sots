@@ -74,14 +74,14 @@ button { color: inherit; }
 .status-pill span { width: 7px; height: 7px; border-radius: 50%; background: #8ed0ad; box-shadow: 0 0 0 4px rgba(142,208,173,.12); }
 .time.led-clock { --led-height: clamp(52px, 24cqw, 205px); width: 100%; height: var(--led-height); margin: 22px 0 0; display: flex; align-items: center; justify-content: center; gap: calc(var(--led-height) * .025); }
 .led-digit { width: calc(var(--led-height) * .58); height: 100%; position: relative; flex: 0 0 auto; }
-.led-segment { position: absolute; display: block; opacity: .12; background: #c9fbd6; }
-.led-segment.on { opacity: 1; background: #d9ffe4; box-shadow: 0 0 calc(var(--led-height) * .1) rgba(162,255,193,.53), 0 0 calc(var(--led-height) * .035) rgba(210,255,221,.8); }
+.led-segment { position: absolute; display: block; background: transparent; }
+.led-segment.on { background: #ffd466; box-shadow: 0 0 calc(var(--led-height) * .07) rgba(255,198,65,.42), 0 0 calc(var(--led-height) * .025) rgba(255,222,130,.65); }
 .led-a, .led-g, .led-d { left: 15%; width: 70%; height: 8%; clip-path: polygon(9% 0, 91% 0, 100% 50%, 91% 100%, 9% 100%, 0 50%); }
 .led-a { top: 0; }.led-g { top: 46%; }.led-d { bottom: 0; }
 .led-b, .led-c, .led-e, .led-f { width: 15%; height: 40%; clip-path: polygon(50% 0, 100% 9%, 100% 91%, 50% 100%, 0 91%, 0 9%); }
 .led-b { top: 6%; right: 0; }.led-c { right: 0; bottom: 6%; }.led-e { left: 0; bottom: 6%; }.led-f { top: 6%; left: 0; }
 .led-colon { width: calc(var(--led-height) * .16); height: 100%; position: relative; flex: 0 0 auto; }
-.led-colon span { width: 58%; height: 9%; position: absolute; left: 21%; border-radius: 50%; background: #d9ffe4; box-shadow: 0 0 calc(var(--led-height) * .09) rgba(162,255,193,.6); }
+.led-colon span { width: 58%; height: 9%; position: absolute; left: 21%; border-radius: 50%; background: #ffd466; box-shadow: 0 0 calc(var(--led-height) * .07) rgba(255,198,65,.42); }
 .led-colon span:first-child { top: 28%; }.led-colon span:last-child { bottom: 28%; }
 .clock-source { margin: 9px 0 0; color: #c8e1d5; font-size: 13px; }
 .shift-note { color: #d6e7df; font-size: 15px; margin: 20px 0 8px; }
