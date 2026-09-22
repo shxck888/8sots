@@ -9,7 +9,7 @@ import { getWorkspaceContext } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
 
-const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
+const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
 
 function addDays(dateKey: string, days: number): string {
   const date = new Date(`${dateKey}T00:00:00.000Z`);
@@ -92,7 +92,7 @@ export default async function MySchedulePage({
             {isWeek ? (
               <div className="my-week-list">
                 {dates.map((dateKey) => <article className={dateKey === today ? "my-week-day today" : "my-week-day"} key={dateKey}>
-                  <div className="my-week-date"><small>{Number(dateKey.slice(5, 7))} 月</small><strong>{Number(dateKey.slice(-2))}</strong><span>週{weekdays[(new Date(`${dateKey}T00:00:00.000Z`).getUTCDay() + 6) % 7]}</span></div>
+                  <div className="my-week-date"><small>{Number(dateKey.slice(5, 7))} 月</small><strong>{Number(dateKey.slice(-2))}</strong><span>週{weekdays[new Date(`${dateKey}T00:00:00.000Z`).getUTCDay()]}</span></div>
                   <div className="my-week-content"><ShiftDetail entry={entryByDate.get(dateKey)} compact /></div>
                 </article>)}
               </div>

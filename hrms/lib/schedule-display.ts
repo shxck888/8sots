@@ -31,8 +31,7 @@ export function getMonthCalendarDates(monthKey: string): string[] {
   if (!/^(?:[1-9]\d{3})-(?:0[1-9]|1[0-2])$/.test(monthKey)) throw new Error("Invalid month key");
   const { dateFrom, dateTo } = getMonthBounds(`${monthKey}-01`);
   const first = new Date(`${dateFrom}T00:00:00.000Z`);
-  const mondayOffset = (first.getUTCDay() + 6) % 7;
-  first.setUTCDate(first.getUTCDate() - mondayOffset);
+  first.setUTCDate(first.getUTCDate() - first.getUTCDay());
   const last = new Date(`${dateTo}T00:00:00.000Z`);
   const days = Math.ceil((Math.round((last.getTime() - first.getTime()) / 86400000) + 1) / 7) * 7;
   return Array.from({ length: days }, (_, index) => {

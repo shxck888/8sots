@@ -13,12 +13,14 @@ describe("employee schedule date helpers", () => {
     });
   });
 
-  it("builds complete Monday-first calendar rows across month and year boundaries", () => {
+  it("builds complete Sunday-first calendar rows across month and year boundaries", () => {
     const dates = getMonthCalendarDates("2026-08");
     expect(dates).toHaveLength(42);
-    expect(dates[0]).toBe("2026-07-27");
-    expect(dates.at(-1)).toBe("2026-09-06");
-    expect(getMonthCalendarDates("2026-02").at(-1)).toBe("2026-03-01");
+    expect(dates[0]).toBe("2026-07-26");
+    expect(dates.at(-1)).toBe("2026-09-05");
+    expect(getMonthCalendarDates("2026-02")).toHaveLength(28);
+    expect(getMonthCalendarDates("2026-02").at(-1)).toBe("2026-02-28");
+    expect(getMonthCalendarDates("2026-12").at(-1)).toBe("2027-01-02");
     expect(shiftCalendarMonth("2026-12", 1)).toBe("2027-01");
     expect(shiftCalendarMonth("2026-01", -1)).toBe("2025-12");
   });
