@@ -2,6 +2,7 @@
 
 ## 2026-09-23
 
+- 手機員工導覽收斂為首頁、班表、出勤、申請與「更多」五個入口；薪資單、通知、管理後台與登出移入「更多」，保留未讀通知提示及清楚的點按區。
 - 平日兩段班新增上班、開始午休、結束午休、下班四步打卡提示；連續班維持上下班兩步，班表與出勤紀錄顯示午休時段。
 - Production migrations `041`、`042` 已套用；`042` 限制已發布班次的額外打卡。191 項測試、TypeScript、ESLint 與 production build 通過。
 - Vercel production deployment `dpl_4HwRgqxsLQ8ZT3UBuo5ExmfgLThe` 已 Ready 並切換至 `hrms.8sots.com.tw`；正式登入頁與健康檢查回應正常。

@@ -1,18 +1,21 @@
 import {
-  Banknote, Bell, CalendarDays, Clock3, LayoutDashboard, LogOut, MapPin, ReceiptText, Settings,
+  Banknote, Bell, CalendarDays, Clock3, LayoutDashboard, LogOut, MapPin, Menu, ReceiptText, Settings,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { logout } from "@/app/login/actions";
 
 const nav = [
-  { label: "工作台", icon: LayoutDashboard, href: "/" },
-  { label: "我的班表", icon: CalendarDays, href: "/my-schedule" },
-  { label: "出勤紀錄", icon: Clock3, href: "/attendance" },
-  { label: "申請中心", icon: ReceiptText, href: "/requests" },
+  { label: "工作台", mobileLabel: "首頁", icon: LayoutDashboard, href: "/" },
+  { label: "我的班表", mobileLabel: "班表", icon: CalendarDays, href: "/my-schedule" },
+  { label: "出勤紀錄", mobileLabel: "出勤", icon: Clock3, href: "/attendance" },
+  { label: "申請中心", mobileLabel: "申請", icon: ReceiptText, href: "/requests" },
   { label: "薪資單", icon: Banknote, href: "/payslips" },
   { label: "通知", icon: Bell, href: "/notifications" },
 ];
+
+const primaryMobileNav = nav.slice(0, 4);
+const secondaryMobileNav = nav.slice(4);
 
 export function WorkspaceShell({
   activePath, canManage, children, displayName, email, tenantName, notificationUnreadCount = 0,
@@ -45,9 +48,15 @@ export function WorkspaceShell({
       <section className="content">
         {children}
         <nav className="mobile-nav" aria-label="行動版導覽">
-          {nav.map(({ label, icon: Icon, href }) => <Link className={activePath === href ? "active" : ""} href={href} key={label}><Icon size={21} /><span>{label}</span>{href === "/notifications" && notificationUnreadCount > 0 ? <i className="nav-badge">{Math.min(notificationUnreadCount, 99)}</i> : null}</Link>)}
-          {canManage ? <Link href="/admin"><Settings size={21} /><span>管理後台</span></Link> : null}
-          <form action={logout}><button aria-label="登出" type="submit"><LogOut size={21} /><span>登出</span></button></form>
+          {primaryMobileNav.map(({ label, mobileLabel, icon: Icon, href }) => <Link aria-current={activePath === href ? "page" : undefined} aria-label={label} className={activePath === href ? "active" : ""} href={href} key={label}><Icon size={22} /><span>{mobileLabel}</span></Link>)}
+          <details className="mobile-more">
+            <summary className={secondaryMobileNav.some(({ href }) => href === activePath) ? "active" : ""}><Menu size={22} /><span>更多</span>{notificationUnreadCount > 0 ? <i className="nav-badge">{Math.min(notificationUnreadCount, 99)}</i> : null}</summary>
+            <div className="mobile-more-menu">
+              {secondaryMobileNav.map(({ label, icon: Icon, href }) => <Link aria-current={activePath === href ? "page" : undefined} className={activePath === href ? "active" : ""} href={href} key={label}><Icon size={20} /><span>{label}</span>{href === "/notifications" && notificationUnreadCount > 0 ? <i className="nav-badge">{Math.min(notificationUnreadCount, 99)}</i> : null}</Link>)}
+              {canManage ? <Link href="/admin"><Settings size={20} /><span>管理後台</span></Link> : null}
+              <form action={logout}><button aria-label="登出" type="submit"><LogOut size={20} /><span>登出</span></button></form>
+            </div>
+          </details>
         </nav>
       </section>
     </main>

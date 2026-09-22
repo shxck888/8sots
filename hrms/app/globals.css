@@ -595,7 +595,7 @@ code { font-size: 14px !important; line-height: 1.55; }
 .login-submit { font-size: 16px; }
 
 .nav-item,.admin-nav a { font-size: 15px; }
-.mobile-nav a,.mobile-nav button { font-size: 14px; }
+.mobile-nav a,.mobile-nav button,.mobile-nav summary { font-size: 14px; }
 .store-card > span:last-child,.profile-mini div span,.admin-brand small,.admin-tenant small { font-size: 14px; }
 .profile-mini div:nth-child(2),.admin-brand strong,.admin-tenant strong { font-size: 15px; }
 .admin-entry,.admin-button,.table-action,.text-button { font-size: 15px; }
@@ -622,6 +622,22 @@ code { font-size: 14px !important; line-height: 1.55; }
 
 .schedule-warning,.holiday-form-hint,.rule-form-hint,.settings-panel header p,.settings-history span,.payroll-chip-list span,.payroll-entry-list article span,.payroll-entry-list article small,.payslip-period,.payslip-sheet footer,.account-security-panel > header p,.account-security-note span,.payroll-period-tabs small { font-size: 14px !important; line-height: 1.55; }
 .audit-table td > small,.audit-table td strong + small,.audit-table details code { font-size: 14px !important; line-height: 1.55; }
+
+@media (max-width: 720px) {
+  .mobile-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-flow: row; bottom: max(10px, env(safe-area-inset-bottom)); padding: 4px; }
+  .mobile-nav > a, .mobile-more > summary { min-width: 0; min-height: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 14px; color: #667b72; font-size: 14px; font-weight: 700; white-space: nowrap; }
+  .mobile-nav > a.active, .mobile-more > summary.active, .mobile-more[open] > summary { color: #1d624b; background: #e6f1e9; }
+  .mobile-more { position: relative; min-width: 0; }
+  .mobile-more > summary { cursor: pointer; list-style: none; }
+  .mobile-more > summary::-webkit-details-marker { display: none; }
+  .mobile-more > summary .nav-badge { top: 5px; right: calc(50% - 26px); }
+  .mobile-more-menu { position: absolute; right: 0; bottom: calc(100% + 14px); width: min(270px, calc(100vw - 24px)); padding: 8px; border: 1px solid #d9e1d9; border-radius: 18px; background: #fffdf8; box-shadow: 0 16px 38px rgba(25,55,47,.2); }
+  .mobile-more-menu a, .mobile-more-menu button { min-height: 52px; height: auto; padding: 10px 12px; display: flex; flex-direction: row; justify-content: flex-start; gap: 12px; border-radius: 11px; color: #31564a; font-size: 15px; text-align: left; }
+  .mobile-more-menu a.active { background: #e6f1e9; color: #1d624b; }
+  .mobile-more-menu form { height: auto; border-top: 1px solid #e9eee8; margin-top: 5px; padding-top: 5px; }
+  .mobile-more-menu button { color: #8a4d43; }
+  .mobile-more-menu .nav-badge { position: static; min-width: 20px; height: 20px; margin-left: auto; font-size: 11px; }
+}
 
 @media print { body{background:#fff}.app-shell .sidebar,.mobile-nav,.no-print{display:none!important}.app-shell,.content{display:block!important}.payslip-sheet{max-width:none;margin:0;border:0;box-shadow:none}.payslip-sheet footer{page-break-inside:avoid} }
 
