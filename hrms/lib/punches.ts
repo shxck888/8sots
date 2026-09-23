@@ -27,7 +27,7 @@ export async function getEmployeePunchContext({
 
   const supabase = await createSupabaseServerClient();
   const [{ data, error }, { data: policyData, error: policyError }] = await Promise.all([
-    supabase.from("punch_records").select("*").eq("tenant_id", tenantId).eq("employee_id", employeeId)
+    supabase.from("punch_records").select("*").eq("tenant_id", tenantId).eq("employee_id", employeeId).is("voided_at", null)
       .order("occurred_at", { ascending: false }).limit(Math.min(Math.max(limit, 1), 200)),
     supabase.rpc("get_my_punch_policy"),
   ]);

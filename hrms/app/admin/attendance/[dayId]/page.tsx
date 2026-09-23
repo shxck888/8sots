@@ -25,7 +25,7 @@ export default async function AttendanceDayDetailPage({ params }: {
     supabase.from("attendance_calculation_runs").select("calculated_at, date_from, date_to").eq("tenant_id", admin.tenantId).eq("id", day.calculation_run_id).maybeSingle(),
     supabase.from("attendance_segments").select("*").eq("tenant_id", admin.tenantId).eq("attendance_day_id", day.id).order("segment_order"),
     supabase.from("attendance_exceptions").select("*").eq("tenant_id", admin.tenantId).eq("attendance_day_id", day.id).order("created_at"),
-    supabase.from("punch_records").select("*").eq("tenant_id", admin.tenantId).eq("employee_id", day.employee_id).eq("work_date", day.work_date).order("occurred_at"),
+    supabase.from("punch_records").select("*").eq("tenant_id", admin.tenantId).eq("employee_id", day.employee_id).eq("work_date", day.work_date).is("voided_at", null).order("occurred_at"),
     supabase.from("punch_correction_requests").select("*").eq("tenant_id", admin.tenantId).eq("employee_id", day.employee_id).eq("work_date", day.work_date).order("requested_at"),
   ]);
   const employee = employeeResult.data;

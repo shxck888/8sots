@@ -748,6 +748,66 @@ describe("database migrations and critical workflows", () => {
     expect(day.rows[0]).toMatchObject({ status: "leave", scheduled_minutes: 1440, approved_leave_minutes: 1440 });
   });
 
+  it("lets only admins delete selected punches while preserving evidence and recalculating attendance", async () => {
+    await setUser(fixtureIds.admin);
+    const version = await db.query<{ id: string }>(`insert into public.schedule_versions(
+      tenant_id,period_start,period_end,version,status,created_by
+    ) values($1,'2026-12-22','2026-12-22',1,'draft',$2) returning id`,
+    [fixtureIds.tenant, fixtureIds.admin]);
+    await db.query(`insert into public.schedule_assignments(
+      tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by
+    ) values($1,$2,$3,'2026-12-22',$4,$5)`, [
+      fixtureIds.tenant, version.rows[0].id, fixtureIds.employee, fixtureIds.weekdayShift, fixtureIds.admin,
+    ]);
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, version.rows[0].id]);
+    const punches = await db.query<{ id: string }>(`insert into public.punch_records(
+      tenant_id,employee_id,work_date,event_type,occurred_at,client_occurred_at,timezone,source,
+      idempotency_key,created_by
+    ) values
+      ($1,$2,'2026-12-22','clock_in','2026-12-22 10:00+08','2026-12-22 10:00+08','Asia/Taipei','qr',$3,$4),
+      ($1,$2,'2026-12-22','clock_out','2026-12-22 14:00+08','2026-12-22 14:00+08','Asia/Taipei','qr',$5,$4)
+    returning id`, [fixtureIds.tenant, fixtureIds.employee, crypto.randomUUID(), fixtureIds.employeeUser, crypto.randomUUID()]);
+    const ids = punches.rows.map((row) => row.id);
+    const firstRun = await db.query<{ id: string }>(
+      "select public.calculate_attendance($1,'2026-12-22','2026-12-22') id", [fixtureIds.tenant]);
+    const oldSegments = await db.query<{ count: number }>(`select count(*)::integer count
+      from public.attendance_segments where attendance_day_id in
+      (select id from public.attendance_days where calculation_run_id=$1)
+      and (clock_in_punch_id=any($2::uuid[]) or clock_out_punch_id=any($2::uuid[]))`, [firstRun.rows[0].id, ids]);
+    expect(oldSegments.rows[0].count).toBeGreaterThan(0);
+
+    await setUser(fixtureIds.employeeUser);
+    await expect(db.query("select public.void_punch_records($1,$2::uuid[],$3)", [fixtureIds.tenant, ids, "測試錯誤打卡刪除"])).rejects.toThrow(/attendance.punch_delete permission required/);
+    await setUser(fixtureIds.admin);
+    await expect(db.query("select public.void_punch_records($1,$2::uuid[],$3)", [fixtureIds.tenant, [ids[0], ids[0]], "測試重複選取"])).rejects.toThrow(/distinct punch records/);
+    const deleted = await db.query<{ count: number }>("select public.void_punch_records($1,$2::uuid[],$3) count", [fixtureIds.tenant, ids, "測試錯誤打卡刪除"]);
+    expect(deleted.rows[0].count).toBe(2);
+    const retained = await db.query<{ count: number; deleted: number; actor: string }>(`select
+      count(*)::integer count, count(*) filter(where voided_at is not null)::integer deleted,
+      min(voided_by::text) actor from public.punch_records where id=any($1::uuid[])`, [ids]);
+    expect(retained.rows[0]).toEqual({ count: 2, deleted: 2, actor: fixtureIds.admin });
+    const active = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.active_punch_records where id=any($1::uuid[])", [ids]);
+    expect(active.rows[0].count).toBe(0);
+    await expect(db.query("delete from public.punch_records where id=$1", [ids[0]])).rejects.toThrow(/append-only/);
+    const stale = await db.query<{ work_date: string }>(
+      "select work_date::text from public.get_stale_voided_punch_dates($1)", [fixtureIds.tenant]);
+    expect(stale.rows.some((row) => row.work_date === "2026-12-22")).toBe(true);
+    const nextRun = await db.query<{ id: string }>(
+      "select public.calculate_attendance($1,'2026-12-22','2026-12-22') id", [fixtureIds.tenant]);
+    const nextSegments = await db.query<{ count: number }>(`select count(*)::integer count
+      from public.attendance_segments where attendance_day_id in
+      (select id from public.attendance_days where calculation_run_id=$1)
+      and (clock_in_punch_id is not null or clock_out_punch_id is not null)`, [nextRun.rows[0].id]);
+    expect(nextSegments.rows[0].count).toBe(0);
+    const audit = await db.query<{ count: number }>(`select count(*)::integer count
+      from public.audit_logs where tenant_id=$1 and action='punch.records_voided' and after_data->>'count'='2'`, [fixtureIds.tenant]);
+    expect(audit.rows[0].count).toBe(1);
+    const cleared = await db.query<{ work_date: string }>(
+      "select work_date::text from public.get_stale_voided_punch_dates($1)", [fixtureIds.tenant]);
+    expect(cleared.rows.some((row) => row.work_date === "2026-12-22")).toBe(false);
+  });
+
   it("restricts audit history and rate-limits abnormal punch bursts", async () => {
     await setUser(fixtureIds.admin);
     await db.query("select public.record_self_password_change($1)", [fixtureIds.tenant]);

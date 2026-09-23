@@ -2139,6 +2139,9 @@ export type Database = {
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
           work_date: string
           workplace_setting_version_id: string | null
         }
@@ -2161,6 +2164,9 @@ export type Database = {
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
           work_date: string
           workplace_setting_version_id?: string | null
         }
@@ -2183,6 +2189,9 @@ export type Database = {
           source?: Database["public"]["Enums"]["punch_source"]
           tenant_id?: string
           timezone?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
           work_date?: string
           workplace_setting_version_id?: string | null
         }
@@ -3077,6 +3086,10 @@ export type Database = {
         Returns: boolean
       }
       current_user_tenant_ids: { Args: never; Returns: string[] }
+      get_stale_voided_punch_dates: {
+        Args: { p_tenant_id: string }
+        Returns: { work_date: string }[]
+      }
       decide_punch_correction: {
         Args: {
           p_decision: Database["public"]["Enums"]["punch_correction_decision_type"]
@@ -3527,6 +3540,10 @@ export type Database = {
       withdraw_work_request: {
         Args: { p_request_id: string; p_tenant_id: string }
         Returns: string
+      }
+      void_punch_records: {
+        Args: { p_punch_ids: string[]; p_reason: string; p_tenant_id: string }
+        Returns: number
       }
     }
     Enums: {

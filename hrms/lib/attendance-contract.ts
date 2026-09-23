@@ -25,6 +25,12 @@ export const correctionDecisionSchema = z.object({
   reviewNote: z.string().trim().max(500),
 });
 
+export const punchDeleteSchema = z.object({
+  punchIds: z.array(z.uuid()).min(1).max(200)
+    .refine((ids) => new Set(ids).size === ids.length),
+  reason: z.string().trim().min(5).max(500),
+});
+
 export const attendanceExceptionLabels = {
   missing_clock_in: "缺上班卡",
   missing_clock_out: "缺下班卡",

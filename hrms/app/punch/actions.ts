@@ -42,6 +42,7 @@ export async function recordGpsPunch(input: unknown): Promise<PunchActionState> 
     .select("event_type, occurred_at, work_date")
     .eq("tenant_id", workspace.tenantId)
     .eq("id", punchId)
+    .is("voided_at", null)
     .single();
   if (readError || !record) return { ok: false, message: "打卡已送出，但紀錄讀取失敗，請至出勤紀錄確認。" };
 

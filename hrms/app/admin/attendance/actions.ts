@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { attendanceRangeSchema, correctionDecisionSchema } from "@/lib/attendance-contract";
+import { attendanceRangeSchema, correctionDecisionSchema, punchDeleteSchema } from "@/lib/attendance-contract";
 import { getAdminContext } from "@/lib/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -37,4 +37,24 @@ export async function decideCorrection(formData: FormData) {
   revalidatePath("/attendance");
   revalidatePath("/admin/attendance");
   redirect("/admin/attendance?decided=1");
+}
+
+export async function voidPunchRecords(formData: FormData) {
+  const parsed = punchDeleteSchema.safeParse({
+    punchIds: formData.getAll("punchIds"), reason: formData.get("reason"),
+  });
+  if (!parsed.success) redirect("/admin/attendance?error=delete-input");
+  const admin = await getAdminContext("attendance.manage");
+  if (!admin) redirect("/");
+  const supabase = await createSupabaseServerClient();
+  const { data: count, error } = await supabase.rpc("void_punch_records", {
+    p_tenant_id: admin.tenantId,
+    p_punch_ids: parsed.data.punchIds,
+    p_reason: parsed.data.reason,
+  });
+  if (error || count !== parsed.data.punchIds.length) redirect("/admin/attendance?error=delete");
+  revalidatePath("/");
+  revalidatePath("/attendance");
+  revalidatePath("/admin/attendance");
+  redirect(`/admin/attendance?deleted=${count}`);
 }

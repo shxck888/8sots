@@ -1,12 +1,13 @@
-import { AlertTriangle, Calculator, Check, ChevronRight, Clock3, MapPin, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Calculator, Check, ChevronRight, Clock3, RefreshCw, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminContext } from "@/lib/admin";
 import { attendanceExceptionLabels, attendanceStatusLabels } from "@/lib/attendance-contract";
-import { locationVerificationLabels, punchEventLabels, punchSourceLabels } from "@/lib/punch-contract";
+import { punchEventLabels } from "@/lib/punch-contract";
 import { formatTaipeiDateTime, taipeiDateKey } from "@/lib/schedule-display";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { calculateAttendance, decideCorrection } from "./actions";
+import { calculateAttendance, decideCorrection, voidPunchRecords } from "./actions";
+import { RawPunchTable } from "./raw-punch-table";
 
 export const dynamic = "force-dynamic";
 
@@ -17,24 +18,26 @@ function addDays(dateKey: string, days: number): string {
 }
 
 export default async function AdminAttendancePage({ searchParams }: {
-  searchParams: Promise<{ calculated?: string; decided?: string; error?: string }>;
+  searchParams: Promise<{ calculated?: string; decided?: string; deleted?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const admin = await getAdminContext("attendance.manage");
   if (!admin) redirect("/");
   const supabase = await createSupabaseServerClient();
   const { data: records, error } = await supabase.from("punch_records").select("*")
-    .eq("tenant_id", admin.tenantId).order("occurred_at", { ascending: false }).limit(200);
+    .eq("tenant_id", admin.tenantId).is("voided_at", null).order("occurred_at", { ascending: false }).limit(200);
   const employeeIds = [...new Set((records ?? []).map((record) => record.employee_id))];
   const employeesResult = employeeIds.length
     ? await supabase.from("employees").select("id, employee_no, full_name").eq("tenant_id", admin.tenantId).in("id", employeeIds)
     : { data: [], error: null };
   const employees = new Map((employeesResult.data ?? []).map((employee) => [employee.id, employee]));
-  const [{ data: latestRun }, { data: correctionRequests }] = await Promise.all([
+  const [{ data: latestRun }, { data: correctionRequests }, { data: canDelete }, staleVoidedResult] = await Promise.all([
     supabase.from("attendance_calculation_runs").select("*").eq("tenant_id", admin.tenantId)
       .order("calculated_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("punch_correction_requests").select("*").eq("tenant_id", admin.tenantId)
       .order("requested_at", { ascending: false }).limit(50),
+    supabase.rpc("current_user_has_permission", { p_tenant_id: admin.tenantId, p_permission_code: "attendance.punch_delete" }),
+    supabase.rpc("get_stale_voided_punch_dates", { p_tenant_id: admin.tenantId }),
   ]);
   const daysResult = latestRun
     ? await supabase.from("attendance_days").select("*").eq("tenant_id", admin.tenantId)
@@ -60,8 +63,9 @@ export default async function AdminAttendancePage({ searchParams }: {
       ? [request.work_date]
       : [];
   }).sort();
-  const recalculateFrom = staleApprovedDates[0] ?? addDays(today, -6);
-  const recalculateTo = staleApprovedDates.at(-1) ?? today;
+  const staleDates = [...new Set([...staleApprovedDates, ...(staleVoidedResult.data ?? []).map((row) => row.work_date)])].sort();
+  const recalculateFrom = staleDates[0] ?? addDays(today, -6);
+  const recalculateTo = staleDates.at(-1) ?? today;
   const correctionEmployeeIds = [...new Set((correctionRequests ?? []).map((request) => request.employee_id))];
   if (correctionEmployeeIds.length) {
     const { data: correctionEmployees } = await supabase.from("employees").select("id, employee_no, full_name")
@@ -70,20 +74,19 @@ export default async function AdminAttendancePage({ searchParams }: {
   }
   return (
     <>
-      <header className="admin-page-header"><div><span className="admin-eyebrow">ATTENDANCE</span><h1>出勤與打卡</h1><p>計算結果採獨立快照；原始打卡只讀且不可變更。</p></div></header>
+      <header className="admin-page-header"><div><span className="admin-eyebrow">ATTENDANCE</span><h1>出勤與打卡</h1><p>計算結果採獨立快照；管理員可刪除錯誤打卡並保留稽核紀錄。</p></div></header>
       {params.calculated ? <div className="admin-success">每日出勤已建立新的計算快照。</div> : null}
       {params.decided ? <div className="admin-success">更正申請已完成審核；請重新計算受影響日期。</div> : null}
+      {params.deleted ? <div className="admin-success">已刪除 {params.deleted} 筆打卡；如影響已計算日期，請重新計算出勤。</div> : null}
       {params.error ? <div className="admin-form-error">操作失敗，請確認日期範圍、權限與資料狀態。</div> : null}
-      {staleApprovedDates.length ? <div className="attendance-recalc-alert"><RefreshCw size={20} /><div><strong>有 {staleApprovedDates.length} 個工作日需要重新計算</strong><p>已核准的補卡晚於目前快照；重新計算前，畫面仍是舊結果。</p></div></div> : null}
+      {staleDates.length ? <div className="attendance-recalc-alert"><RefreshCw size={20} /><div><strong>有 {staleDates.length} 個工作日需要重新計算</strong><p>打卡刪除或已核准補卡晚於目前快照；重新計算前，畫面仍是舊結果。</p></div></div> : null}
       <section className="attendance-calculate admin-panel"><div><Calculator size={24} /><div><strong>產生出勤快照</strong><p>以已發布班表、原始 Punch、已核准更正及規則 V1（寬限 0 分鐘）重算。</p></div></div><form action={calculateAttendance}><label>開始<input defaultValue={recalculateFrom} name="dateFrom" required type="date" /></label><label>結束<input defaultValue={recalculateTo} name="dateTo" required type="date" /></label><button className="admin-button" type="submit"><Calculator size={15} /> 計算</button></form></section>
       {latestRun ? <section className="admin-panel attendance-results"><header><div><span className="admin-eyebrow">LATEST SNAPSHOT</span><h2>{latestRun.date_from} — {latestRun.date_to}</h2></div><small>{formatTaipeiDateTime(latestRun.calculated_at)}</small></header><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>工作日</th><th>員工</th><th>狀態</th><th>排班</th><th>實際</th><th>異常</th><th aria-label="操作" /></tr></thead><tbody>{(daysResult.data ?? []).map((day) => { const employee = employees.get(day.employee_id); const dayExceptions = exceptionsByDay.get(day.id) ?? []; return <tr key={day.id}><td><Link className="attendance-detail-link" href={`/admin/attendance/${day.id}`}>{day.work_date}</Link></td><td>{employee?.full_name ?? "未知員工"}<br /><code>{employee?.employee_no ?? day.employee_id.slice(0, 8)}</code></td><td><span className={`attendance-day-status ${day.status}`}>{attendanceStatusLabels[day.status]}</span></td><td>{day.scheduled_minutes} 分</td><td>{day.actual_minutes} 分</td><td>{dayExceptions.length ? dayExceptions.map((item) => <span className="exception-chip" key={item.id}>{attendanceExceptionLabels[item.exception_type]}{item.minutes ? ` ${item.minutes} 分` : ""}</span>) : "—"}</td><td><Link aria-label={`查看 ${day.work_date} 明細`} className="attendance-detail-arrow" href={`/admin/attendance/${day.id}`}><ChevronRight size={17} /></Link></td></tr>; })}</tbody></table></div></section> : null}
       <section className="admin-panel correction-review"><header><div><span className="admin-eyebrow">CORRECTIONS</span><h2>打卡更正審核</h2></div></header>{!correctionRequests?.length ? <div className="admin-empty"><Check size={28} /><strong>目前沒有更正申請</strong></div> : <div className="correction-review-list">{correctionRequests.map((request) => { const employee = employees.get(request.employee_id); const decision = decisionByRequest.get(request.id); return <article key={request.id}><div><strong>{employee?.full_name ?? "未知員工"} · {request.work_date}</strong><span>{punchEventLabels[request.proposed_event_type]} {formatTaipeiDateTime(request.proposed_occurred_at)}</span><p>{request.reason}</p></div>{decision ? <span className={`correction-status ${decision.decision}`}>{decision.decision === "approved" ? "已核准" : "已拒絕"}</span> : <form action={decideCorrection}><input name="requestId" type="hidden" value={request.id} /><input maxLength={500} name="reviewNote" placeholder="審核備註（選填）" /><button className="approve" name="decision" type="submit" value="approved"><Check size={14} /> 核准</button><button className="reject" name="decision" type="submit" value="rejected"><X size={14} /> 拒絕</button></form>}</article>; })}</div>}</section>
-      <header className="admin-page-header compact"><div><span className="admin-eyebrow">RAW EVIDENCE</span><h1>原始打卡紀錄</h1><p><AlertTriangle size={13} /> 每筆時間與 GPS 證據由伺服器留存。</p></div></header>
+      <header className="admin-page-header compact"><div><span className="admin-eyebrow">RAW EVIDENCE</span><h1>原始打卡紀錄</h1><p><AlertTriangle size={13} /> 刪除會從打卡與出勤計算排除；原始證據和操作紀錄仍保留供稽核。</p></div></header>
       <section className="admin-panel">
         {error || employeesResult.error ? <div className="admin-empty"><strong>打卡紀錄讀取失敗</strong><p>請確認最新 database migration 已完成。</p></div> : !records?.length ? <div className="admin-empty"><Clock3 size={30} /><strong>尚無打卡紀錄</strong><p>員工完成 GPS 打卡後會顯示在這裡。</p></div> : (
-          <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>伺服器時間</th><th>員工</th><th>事件</th><th>工作日</th><th>來源</th><th>定位證據</th><th>驗證</th></tr></thead><tbody>
-            {records.map((record) => { const employee = employees.get(record.employee_id); return <tr key={record.id}><td><strong>{formatTaipeiDateTime(record.occurred_at)}</strong></td><td>{employee?.full_name ?? "未知員工"}<br /><code>{employee?.employee_no ?? record.employee_id.slice(0, 8)}</code></td><td><span className={`attendance-event ${record.event_type}`}>{punchEventLabels[record.event_type]}</span></td><td>{record.work_date}</td><td>{punchSourceLabels[record.source]}</td><td><MapPin size={13} /> {Number(record.latitude).toFixed(5)}, {Number(record.longitude).toFixed(5)}<br /><small>誤差約 {Number(record.accuracy_m).toFixed(0)} m{record.location_distance_m != null ? ` · 距門市 ${Number(record.location_distance_m).toFixed(0)} m` : ""}</small></td><td>{locationVerificationLabels[record.location_verification]}</td></tr>; })}
-          </tbody></table></div>
+          <RawPunchTable canDelete={canDelete === true} deleteAction={voidPunchRecords} employees={Object.fromEntries(employees)} records={records} />
         )}
       </section>
     </>
