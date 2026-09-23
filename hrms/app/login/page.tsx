@@ -3,6 +3,7 @@ import Image from "next/image";
 import { sanitizeNextPath } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { LoginForm } from "./login-form";
+import { InstallPrompt } from "./install-prompt";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export default async function LoginPage({
           </div>
           {passwordChanged === "1" ? <p className="login-success" role="status">密碼已變更，請使用新密碼重新登入。{warning ? " 若舊裝置仍保持登入，請聯絡系統管理員檢查稽核紀錄。" : ""}</p> : null}
           <LoginForm nextPath={sanitizeNextPath(next)} />
+          <InstallPrompt />
         </div>
       </section>
     </main>

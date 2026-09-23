@@ -28,6 +28,33 @@ export function leaveRequestUsesSingleDate(startsLocal: string, endsLocal: strin
   return dates.length === 1;
 }
 
+export function nextCalendarDate(date: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const next = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(next.getTime()) || next.toISOString().slice(0, 10) !== date) return null;
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+}
+
+export function fullDayLeaveDate(startsAt: string, endsAt: string, timeZone: string): string | null {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone, year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    });
+    const local = (value: string) => {
+      const parts = Object.fromEntries(formatter.formatToParts(new Date(value)).map((part) => [part.type, part.value]));
+      return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+    };
+    const start = local(startsAt);
+    const end = local(endsAt);
+    return start.time === "00:00" && end.time === "00:00" && nextCalendarDate(start.date) === end.date
+      ? start.date : null;
+  } catch {
+    return null;
+  }
+}
+
 export const workRequestInputSchema = z.object({
   requestType: z.enum(["leave", "overtime"]),
   leaveTypeId: z.union([z.uuid(), z.literal("")]).nullable(),

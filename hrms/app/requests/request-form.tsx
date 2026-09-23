@@ -3,7 +3,7 @@
 import { CalendarPlus, Send, Timer } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { createWorkRequest } from "./actions";
-import { leaveRequestUsesSingleDate } from "@/lib/work-request-contract";
+import { leaveRequestUsesSingleDate, nextCalendarDate } from "@/lib/work-request-contract";
 
 type LeaveType = { id: string; name: string; description: string | null };
 
@@ -14,17 +14,28 @@ export function RequestForm({ enabled, leaveTypes, requestType }: {
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [message, setMessage] = useState("");
+  const [leaveScope, setLeaveScope] = useState<"full_day" | "custom">("full_day");
   const [pending, startTransition] = useTransition();
   const isLeave = requestType === "leave";
 
   function submit(formData: FormData) {
     const leaveDate = String(formData.get("leaveDate") ?? "");
+    const fullDay = isLeave && formData.get("leaveScope") === "full_day";
+    const followingDate = fullDay ? nextCalendarDate(leaveDate) : null;
+    if (fullDay && !followingDate) {
+      setMessage("請先選擇有效的請假日期。");
+      return;
+    }
     const startsLocal = isLeave
-      ? `${leaveDate}T${String(formData.get("startsTime") ?? "")}`
+      ? `${leaveDate}T${fullDay ? "00:00" : String(formData.get("startsTime") ?? "")}`
       : String(formData.get("startsLocal") ?? "");
     const endsLocal = isLeave
-      ? `${leaveDate}T${String(formData.get("endsTime") ?? "")}`
+      ? fullDay ? `${followingDate}T00:00` : `${leaveDate}T${String(formData.get("endsTime") ?? "")}`
       : String(formData.get("endsLocal") ?? "");
+    if (isLeave && endsLocal <= startsLocal) {
+      setMessage("結束時間必須晚於開始時間。");
+      return;
+    }
     if (isLeave && !leaveRequestUsesSingleDate(startsLocal, endsLocal)) {
       setMessage("每筆請假只能選一個日期；多日請假請分開送出多筆申請。");
       return;
@@ -46,20 +57,29 @@ export function RequestForm({ enabled, leaveTypes, requestType }: {
         idempotencyKey: crypto.randomUUID(),
       });
       setMessage(result.message);
-      if (result.ok) formRef.current?.reset();
+      if (result.ok) {
+        formRef.current?.reset();
+        if (isLeave) setLeaveScope("full_day");
+      }
     });
   }
 
   const Icon = isLeave ? CalendarPlus : Timer;
   return (
     <article className="work-request-form-card">
-      <header><span><Icon size={21} /></span><div><strong>{isLeave ? "請假申請" : "加班申請"}</strong><p>{isLeave ? "選擇單一日期，再填寫當日請假時間。" : "填寫實際預計加班的起訖時間。"}</p></div></header>
+      <header><span><Icon size={21} /></span><div><strong>{isLeave ? "請假申請" : "加班申請"}</strong><p>{isLeave ? "選擇請假日期；預設申請整日，亦可改選指定時間。" : "填寫實際預計加班的起訖時間。"}</p></div></header>
       <form action={submit} ref={formRef}>
         {isLeave ? <label>假別<select disabled={!enabled || pending} name="leaveTypeId" required><option value="">請選擇</option>{leaveTypes.map((item) => <option key={item.id} title={item.description ?? undefined} value={item.id}>{item.name}</option>)}</select></label> : null}
         {isLeave ? <>
           <label>請假日期<input disabled={!enabled || pending} name="leaveDate" required type="date" /></label>
-          <label>開始時間<input disabled={!enabled || pending} name="startsTime" required type="time" /></label>
-          <label>結束時間<input disabled={!enabled || pending} name="endsTime" required type="time" /></label>
+          <fieldset className="leave-scope"><legend>請假時段</legend>
+            <label><input checked={leaveScope === "full_day"} disabled={!enabled || pending} name="leaveScope" onChange={() => setLeaveScope("full_day")} type="radio" value="full_day" />整日</label>
+            <label><input checked={leaveScope === "custom"} disabled={!enabled || pending} name="leaveScope" onChange={() => setLeaveScope("custom")} type="radio" value="custom" />指定時間</label>
+          </fieldset>
+          {leaveScope === "custom" ? <>
+            <label>開始時間<input disabled={!enabled || pending} name="startsTime" required type="time" /></label>
+            <label>結束時間<input disabled={!enabled || pending} name="endsTime" required type="time" /></label>
+          </> : <p className="leave-scope-note">將以所選日期的整日送審，並按一天的標準工時計算請假額度。</p>}
         </> : <>
           <label>開始時間<input disabled={!enabled || pending} name="startsLocal" required type="datetime-local" /></label>
           <label>結束時間<input disabled={!enabled || pending} name="endsLocal" required type="datetime-local" /></label>

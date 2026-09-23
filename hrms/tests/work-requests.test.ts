@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { calculateLeaveBalance, coveredLeaveDates, formatRequestedMinutes, leaveDatesUseAllowedWeekdays, leaveEntitlementInputSchema, leaveRequestUsesSingleDate, workRequestDecisionSchema, workRequestInputSchema, workRequestWithdrawalSchema } from "../lib/work-request-contract";
+import { calculateLeaveBalance, coveredLeaveDates, formatRequestedMinutes, fullDayLeaveDate, leaveDatesUseAllowedWeekdays, leaveEntitlementInputSchema, leaveRequestUsesSingleDate, nextCalendarDate, workRequestDecisionSchema, workRequestInputSchema, workRequestWithdrawalSchema } from "../lib/work-request-contract";
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8").toLowerCase();
 
@@ -63,6 +63,14 @@ describe("work request center", () => {
       startsLocal: "2026-09-01T10:00", endsLocal: "2026-09-02T14:00",
       reason: "連續兩日私人行程安排", idempotencyKey: crypto.randomUUID(),
     }).success).toBe(false);
+  });
+
+  it("recognizes an end-exclusive full-day interval and keeps partial leave distinct", () => {
+    expect(nextCalendarDate("2026-09-30")).toBe("2026-10-01");
+    expect(nextCalendarDate("2026-02-30")).toBeNull();
+    expect(leaveRequestUsesSingleDate("2026-09-30T00:00", "2026-10-01T00:00")).toBe(true);
+    expect(fullDayLeaveDate("2026-09-29T16:00:00Z", "2026-09-30T16:00:00Z", "Asia/Taipei")).toBe("2026-09-30");
+    expect(fullDayLeaveDate("2026-09-30T02:00:00Z", "2026-09-30T04:00:00Z", "Asia/Taipei")).toBeNull();
   });
 
   it("validates withdrawal and annual leave entitlement inputs", () => {

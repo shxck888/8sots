@@ -509,6 +509,63 @@ describe("database migrations and critical workflows", () => {
     ]));
   });
 
+  it("charges full-day leave as one standard workday while keeping timed leave hourly", async () => {
+    await setUser(fixtureIds.employeeUser);
+    const leaveType = await db.query<{ id: string }>(
+      "select id from public.leave_types where tenant_id=$1 and code='ANNUAL'", [fixtureIds.tenant],
+    );
+    const fullDay = await db.query<{ id: string }>(`select public.create_work_request(
+      $1,'leave',$2,'2026-09-25 00:00','2026-09-26 00:00','整日特休扣抵測試',$3) id`,
+      [fixtureIds.tenant, leaveType.rows[0].id, crypto.randomUUID()]);
+    const timed = await db.query<{ id: string }>(`select public.create_work_request(
+      $1,'leave',$2,'2026-09-29 10:00','2026-09-29 12:00','指定時段特休測試',$3) id`,
+      [fixtureIds.tenant, leaveType.rows[0].id, crypto.randomUUID()]);
+    const amounts = await db.query<{ id: string; requested_minutes: number }>(
+      "select id,requested_minutes from public.work_requests where id in ($1,$2)",
+      [fullDay.rows[0].id, timed.rows[0].id],
+    );
+    expect(new Map(amounts.rows.map((row) => [row.id, row.requested_minutes]))).toEqual(new Map([
+      [fullDay.rows[0].id, 480], [timed.rows[0].id, 120],
+    ]));
+    await setUser(fixtureIds.admin);
+    await db.query("select public.decide_work_request($1,$2,'approved','核准整日特休')", [fixtureIds.tenant, fullDay.rows[0].id]);
+    const usage = await db.query<{ used_minutes: number }>(
+      "select used_minutes from public.annual_leave_usages where work_request_id=$1", [fullDay.rows[0].id],
+    );
+    expect(usage.rows.reduce((total, row) => total + row.used_minutes, 0)).toBe(480);
+  });
+
+  it("covers every segment of an overnight shift with full-day leave", async () => {
+    await setUser(fixtureIds.admin);
+    const version = await db.query<{ id: string }>(`insert into public.schedule_versions(
+      tenant_id,period_start,period_end,version,status,created_by
+    ) values($1,'2026-12-15','2026-12-15',1,'draft',$2) returning id`,
+    [fixtureIds.tenant, fixtureIds.admin]);
+    await db.query(`insert into public.schedule_assignments(
+      tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by
+    ) values($1,$2,$3,'2026-12-15',$4,$5)`, [
+      fixtureIds.tenant, version.rows[0].id, fixtureIds.overnightEmployee, fixtureIds.overnightShift, fixtureIds.admin,
+    ]);
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, version.rows[0].id]);
+    const leaveType = await db.query<{ id: string }>(
+      "select id from public.leave_types where tenant_id=$1 and code='PERSONAL'", [fixtureIds.tenant],
+    );
+    await setUser(fixtureIds.overnightUser);
+    const request = await db.query<{ id: string }>(`select public.create_work_request(
+      $1,'leave',$2,'2026-12-15 00:00','2026-12-16 00:00','跨午夜班整日請假測試',$3) id`,
+      [fixtureIds.tenant, leaveType.rows[0].id, crypto.randomUUID()]);
+    await setUser(fixtureIds.admin);
+    await db.query("select public.decide_work_request($1,$2,'approved','核准整日請假')", [fixtureIds.tenant, request.rows[0].id]);
+    const run = await db.query<{ id: string }>(
+      "select public.calculate_attendance($1,'2026-12-15','2026-12-15') id", [fixtureIds.tenant],
+    );
+    const day = await db.query<{ status: string; scheduled_minutes: number; approved_leave_minutes: number }>(
+      "select status,scheduled_minutes,approved_leave_minutes from public.attendance_days where calculation_run_id=$1 and employee_id=$2 and work_date='2026-12-15'",
+      [run.rows[0].id, fixtureIds.overnightEmployee],
+    );
+    expect(day.rows[0]).toMatchObject({ status: "leave", scheduled_minutes: 1440, approved_leave_minutes: 1440 });
+  });
+
   it("restricts audit history and rate-limits abnormal punch bursts", async () => {
     await setUser(fixtureIds.admin);
     await db.query("select public.record_self_password_change($1)", [fixtureIds.tenant]);

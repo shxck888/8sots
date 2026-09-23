@@ -54,6 +54,13 @@ button { color: inherit; }
 .login-success { margin: 0 0 18px; padding: 11px 13px; border: 1px solid #bcd9c9; border-radius: 10px; color: #24634f; background: #eaf6ef; font-size: 11px; line-height: 1.55; }
 .login-submit { height: 52px; margin-top: 25px; border: 0; border-radius: 13px; padding: 0 18px; display: flex; align-items: center; justify-content: center; gap: 9px; color: white; background: var(--green); font-weight: 700; cursor: pointer; box-shadow: 0 12px 26px rgba(21,74,64,.19); }
 .login-submit:disabled { cursor: wait; opacity: .65; }
+.login-install { margin-top: 25px; padding: 15px 13px; display: grid; grid-template-columns: 38px minmax(0, 1fr) 24px; align-items: start; gap: 11px; border: 1px solid #dce5dd; border-radius: 14px; background: #f1f6f0; }
+.login-install-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; color: #1d6154; background: #dcebe4; }
+.login-install-copy { min-width: 0; }.login-install-copy strong { display: block; color: #183e35; font-size: 15px; }.login-install-copy p { margin: 4px 0 7px; color: #50685e; font-size: 13px; line-height: 1.45; }
+.login-install-copy small { display: block; color: #456357; font-size: 12px; line-height: 1.5; }
+.login-install-action { margin-top: 3px; min-height: 34px; padding: 5px 12px; border: 0; border-radius: 8px; color: white; background: #1d6154; font-size: 13px; font-weight: 700; cursor: pointer; }
+.login-install-action:hover { background: #154a40; }
+.login-install-close { width: 24px; height: 24px; padding: 2px; border: 0; display: grid; place-items: center; color: #587267; background: transparent; cursor: pointer; }
 
 .content { min-width: 0; padding: 34px clamp(24px, 4vw, 62px) 50px; }
 .topbar { display: flex; align-items: center; justify-content: space-between; max-width: 1180px; margin: 0 auto 28px; }
@@ -201,6 +208,11 @@ button { color: inherit; }
 .work-request-form-card label { display: grid; gap: 6px; color: #65756f; font-size: 9px; font-weight: 700; }.work-request-form-card label:first-child:nth-last-child(5) { grid-column: 1 / -1; }
 .work-request-form-card input, .work-request-form-card select, .work-request-form-card textarea { width: 100%; min-height: 42px; padding: 9px 10px; border: 1px solid #d8dcd6; border-radius: 9px; outline: none; color: var(--ink); background: white; font-size: 10px; }
 .work-request-form-card textarea { resize: vertical; }.work-request-reason, .work-request-form-card .admin-button { grid-column: 1 / -1; }.work-request-form-card .admin-button { justify-content: center; }
+.leave-scope { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 11px 12px 12px; display: flex; gap: 18px; flex-wrap: wrap; border: 1px solid #d8dcd6; border-radius: 9px; }
+.leave-scope legend { padding: 0 4px; color: #65756f; font-size: 15px; font-weight: 700; }
+.work-request-form-card .leave-scope label { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 15px; cursor: pointer; }
+.work-request-form-card .leave-scope input[type="radio"] { width: 18px; min-height: 18px; height: 18px; margin: 0; padding: 0; accent-color: var(--green-2); }
+.leave-scope-note { grid-column: 1 / -1; margin: 0; color: #536c65; line-height: 1.5; }
 .work-request-history article { grid-template-columns: 135px minmax(190px, 1.25fr) 90px 80px minmax(120px, 1fr); }
 .work-request-review > header small { color: var(--muted); font-size: 10px; }.work-request-review .correction-review-list article > div > small { color: var(--muted); font-size: 9px; }.work-request-decision { min-width: 100px; justify-items: end; }.work-request-decision small { margin-top: 5px; max-width: 220px; text-align: right; }
 .leave-balance-grid { max-width: 1180px; margin: 0 auto 16px; display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 10px; }.leave-balance-grid article { display: grid; gap: 5px; padding: 16px; border: 1px solid rgba(23,63,54,.1); border-radius: 14px; background: var(--paper); }.leave-balance-grid article span,.leave-balance-grid article small,.request-policy-note { color: var(--muted); font-size: 12px; }.leave-balance-grid article strong { font-size: 20px; }.annual-leave-balance > span { display: flex; align-items: center; gap: 6px; }.request-policy-note { margin: 0; }.text-button { margin-left: 10px; border: 0; color: #8b493f; background: none; text-decoration: underline; cursor: pointer; }.entitlement-panel { margin-bottom: 16px; }.entitlement-panel > header { padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }.entitlement-panel > header h2 { margin: 4px 0 0; display: flex; align-items: center; gap: 7px; }.entitlement-panel > header p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }.entitlement-panel form { display: grid; grid-template-columns: 1.2fr 1fr .65fr .75fr 1fr auto; gap: 9px; }.entitlement-panel form.annual-sync-form { display: block; }.entitlement-panel input,.entitlement-panel select { min-height: 42px; padding: 8px 10px; border: 1px solid #d8dcd6; border-radius: 9px; background: white; }

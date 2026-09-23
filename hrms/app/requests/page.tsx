@@ -5,7 +5,7 @@ import { formatTaipeiDateTime } from "@/lib/schedule-display";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
 import {
-  annualLeavePeriodEnd, calculateLeaveBalance, formatAnnualLeaveMinutes, formatRequestedMinutes,
+  annualLeavePeriodEnd, calculateLeaveBalance, formatAnnualLeaveMinutes, formatRequestedMinutes, fullDayLeaveDate,
   parseAnnualLeaveBalance, workRequestDecisionLabels, workRequestTypeLabels,
 } from "@/lib/work-request-contract";
 import { RequestForm } from "./request-form";
@@ -63,10 +63,10 @@ export default async function RequestsPage() {
           {!manualEntitlements.length && !annualLeave.configured ? <p className="request-policy-note">尚未設定本年度假別額度；請假仍可送審，但不代表可用餘額或薪資結果。</p> : null}
         </section>
         <section className="attendance-summary-list work-request-history"><header><div><span className="eyebrow">MY REQUESTS</span><h2>我的申請紀錄</h2></div><small>最近 50 筆</small></header>
-          {!requests?.length ? <div className="admin-empty"><ClipboardList size={28} /><strong>目前沒有申請紀錄</strong><p>送出第一筆請假或加班申請後會顯示在這裡。</p></div> : requests.map((request) => { const decision = decisionByRequest.get(request.id); const withdrawn = withdrawnIds.has(request.id); const leaveType = request.leave_type_id ? leaveTypeById.get(request.leave_type_id) : null; return <article key={request.id}>
+          {!requests?.length ? <div className="admin-empty"><ClipboardList size={28} /><strong>目前沒有申請紀錄</strong><p>送出第一筆請假或加班申請後會顯示在這裡。</p></div> : requests.map((request) => { const decision = decisionByRequest.get(request.id); const withdrawn = withdrawnIds.has(request.id); const leaveType = request.leave_type_id ? leaveTypeById.get(request.leave_type_id) : null; const fullDayDate = request.request_type === "leave" ? fullDayLeaveDate(request.starts_at, request.ends_at, request.timezone) : null; return <article key={request.id}>
             <strong>{workRequestTypeLabels[request.request_type]}{leaveType ? ` · ${leaveType.name}` : ""}</strong>
-            <span>{formatTaipeiDateTime(request.starts_at)}<br />至 {formatTaipeiDateTime(request.ends_at)}</span>
-            <span>{formatRequestedMinutes(request.requested_minutes)}</span>
+            <span>{fullDayDate ? `${fullDayDate} · 整日` : <>{formatTaipeiDateTime(request.starts_at)}<br />至 {formatTaipeiDateTime(request.ends_at)}</>}</span>
+            <span>{fullDayDate ? `整日 · ${formatRequestedMinutes(request.requested_minutes)}` : formatRequestedMinutes(request.requested_minutes)}</span>
             <span className={`correction-status ${withdrawn ? "withdrawn" : decision?.decision ?? "pending"}`}>{withdrawn ? "已撤回" : decision ? workRequestDecisionLabels[decision.decision] : "待審核"}</span>
             <em title={request.reason}>{request.reason}{decision?.review_note ? `｜審核：${decision.review_note}` : ""}{!decision && !withdrawn ? <form action={withdrawWorkRequest}><input name="requestId" type="hidden" value={request.id} /><button className="text-button" type="submit">撤回申請</button></form> : null}</em>
             {!decision && !withdrawn
