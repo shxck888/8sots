@@ -16,15 +16,18 @@ export type PunchInput = z.infer<typeof punchInputSchema>;
 
 export const qrPunchInputSchema = z.object({
   deviceId: z.uuid(),
-  token: z.string().regex(/^[0-9a-f]{64}$/),
+  token: z.string().regex(/^(?:[0-9a-f]{64}|2:[0-9]{1,12}:[0-9a-f]{64})$/),
   idempotencyKey: z.uuid(),
 });
 
 export function parseQrPunchValue(value: string): { deviceId: string; token: string } | null {
-  const match = /^8SOTS-PUNCH:1:([0-9a-f-]{36}):([0-9a-f]{64})$/.exec(value.trim());
-  if (!match) return null;
-  return z.uuid().safeParse(match[1]).success
-    ? { deviceId: match[1], token: match[2] }
+  const trimmed = value.trim();
+  const legacy = /^8SOTS-PUNCH:1:([0-9a-f-]{36}):([0-9a-f]{64})$/.exec(trimmed);
+  const local = /^8SOTS-PUNCH:2:([0-9a-f-]{36}):([0-9]{1,12}):([0-9a-f]{64})$/.exec(trimmed);
+  const deviceId = legacy?.[1] ?? local?.[1];
+  if (!deviceId) return null;
+  return z.uuid().safeParse(deviceId).success
+    ? { deviceId, token: legacy?.[2] ?? `2:${local![2]}:${local![3]}` }
     : null;
 }
 

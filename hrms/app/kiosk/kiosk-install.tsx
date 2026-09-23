@@ -76,7 +76,7 @@ export function KioskInstall() {
       <button aria-label="關閉安裝說明" className="kiosk-install-close" onClick={() => setShowHelp(false)} type="button"><X size={18} /></button>
       <strong>將打卡機加入主畫面</strong>
       <p>{mode === "ios" ? "在 Safari 點選「分享」→「加入主畫面」。安裝後從主畫面開啟。" : "從瀏覽器選單選擇「安裝應用程式」或「建立捷徑」，並選擇以視窗開啟。"}</p>
-      <small>安裝後會直接開啟打卡機畫面；產生 QR Code 需要網路連線。</small>
+      <small>安裝後會直接開啟打卡機畫面；配對與員工掃碼打卡需要網路連線。</small>
     </aside> : null}
   </div>;
 }

@@ -40,7 +40,7 @@ export function QrDeviceManager({ devices }: { devices: Device[] }) {
   }
 
   function revoke(device: Device) {
-    if (!window.confirm(`確定停用「${device.name}」？該機器畫面上的 QR Code 會立即失效。`)) return;
+    if (!window.confirm(`確定停用「${device.name}」？該機器的 QR Code 將無法用於打卡。`)) return;
     startTransition(async () => {
       const result = await revokeQrDevice(device.id);
       setMessage(result.ok ? `已停用「${device.name}」。` : result.message);
@@ -66,7 +66,7 @@ export function QrDeviceManager({ devices }: { devices: Device[] }) {
     {message ? <p aria-live="polite" className="qr-device-message">{message}</p> : null}
     <div className="qr-device-list"><h2>已授權機器</h2>
       {devices.length === 0 ? <p>尚未新增打卡機器。</p> : devices.map((device) => <article key={device.id}>
-        <Monitor size={20} /><div><strong>{device.name}</strong><span>{device.revoked_at ? `已停用 · ${formatDateTime(device.revoked_at)}` : device.paired_at ? `已配對${device.last_seen_at ? ` · 最近連線 ${formatDateTime(device.last_seen_at)}` : ""}` : "等待配對"}</span></div>
+        <Monitor size={20} /><div><strong>{device.name}</strong><span>{device.revoked_at ? `已停用 · ${formatDateTime(device.revoked_at)}` : device.paired_at ? `已配對 · ${formatDateTime(device.paired_at)}` : "等待配對"}</span></div>
         {!device.revoked_at && !device.paired_at ? <button disabled={pending} onClick={() => renew(device)} type="button"><Plus size={16} /> 重新產生配對碼</button> : null}
         {!device.revoked_at ? <button disabled={pending} onClick={() => revoke(device)} type="button"><ShieldX size={16} /> 停用</button> : null}
       </article>)}

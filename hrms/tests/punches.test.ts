@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createHash, createHmac } from "node:crypto";
 import { nextPunchLabel, parseQrPunchValue, punchDisplayLabel, punchInputSchema, qrPunchInputSchema, scheduledPunchLabel } from "../lib/punch-contract";
+import { createKioskQrValue } from "../lib/qr-kiosk-token";
 
 const validInput = {
   accuracyM: 18.4,
@@ -48,17 +50,33 @@ describe("QR punch contract", () => {
   const deviceId = "4c44df53-0470-4b4f-8239-7f901f2bb43e";
   const token = "a".repeat(64);
 
-  it("accepts only the signed-format kiosk value and its own tenant device UUID", () => {
+  it("accepts both current local signatures and legacy QR values", () => {
     expect(parseQrPunchValue(`8SOTS-PUNCH:1:${deviceId}:${token}`)).toEqual({ deviceId, token });
+    expect(parseQrPunchValue(`8SOTS-PUNCH:2:${deviceId}:59642320:${token}`)).toEqual({
+      deviceId, token: `2:59642320:${token}`,
+    });
     expect(parseQrPunchValue(`https://example.com/8SOTS-PUNCH:1:${deviceId}:${token}`)).toBeNull();
     expect(parseQrPunchValue(`8SOTS-PUNCH:1:bad:${token}`)).toBeNull();
     expect(parseQrPunchValue(`8SOTS-PUNCH:1:${deviceId}:short`)).toBeNull();
+    expect(parseQrPunchValue(`8SOTS-PUNCH:2:${deviceId}:bad:${token}`)).toBeNull();
   });
 
   it("rejects malformed QR punch submissions before calling the database", () => {
     const valid = { deviceId, token, idempotencyKey: crypto.randomUUID() };
     expect(qrPunchInputSchema.safeParse(valid).success).toBe(true);
+    expect(qrPunchInputSchema.safeParse({ ...valid, token: `2:59642320:${token}` }).success).toBe(true);
     expect(qrPunchInputSchema.safeParse({ ...valid, token: "b" }).success).toBe(false);
+    expect(qrPunchInputSchema.safeParse({ ...valid, token: `2:-1:${token}` }).success).toBe(false);
     expect(qrPunchInputSchema.safeParse({ ...valid, idempotencyKey: "repeat" }).success).toBe(false);
+  });
+
+  it("signs the exact device and time slot with a derived key", async () => {
+    const credential = "f".repeat(64);
+    const slot = 59642320;
+    const key = createHash("sha256").update(credential).digest();
+    const signature = createHmac("sha256", key).update(`${deviceId}:${slot}`).digest("hex");
+    expect(await createKioskQrValue(deviceId, credential, slot)).toBe(
+      `8SOTS-PUNCH:2:${deviceId}:${slot}:${signature}`,
+    );
   });
 });

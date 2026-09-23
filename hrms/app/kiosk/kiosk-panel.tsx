@@ -5,10 +5,11 @@ import { Clock3, MonitorCheck, QrCode, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import type { Database } from "@/lib/database";
+import { createKioskQrValue, QR_SLOT_MS } from "@/lib/qr-kiosk-token";
 import { KioskInstall } from "./kiosk-install";
 
 type PairedDevice = { deviceId: string; credential: string; deviceName: string; tenantName: string };
-type CurrentQr = { imageUrl: string; validUntil: number };
+type CurrentQr = { imageUrl: string; deviceId: string; slot: number };
 const storageKey = "hrms.qr-punch-device.v1";
 
 function getKioskClient() {
@@ -26,8 +27,8 @@ export function KioskPanel() {
   const [qr, setQr] = useState<CurrentQr | null>(null);
   const [message, setMessage] = useState("");
   const [now, setNow] = useState(() => Date.now());
-  const [monotonicNow, setMonotonicNow] = useState(0);
   const [pending, startTransition] = useTransition();
+  const slot = Math.floor(now / QR_SLOT_MS);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -44,55 +45,39 @@ export function KioskPanel() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNow(Date.now());
-      setMonotonicNow(performance.now());
-    }, 1000);
-    return () => window.clearInterval(timer);
+    const tick = () => setNow(Date.now());
+    const timer = window.setInterval(tick, 1000);
+    window.addEventListener("focus", tick);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", tick);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, []);
 
   useEffect(() => {
     if (!device) return;
+    const currentDevice = device;
     let active = true;
-    let refreshing = false;
     async function refresh() {
-      if (!active || refreshing || !device) return;
-      refreshing = true;
       try {
-        const supabase = getKioskClient();
-        const { data, error } = await supabase.rpc("issue_punch_qr_token", {
-          p_device_id: device.deviceId, p_credential: device.credential,
-        });
-        if (!active) return;
-        if (error?.message.includes("device not authorized")) {
-          window.localStorage.removeItem(storageKey);
-          setDevice(null);
-          setQr(null);
-          setMessage("此機器已停用或授權失效，請管理員重新配對。 ");
-          return;
-        }
-        const issued = data?.[0];
-        if (error || !issued) throw new Error("QR token unavailable");
+        const qrValue = await createKioskQrValue(currentDevice.deviceId, currentDevice.credential, slot);
         const QRCode = await import("qrcode");
-        const imageUrl = await QRCode.toDataURL(issued.qr_value, {
+        const imageUrl = await QRCode.toDataURL(qrValue, {
           width: 460, margin: 2, errorCorrectionLevel: "M",
           color: { dark: "#123f36", light: "#ffffff" },
         });
         if (!active) return;
-        // Display for less than the server's 35-second validity window.
-        // This uses elapsed device time, so an incorrect wall clock cannot
-        // make an expired code appear usable.
-        setQr({ imageUrl, validUntil: performance.now() + 30000 });
-        setMonotonicNow(performance.now());
+        setQr({ imageUrl, deviceId: currentDevice.deviceId, slot });
         setMessage("");
       } catch {
-        if (active) setMessage("無法更新 QR Code，正在重試。請檢查機器網路連線。 ");
-      } finally { refreshing = false; }
+        if (active) setMessage("無法產生 QR Code，請確認使用安全連線並重新開啟頁面。 ");
+      }
     }
     void refresh();
-    const timer = window.setInterval(() => void refresh(), 20000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [device]);
+    return () => { active = false; };
+  }, [device, slot]);
 
   function pair(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -120,8 +105,8 @@ export function KioskPanel() {
     });
   }
 
-  const secondsLeft = qr ? Math.max(0, Math.ceil((qr.validUntil - monotonicNow) / 1000)) : 0;
-  const visibleQr = qr && secondsLeft > 0;
+  const secondsLeft = Math.ceil((QR_SLOT_MS - now % QR_SLOT_MS) / 1000);
+  const visibleQr = qr?.slot === slot && qr.deviceId === device?.deviceId;
   const time = new Intl.DateTimeFormat("zh-TW", {
     hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
     timeZone: "Asia/Taipei",
@@ -140,7 +125,7 @@ export function KioskPanel() {
       <div className="kiosk-qr-frame">{visibleQr ? <Image alt="動態打卡 QR Code" height={460} src={qr.imageUrl} unoptimized width={460} /> : <div className="kiosk-qr-wait"><RefreshCw className="spin" size={42} /><span>更新 QR Code 中…</span></div>}</div>
       <div className="kiosk-countdown"><Clock3 size={20} />{visibleQr ? `${secondsLeft} 秒後更新` : "暫無有效 QR Code"}</div>
       {message ? <p aria-live="polite" className="kiosk-error">{message}</p> : null}
-      <small>打卡時間以伺服器收件時間為準。請勿分享或拍攝此畫面。</small>
+      <small>QR Code 由此機器產生；掃碼打卡需要網路。請開啟機器自動校時，勿分享或拍攝畫面。打卡時間以伺服器收件時間為準。</small>
     </div>}
   </main>;
 }

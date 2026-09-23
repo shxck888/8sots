@@ -3008,6 +3008,18 @@ export type Database = {
         Args: { p_tenant_id: string; p_device_id: string; p_token: string; p_idempotency_key: string }
         Returns: string
       }
+      validate_punch_qr_token: {
+        Args: {
+          p_device_id: string
+          p_token: string
+          p_credential_hash: string | null
+          p_current_hash: string | null
+          p_current_expires_at: string | null
+          p_previous_hash: string | null
+          p_previous_expires_at: string | null
+        }
+        Returns: boolean
+      }
       add_annual_leave_adjustment: {
         Args: {
           p_adjustment_minutes: number
