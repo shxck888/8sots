@@ -5,6 +5,7 @@ import { Clock3, MonitorCheck, QrCode, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import type { Database } from "@/lib/database";
+import { KioskInstall } from "./kiosk-install";
 
 type PairedDevice = { deviceId: string; credential: string; deviceName: string; tenantName: string };
 type CurrentQr = { imageUrl: string; validUntil: number };
@@ -127,7 +128,7 @@ export function KioskPanel() {
   }).format(new Date(now));
 
   return <main className="kiosk-shell">
-    <header className="kiosk-header"><span><MonitorCheck size={25} /> 海之星打卡機</span><time>{time}</time></header>
+    <header className="kiosk-header"><span><MonitorCheck size={25} /> 海之星打卡機</span><div className="kiosk-header-actions"><KioskInstall /><time>{time}</time></div></header>
     {!loaded ? <div className="kiosk-center"><RefreshCw className="spin" size={34} /><p>正在載入機器授權…</p></div> : !device ? <div className="kiosk-pair-card">
       <QrCode size={38} /><h1>配對打卡機器</h1><p>請管理員先到「管理後台 → 動態 QR 機器」新增此機器，並提供一次性配對碼。配對後這台機器不需登入。</p>
       <form onSubmit={pair}><label>一次性配對碼<input autoCapitalize="characters" autoComplete="off" autoCorrect="off" maxLength={24} onChange={(event) => setCode(event.target.value)} placeholder="XXXX XXXX XXXX XXXX" required spellCheck={false} value={code} /></label><button disabled={pending} type="submit">{pending ? "配對中…" : "授權這台機器"}</button></form>
