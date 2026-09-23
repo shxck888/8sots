@@ -1,4 +1,4 @@
-export const QR_SLOT_MS = 30_000;
+export const QR_SLOT_MS = 10_000;
 
 const encoder = new TextEncoder();
 
@@ -14,6 +14,6 @@ export async function createKioskQrValue(deviceId: string, credential: string, s
   const key = await crypto.subtle.importKey(
     "raw", credentialHash, { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
   );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(`${deviceId}:${slot}`));
-  return `8SOTS-PUNCH:2:${deviceId}:${slot}:${hex(signature)}`;
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(`${deviceId}:3:${slot}`));
+  return `8SOTS-PUNCH:3:${deviceId}:${slot}:${hex(signature)}`;
 }

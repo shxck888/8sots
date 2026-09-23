@@ -67,6 +67,9 @@ export async function recordQrPunch(input: unknown): Promise<PunchActionState> {
     p_token: parsed.data.token,
     p_idempotency_key: parsed.data.idempotencyKey,
   });
+  if (error?.message.includes("QR token already used")) {
+    return { ok: false, code: "qr_already_used", message: "這個 QR Code 已被使用，請等新碼出現後重新掃描。" };
+  }
   if (error || !punchId) return { ok: false, message: safeMessage(error?.message ?? "") };
 
   const { data: record, error: readError } = await supabase.from("punch_records")

@@ -2199,6 +2199,7 @@ export type Database = {
           longitude: number | null
           occurred_at: string
           qr_device_id: string | null
+          qr_token_hash: string | null
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
@@ -2225,6 +2226,7 @@ export type Database = {
           longitude?: number | null
           occurred_at?: string
           qr_device_id?: string | null
+          qr_token_hash?: string | null
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
@@ -2251,6 +2253,7 @@ export type Database = {
           longitude?: number | null
           occurred_at?: string
           qr_device_id?: string | null
+          qr_token_hash?: string | null
           source?: Database["public"]["Enums"]["punch_source"]
           tenant_id?: string
           timezone?: string

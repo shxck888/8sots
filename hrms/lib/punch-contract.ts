@@ -16,24 +16,24 @@ export type PunchInput = z.infer<typeof punchInputSchema>;
 
 export const qrPunchInputSchema = z.object({
   deviceId: z.uuid(),
-  token: z.string().regex(/^(?:[0-9a-f]{64}|2:[0-9]{1,12}:[0-9a-f]{64})$/),
+  token: z.string().regex(/^(?:[0-9a-f]{64}|[23]:(?:0|[1-9][0-9]{0,11}):[0-9a-f]{64})$/),
   idempotencyKey: z.uuid(),
 });
 
 export function parseQrPunchValue(value: string): { deviceId: string; token: string } | null {
   const trimmed = value.trim();
   const legacy = /^8SOTS-PUNCH:1:([0-9a-f-]{36}):([0-9a-f]{64})$/.exec(trimmed);
-  const local = /^8SOTS-PUNCH:2:([0-9a-f-]{36}):([0-9]{1,12}):([0-9a-f]{64})$/.exec(trimmed);
-  const deviceId = legacy?.[1] ?? local?.[1];
+  const local = /^8SOTS-PUNCH:([23]):([0-9a-f-]{36}):(0|[1-9][0-9]{0,11}):([0-9a-f]{64})$/.exec(trimmed);
+  const deviceId = legacy?.[1] ?? local?.[2];
   if (!deviceId) return null;
   return z.uuid().safeParse(deviceId).success
-    ? { deviceId, token: legacy?.[2] ?? `2:${local![2]}:${local![3]}` }
+    ? { deviceId, token: legacy?.[2] ?? `${local![1]}:${local![3]}:${local![4]}` }
     : null;
 }
 
 export type PunchActionState =
   | { ok: true; eventType: PunchEventType; occurredAt: string; workDate: string }
-  | { ok: false; message: string };
+  | { ok: false; message: string; code?: "qr_already_used" };
 
 export const punchEventLabels: Record<PunchEventType, string> = {
   clock_in: "上班",

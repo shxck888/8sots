@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createHash, createHmac } from "node:crypto";
 import { nextPunchLabel, parseQrPunchValue, punchDisplayLabel, punchInputSchema, qrPunchInputSchema, scheduledPunchLabel } from "../lib/punch-contract";
-import { createKioskQrValue } from "../lib/qr-kiosk-token";
+import { createKioskQrValue, QR_SLOT_MS } from "../lib/qr-kiosk-token";
 
 const validInput = {
   accuracyM: 18.4,
@@ -50,21 +50,26 @@ describe("QR punch contract", () => {
   const deviceId = "4c44df53-0470-4b4f-8239-7f901f2bb43e";
   const token = "a".repeat(64);
 
-  it("accepts both current local signatures and legacy QR values", () => {
+  it("accepts 10-second kiosk codes and earlier versions during rollout", () => {
     expect(parseQrPunchValue(`8SOTS-PUNCH:1:${deviceId}:${token}`)).toEqual({ deviceId, token });
     expect(parseQrPunchValue(`8SOTS-PUNCH:2:${deviceId}:59642320:${token}`)).toEqual({
       deviceId, token: `2:59642320:${token}`,
+    });
+    expect(parseQrPunchValue(`8SOTS-PUNCH:3:${deviceId}:178926960:${token}`)).toEqual({
+      deviceId, token: `3:178926960:${token}`,
     });
     expect(parseQrPunchValue(`https://example.com/8SOTS-PUNCH:1:${deviceId}:${token}`)).toBeNull();
     expect(parseQrPunchValue(`8SOTS-PUNCH:1:bad:${token}`)).toBeNull();
     expect(parseQrPunchValue(`8SOTS-PUNCH:1:${deviceId}:short`)).toBeNull();
     expect(parseQrPunchValue(`8SOTS-PUNCH:2:${deviceId}:bad:${token}`)).toBeNull();
+    expect(parseQrPunchValue(`8SOTS-PUNCH:3:${deviceId}:0178926960:${token}`)).toBeNull();
   });
 
   it("rejects malformed QR punch submissions before calling the database", () => {
     const valid = { deviceId, token, idempotencyKey: crypto.randomUUID() };
     expect(qrPunchInputSchema.safeParse(valid).success).toBe(true);
     expect(qrPunchInputSchema.safeParse({ ...valid, token: `2:59642320:${token}` }).success).toBe(true);
+    expect(qrPunchInputSchema.safeParse({ ...valid, token: `3:178926960:${token}` }).success).toBe(true);
     expect(qrPunchInputSchema.safeParse({ ...valid, token: "b" }).success).toBe(false);
     expect(qrPunchInputSchema.safeParse({ ...valid, token: `2:-1:${token}` }).success).toBe(false);
     expect(qrPunchInputSchema.safeParse({ ...valid, idempotencyKey: "repeat" }).success).toBe(false);
@@ -72,11 +77,12 @@ describe("QR punch contract", () => {
 
   it("signs the exact device and time slot with a derived key", async () => {
     const credential = "f".repeat(64);
-    const slot = 59642320;
+    const slot = 178926960;
     const key = createHash("sha256").update(credential).digest();
-    const signature = createHmac("sha256", key).update(`${deviceId}:${slot}`).digest("hex");
+    const signature = createHmac("sha256", key).update(`${deviceId}:3:${slot}`).digest("hex");
+    expect(QR_SLOT_MS).toBe(10_000);
     expect(await createKioskQrValue(deviceId, credential, slot)).toBe(
-      `8SOTS-PUNCH:2:${deviceId}:${slot}:${signature}`,
+      `8SOTS-PUNCH:3:${deviceId}:${slot}:${signature}`,
     );
   });
 });

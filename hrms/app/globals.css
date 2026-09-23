@@ -102,6 +102,9 @@ button { color: inherit; }
 .qr-scanner-heading button { width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 10px; background: #edf2ed; cursor: pointer; }
 .qr-scanner-video { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 14px; background: #13251f; }
 .qr-scanner-card p { margin: 13px 0 0; color: #536c65; font-size: 14px; text-align: center; }
+.qr-retry-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }
+.qr-retry-actions button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #edf2ed; color: #18342f; cursor: pointer; }
+.qr-retry-actions button:last-child { background: #315f4b; color: #fff; }
 .attendance-qr-entry { margin: 0 0 16px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; border: 1px solid #cbded2; border-radius: 15px; background: #eaf4ed; color: #194b3d; }
 .attendance-qr-entry span { display: grid; gap: 3px; flex: 1; }.attendance-qr-entry strong { font-size: 15px; }.attendance-qr-entry small { font-size: 13px; color: #587267; }
 .qr-device-panel { padding: 24px; }

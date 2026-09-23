@@ -28,6 +28,7 @@ export function PunchPanel({
   const [latestEvent, setLatestEvent] = useState(lastEventType);
   const [punchCount, setPunchCount] = useState(scheduledPunchCount);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [retryQrPrompt, setRetryQrPrompt] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const scanLockedRef = useRef(false);
   const [isPending, startTransition] = useTransition();
@@ -72,6 +73,7 @@ export function PunchPanel({
             const response = await recordQrPunch({ ...value, idempotencyKey: crypto.randomUUID() });
             if (!response.ok) {
               setMessage(response.message);
+              if (response.code === "qr_already_used") setRetryQrPrompt(true);
               return;
             }
             showPunchSuccess(response.eventType, response.occurredAt);
@@ -144,6 +146,16 @@ export function PunchPanel({
           <div className="qr-scanner-heading"><div><Camera size={21} /><strong>掃描門市 QR Code</strong></div><button aria-label="關閉相機" onClick={() => setScannerOpen(false)} type="button"><X size={22} /></button></div>
           <video autoPlay className="qr-scanner-video" muted playsInline ref={videoRef} />
           <p>請對準機器畫面；掃描成功後會自動提交打卡。</p>
+        </div>
+      </div>, document.body) : null}
+      {retryQrPrompt ? createPortal(<div className="qr-scanner-backdrop" role="presentation">
+        <div aria-labelledby="qr-retry-title" aria-modal="true" className="qr-scanner-card" role="alertdialog">
+          <div className="qr-scanner-heading"><strong id="qr-retry-title">這個 QR Code 已使用</strong></div>
+          <p>請等打卡機畫面更新，再掃描新的 QR Code。</p>
+          <div className="qr-retry-actions">
+            <button onClick={() => setRetryQrPrompt(false)} type="button">稍後再掃</button>
+            <button onClick={() => { setRetryQrPrompt(false); setScannerOpen(true); }} type="button">重新開啟相機</button>
+          </div>
         </div>
       </div>, document.body) : null}
     </div>
