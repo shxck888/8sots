@@ -2,6 +2,7 @@
 
 import { Camera, Clock3, LoaderCircle, QrCode, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { nextPunchLabel, parseQrPunchValue, punchDisplayLabel, scheduledPunchLabel, type PunchEventType } from "@/lib/punch-contract";
 import { recordGpsPunch, recordQrPunch } from "./actions";
 
@@ -138,13 +139,13 @@ export function PunchPanel({
         }} type="button"><QrCode size={18} /> 掃描 QR Code 打卡</button>
       </div>
       <p aria-live="polite" className="punch-message">{message || "正式時間以伺服器收到打卡的時間為準。"}</p>
-      {scannerOpen ? <div aria-label="掃描打卡 QR Code" aria-modal="true" className="qr-scanner-backdrop" role="dialog">
+      {scannerOpen ? createPortal(<div aria-label="掃描打卡 QR Code" aria-modal="true" className="qr-scanner-backdrop" role="dialog">
         <div className="qr-scanner-card">
           <div className="qr-scanner-heading"><div><Camera size={21} /><strong>掃描門市 QR Code</strong></div><button aria-label="關閉相機" onClick={() => setScannerOpen(false)} type="button"><X size={22} /></button></div>
           <video autoPlay className="qr-scanner-video" muted playsInline ref={videoRef} />
           <p>請對準機器畫面；掃描成功後會自動提交打卡。</p>
         </div>
-      </div> : null}
+      </div>, document.body) : null}
     </div>
   );
 }
