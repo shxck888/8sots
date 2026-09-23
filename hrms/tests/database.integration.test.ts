@@ -335,6 +335,40 @@ describe("database migrations and critical workflows", () => {
     );
     expect(copied.rows).toEqual([{ is_store_closed: true }]);
 
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, nextDraft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: null }]),
+    ]);
+    const stillUnassigned = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.schedule_assignments where schedule_version_id=$1 and work_date=$2",
+      [nextDraft.rows[0].id, monday],
+    );
+    expect(stillUnassigned.rows[0].count).toBe(0);
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, nextDraft.rows[0].id]);
+    const revisedDraft = await db.query<{ id: string }>(
+      "select public.create_schedule_draft($1,'2026-11-09','2026-11-15') id", [fixtureIds.tenant],
+    );
+    const newDefault = await db.query<{ is_store_closed: boolean }>(
+      "select is_store_closed from public.schedule_assignments where schedule_version_id=$1 and work_date=$2",
+      [revisedDraft.rows[0].id, monday],
+    );
+    expect(newDefault.rows).toEqual([{ is_store_closed: true }]);
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, revisedDraft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: null }]),
+    ]);
+    await db.exec(readFileSync(join(migrationsDirectory, "202609230046_backfill_monday_drafts.sql"), "utf8"));
+    const backfilled = await db.query<{ is_store_closed: boolean }>(
+      "select is_store_closed from public.schedule_assignments where schedule_version_id=$1 and work_date=$2",
+      [revisedDraft.rows[0].id, monday],
+    );
+    expect(backfilled.rows).toEqual([{ is_store_closed: true }]);
+    const publishedUnassigned = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.schedule_assignments where schedule_version_id=$1 and work_date=$2",
+      [nextDraft.rows[0].id, monday],
+    );
+    expect(publishedUnassigned.rows[0].count).toBe(0);
+
     await db.query(
       "insert into public.holiday_calendar_entries(tenant_id,holiday_date,name,kind) values($1,'2026-11-16','測試週一國定假日','national')",
       [fixtureIds.tenant],
