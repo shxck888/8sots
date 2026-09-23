@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextPunchLabel, punchDisplayLabel, punchInputSchema, scheduledPunchLabel } from "../lib/punch-contract";
+import { nextPunchLabel, parseQrPunchValue, punchDisplayLabel, punchInputSchema, qrPunchInputSchema, scheduledPunchLabel } from "../lib/punch-contract";
 
 const validInput = {
   accuracyM: 18.4,
@@ -41,5 +41,24 @@ describe("GPS punch contract", () => {
     expect(punchDisplayLabel("clock_out", 1, true)).toBe("開始午休");
     expect(punchDisplayLabel("clock_in", 2, true)).toBe("結束午休");
     expect(punchDisplayLabel("clock_out", 1, false)).toBe("下班");
+  });
+});
+
+describe("QR punch contract", () => {
+  const deviceId = "4c44df53-0470-4b4f-8239-7f901f2bb43e";
+  const token = "a".repeat(64);
+
+  it("accepts only the signed-format kiosk value and its own tenant device UUID", () => {
+    expect(parseQrPunchValue(`8SOTS-PUNCH:1:${deviceId}:${token}`)).toEqual({ deviceId, token });
+    expect(parseQrPunchValue(`https://example.com/8SOTS-PUNCH:1:${deviceId}:${token}`)).toBeNull();
+    expect(parseQrPunchValue(`8SOTS-PUNCH:1:bad:${token}`)).toBeNull();
+    expect(parseQrPunchValue(`8SOTS-PUNCH:1:${deviceId}:short`)).toBeNull();
+  });
+
+  it("rejects malformed QR punch submissions before calling the database", () => {
+    const valid = { deviceId, token, idempotencyKey: crypto.randomUUID() };
+    expect(qrPunchInputSchema.safeParse(valid).success).toBe(true);
+    expect(qrPunchInputSchema.safeParse({ ...valid, token: "b" }).success).toBe(false);
+    expect(qrPunchInputSchema.safeParse({ ...valid, idempotencyKey: "repeat" }).success).toBe(false);
   });
 });

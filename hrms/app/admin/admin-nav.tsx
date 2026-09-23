@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Bell, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, FileClock, KeyRound, LayoutDashboard, Settings, SlidersHorizontal, UsersRound } from "lucide-react";
+import { Banknote, Bell, CalendarDays, CalendarHeart, ClipboardCheck, Clock3, FileClock, KeyRound, LayoutDashboard, QrCode, Settings, SlidersHorizontal, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,7 +11,8 @@ const items: Array<{ href: string; label: string; icon: typeof LayoutDashboard; 
   { href: "/admin/employees", label: "員工管理", icon: UsersRound, permission: "employees" },
   { href: "/admin/schedules", label: "排班管理", icon: CalendarDays, permission: "schedules" },
   { href: "/admin/holidays", label: "假日曆", icon: CalendarHeart, permission: "schedules" },
-  { href: "/admin/attendance", label: "打卡紀錄", icon: Clock3, permission: "attendance" },
+  { href: "/admin/attendance", label: "打卡紀錄", icon: Clock3, exact: true, permission: "attendance" },
+  { href: "/admin/attendance/qr-devices", label: "動態 QR 機器", icon: QrCode, permission: "attendance" },
   { href: "/admin/attendance-rules", label: "出勤規則", icon: SlidersHorizontal, permission: "attendance" },
   { href: "/admin/requests", label: "申請審核", icon: ClipboardCheck, permission: "requests" },
   { href: "/admin/payroll", label: "薪資管理", icon: Banknote, permission: "payroll" },

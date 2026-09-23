@@ -14,6 +14,20 @@ export const punchInputSchema = z.object({
 export type PunchEventType = "clock_in" | "clock_out";
 export type PunchInput = z.infer<typeof punchInputSchema>;
 
+export const qrPunchInputSchema = z.object({
+  deviceId: z.uuid(),
+  token: z.string().regex(/^[0-9a-f]{64}$/),
+  idempotencyKey: z.uuid(),
+});
+
+export function parseQrPunchValue(value: string): { deviceId: string; token: string } | null {
+  const match = /^8SOTS-PUNCH:1:([0-9a-f-]{36}):([0-9a-f]{64})$/.exec(value.trim());
+  if (!match) return null;
+  return z.uuid().safeParse(match[1]).success
+    ? { deviceId: match[1], token: match[2] }
+    : null;
+}
+
 export type PunchActionState =
   | { ok: true; eventType: PunchEventType; occurredAt: string; workDate: string }
   | { ok: false; message: string };

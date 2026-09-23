@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { punchInputSchema, type PunchActionState } from "@/lib/punch-contract";
+import { punchInputSchema, qrPunchInputSchema, type PunchActionState } from "@/lib/punch-contract";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
 
@@ -14,6 +14,7 @@ function safeMessage(message: string): string {
   if (message.includes("scheduled punch sequence complete")) return "這個班次的打卡已完成，若有缺卡請至出勤紀錄申請補卡。";
   if (message.includes("geofence rejected")) return "目前位置不在允許打卡範圍內，或定位誤差過大；請連上定位服務並移至門市範圍內再試。";
   if (message.includes("rate limit")) return "短時間內打卡次數過多，請稍後再試。";
+  if (message.includes("QR token expired or invalid")) return "QR Code 已更新或失效，請重新掃描機器上最新的碼。";
   return "打卡未完成，請稍後再試。";
 }
 
@@ -44,6 +45,33 @@ export async function recordGpsPunch(input: unknown): Promise<PunchActionState> 
     .eq("id", punchId)
     .is("voided_at", null)
     .single();
+  if (readError || !record) return { ok: false, message: "打卡已送出，但紀錄讀取失敗，請至出勤紀錄確認。" };
+
+  revalidatePath("/");
+  revalidatePath("/attendance");
+  revalidatePath("/admin/attendance");
+  return { ok: true, eventType: record.event_type, occurredAt: record.occurred_at, workDate: record.work_date };
+}
+
+export async function recordQrPunch(input: unknown): Promise<PunchActionState> {
+  const parsed = qrPunchInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "QR Code 格式不正確，請重新掃描。" };
+
+  const workspace = await getWorkspaceContext();
+  if (!workspace?.tenantId) return { ok: false, message: "登入或組織資料已失效，請重新登入。" };
+
+  const supabase = await createSupabaseServerClient();
+  const { data: punchId, error } = await supabase.rpc("record_qr_punch", {
+    p_tenant_id: workspace.tenantId,
+    p_device_id: parsed.data.deviceId,
+    p_token: parsed.data.token,
+    p_idempotency_key: parsed.data.idempotencyKey,
+  });
+  if (error || !punchId) return { ok: false, message: safeMessage(error?.message ?? "") };
+
+  const { data: record, error: readError } = await supabase.from("punch_records")
+    .select("event_type, occurred_at, work_date")
+    .eq("tenant_id", workspace.tenantId).eq("id", punchId).is("voided_at", null).single();
   if (readError || !record) return { ok: false, message: "打卡已送出，但紀錄讀取失敗，請至出勤紀錄確認。" };
 
   revalidatePath("/");

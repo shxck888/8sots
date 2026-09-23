@@ -2119,6 +2119,68 @@ export type Database = {
           },
         ]
       }
+      punch_qr_devices: {
+        Row: {
+          created_at: string
+          created_by: string
+          credential_hash: string | null
+          current_qr_expires_at: string | null
+          current_qr_hash: string | null
+          id: string
+          last_seen_at: string | null
+          name: string
+          paired_at: string | null
+          pairing_code_hash: string | null
+          pairing_expires_at: string | null
+          previous_qr_expires_at: string | null
+          previous_qr_hash: string | null
+          revoked_at: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          credential_hash?: string | null
+          current_qr_expires_at?: string | null
+          current_qr_hash?: string | null
+          id?: string
+          last_seen_at?: string | null
+          name: string
+          paired_at?: string | null
+          pairing_code_hash?: string | null
+          pairing_expires_at?: string | null
+          previous_qr_expires_at?: string | null
+          previous_qr_hash?: string | null
+          revoked_at?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          credential_hash?: string | null
+          current_qr_expires_at?: string | null
+          current_qr_hash?: string | null
+          id?: string
+          last_seen_at?: string | null
+          name?: string
+          paired_at?: string | null
+          pairing_code_hash?: string | null
+          pairing_expires_at?: string | null
+          previous_qr_expires_at?: string | null
+          previous_qr_hash?: string | null
+          revoked_at?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_qr_devices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       punch_records: {
         Row: {
           accuracy_m: number | null
@@ -2136,6 +2198,7 @@ export type Database = {
           location_verification: Database["public"]["Enums"]["punch_location_verification"]
           longitude: number | null
           occurred_at: string
+          qr_device_id: string | null
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
@@ -2161,6 +2224,7 @@ export type Database = {
           location_verification?: Database["public"]["Enums"]["punch_location_verification"]
           longitude?: number | null
           occurred_at?: string
+          qr_device_id?: string | null
           source: Database["public"]["Enums"]["punch_source"]
           tenant_id: string
           timezone: string
@@ -2186,6 +2250,7 @@ export type Database = {
           location_verification?: Database["public"]["Enums"]["punch_location_verification"]
           longitude?: number | null
           occurred_at?: string
+          qr_device_id?: string | null
           source?: Database["public"]["Enums"]["punch_source"]
           tenant_id?: string
           timezone?: string
@@ -2919,6 +2984,30 @@ export type Database = {
       }
     }
     Functions: {
+      create_punch_qr_device: {
+        Args: { p_tenant_id: string; p_name: string }
+        Returns: { device_id: string; pairing_code: string; pairing_expires_at: string }[]
+      }
+      pair_punch_qr_device: {
+        Args: { p_pairing_code: string }
+        Returns: { device_id: string; credential: string; device_name: string; tenant_name: string }[]
+      }
+      issue_punch_qr_token: {
+        Args: { p_device_id: string; p_credential: string }
+        Returns: { qr_value: string; expires_at: string; device_name: string; tenant_name: string }[]
+      }
+      renew_punch_qr_pairing: {
+        Args: { p_tenant_id: string; p_device_id: string }
+        Returns: { pairing_code: string; pairing_expires_at: string }[]
+      }
+      revoke_punch_qr_device: {
+        Args: { p_tenant_id: string; p_device_id: string }
+        Returns: undefined
+      }
+      record_qr_punch: {
+        Args: { p_tenant_id: string; p_device_id: string; p_token: string; p_idempotency_key: string }
+        Returns: string
+      }
       add_annual_leave_adjustment: {
         Args: {
           p_adjustment_minutes: number
