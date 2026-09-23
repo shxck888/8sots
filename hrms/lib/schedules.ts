@@ -24,7 +24,10 @@ export type ScheduleAssignmentInput = {
   employee_id: string;
   work_date: string;
   shift_id: string | null;
+  is_day_off: boolean;
 };
+
+export const DAY_OFF_VALUE = "day_off";
 
 function parseIsoDate(value: string): Date | null {
   if (!isoDatePattern.test(value)) return null;
@@ -97,7 +100,8 @@ export function parseScheduleAssignments(formData: FormData): ScheduleAssignment
     assignments.push({
       employee_id: match[1].toLowerCase(),
       work_date: match[2],
-      shift_id: value === "" ? null : z.string().uuid().parse(value),
+      shift_id: value === "" || value === DAY_OFF_VALUE ? null : z.string().uuid().parse(value),
+      is_day_off: value === DAY_OFF_VALUE,
     });
   }
   return assignments;

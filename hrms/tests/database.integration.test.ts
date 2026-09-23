@@ -171,7 +171,7 @@ describe("database migrations and critical workflows", () => {
     expect(audit.rows[0].count).toBe(2);
   });
 
-  it("builds a weekly draft from default shifts and only needs rest-day removals", async () => {
+  it("keeps unassigned days distinct from explicit days off through publication", async () => {
     await setUser(fixtureIds.admin);
     await db.query(`insert into public.holiday_calendar_entries(tenant_id,holiday_date,name,kind) values
       ($1,'2026-11-04','測試國定假日','national'),
@@ -204,11 +204,68 @@ describe("database migrations and critical workflows", () => {
     );
     expect(remaining.rows[0].count).toBe(4);
 
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant,
+      draft.rows[0].id,
+      JSON.stringify([
+        { employee_id: fixtureIds.employee, work_date: "2026-11-02", shift_id: null, is_day_off: true },
+        { employee_id: fixtureIds.employee, work_date: "2026-11-03", shift_id: null, is_day_off: true },
+      ]),
+    ]);
+    const offRows = await db.query<{ work_date: string; is_day_off: boolean; shift_id: string | null }>(
+      "select work_date::text,is_day_off,shift_id from public.schedule_assignments where schedule_version_id=$1 and is_day_off order by work_date",
+      [draft.rows[0].id],
+    );
+    expect(offRows.rows).toEqual([
+      { work_date: "2026-11-02", is_day_off: true, shift_id: null },
+      { work_date: "2026-11-03", is_day_off: true, shift_id: null },
+    ]);
+
+    await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-06", shift_id: fixtureIds.weekdayShift, is_day_off: true }]),
+    ])).rejects.toThrow(/day off cannot have a shift/);
+
     await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant,
       draft.rows[0].id,
       JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-08", shift_id: fixtureIds.weekdayShift }]),
     ])).rejects.toThrow(/shift does not match date default/);
+
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, draft.rows[0].id]);
+    const leaveType = await db.query<{ id: string }>(
+      "insert into public.leave_types(tenant_id,code,name) values($1,'REST_DAY_TEST','排休驗證假') returning id",
+      [fixtureIds.tenant],
+    );
+    await setUser(fixtureIds.employeeUser);
+    const publishedOff = await db.query<{ work_date: string }>(
+      "select work_date::text from public.get_my_published_days_off('2026-11-02','2026-11-08')",
+    );
+    expect(publishedOff.rows.map((row) => row.work_date)).toEqual(["2026-11-02", "2026-11-03"]);
+    const publishedShifts = await db.query<{ work_date: string }>(
+      "select distinct work_date::text from public.get_my_published_schedule('2026-11-02','2026-11-08') order by work_date",
+    );
+    expect(publishedShifts.rows.map((row) => row.work_date)).not.toContain("2026-11-03");
+    await expect(db.query(
+      "select public.create_work_request($1,'leave',$2,'2026-11-03 00:00','2026-11-04 00:00','測試排休請假申請',$3)",
+      [fixtureIds.tenant, leaveType.rows[0].id, "10000000-0000-4000-8000-000000000030"],
+    )).rejects.toThrow(/leave date requires/);
+    await setUser(fixtureIds.admin);
+    const run = await db.query<{ id: string }>(
+      "select public.calculate_attendance_v1($1,'2026-11-02','2026-11-03') id", [fixtureIds.tenant],
+    );
+    const attendance = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.attendance_days where calculation_run_id=$1", [run.rows[0].id],
+    );
+    expect(attendance.rows[0].count).toBe(0);
+    const nextDraft = await db.query<{ id: string }>(
+      "select public.create_schedule_draft($1,'2026-11-02','2026-11-08') id", [fixtureIds.tenant],
+    );
+    const copiedOff = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.schedule_assignments where schedule_version_id=$1 and is_day_off",
+      [nextDraft.rows[0].id],
+    );
+    expect(copiedOff.rows[0].count).toBe(2);
   });
 
   it("keeps an in-progress overnight checkout on the original work date", async () => {

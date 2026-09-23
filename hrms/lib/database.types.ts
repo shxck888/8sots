@@ -2311,9 +2311,10 @@ export type Database = {
           created_by: string | null
           employee_id: string
           id: string
+          is_day_off: boolean
           notes: string | null
           schedule_version_id: string
-          shift_id: string
+          shift_id: string | null
           tenant_id: string
           updated_at: string
           work_date: string
@@ -2323,9 +2324,10 @@ export type Database = {
           created_by?: string | null
           employee_id: string
           id?: string
+          is_day_off?: boolean
           notes?: string | null
           schedule_version_id: string
-          shift_id: string
+          shift_id?: string | null
           tenant_id: string
           updated_at?: string
           work_date: string
@@ -2335,9 +2337,10 @@ export type Database = {
           created_by?: string | null
           employee_id?: string
           id?: string
+          is_day_off?: boolean
           notes?: string | null
           schedule_version_id?: string
-          shift_id?: string
+          shift_id?: string | null
           tenant_id?: string
           updated_at?: string
           work_date?: string
@@ -3169,6 +3172,10 @@ export type Database = {
           p_request_limit?: number
         }
         Returns: Json
+      }
+      get_my_published_days_off: {
+        Args: { p_date_from: string; p_date_to: string }
+        Returns: { work_date: string }[]
       }
       get_my_published_schedule: {
         Args: { p_date_from: string; p_date_to: string }

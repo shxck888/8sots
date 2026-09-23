@@ -26,7 +26,8 @@ function shiftTone(entry: MyScheduleEntry): string {
   return (entry.segments[0]?.startMinute ?? 0) >= 14 * 60 ? "late" : "early";
 }
 
-function ShiftDetail({ entry, compact = false }: { entry?: MyScheduleEntry; compact?: boolean }) {
+function ShiftDetail({ entry, dayOff = false, compact = false }: { entry?: MyScheduleEntry; dayOff?: boolean; compact?: boolean }) {
+  if (dayOff) return <div className="my-selected-day-off"><span className="my-shift-badge off">休假</span>{compact ? null : <p>這天已在班表中指定為休假（排休）。請假申請與核准紀錄請至請假中心查看。</p>}</div>;
   if (!entry) return <p className="my-selected-empty">{compact ? "未排班" : "這天目前沒有已發布班別。未排班不代表已核准休假。"}</p>;
   return (
     <div className="my-selected-shift">
@@ -57,18 +58,19 @@ export default async function MySchedulePage({
   const dateTo = isWeek ? dates[6] : bounds.dateTo;
   const result = workspace.tenantId
     ? await getMyPublishedSchedule({ dateFrom, dateTo, employeeId: workspace.employeeId })
-    : { employeeId: null, entries: [] };
+    : { employeeId: null, entries: [], daysOff: [] };
   const entryByDate = new Map(result.entries.map((entry) => [entry.workDate, entry]));
+  const daysOff = new Set(result.daysOff);
   const totalMinutes = result.entries.reduce((total, entry) => total + entry.totalMinutes, 0);
   const selectedDay = !isWeek && typeof params.day === "string" && params.day.startsWith(`${monthKey}-`) && params.day >= bounds.dateFrom && params.day <= bounds.dateTo
     ? params.day
-    : monthKey === today.slice(0, 7) ? today : result.entries[0]?.workDate ?? bounds.dateFrom;
+    : monthKey === today.slice(0, 7) ? today : result.entries[0]?.workDate ?? result.daysOff[0] ?? bounds.dateFrom;
   const monthLabel = new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${monthKey}-01T12:00:00.000Z`));
 
   return (
     <WorkspaceShell activePath="/my-schedule" canManage={workspace.canManage} displayName={workspace.displayName} email={workspace.email} tenantName={workspace.tenantName}>
       <header className="my-schedule-header">
-        <div><span className="date-label">EMPLOYEE SCHEDULE</span><h1>我的班表</h1><p>查看已發布班次與每日時段。未排班不代表已核准休假。</p></div>
+        <div><span className="date-label">EMPLOYEE SCHEDULE</span><h1>我的班表</h1><p>查看已發布班次與休假。未排班表示尚未指定班次或休假。</p></div>
         <nav className="my-view-switch" aria-label="班表顯示方式">
           <Link className={!isWeek ? "active" : ""} aria-current={!isWeek ? "page" : undefined} href={`/my-schedule?month=${monthKey}`}>月曆</Link>
           <Link className={isWeek ? "active" : ""} aria-current={isWeek ? "page" : undefined} href={`/my-schedule?view=week&week=${isWeek ? weekStart : getWeekStart(selectedDay)}`}>週檢視</Link>
@@ -93,7 +95,7 @@ export default async function MySchedulePage({
               <div className="my-week-list">
                 {dates.map((dateKey) => <article className={dateKey === today ? "my-week-day today" : "my-week-day"} key={dateKey}>
                   <div className="my-week-date"><small>{Number(dateKey.slice(5, 7))} 月</small><strong>{Number(dateKey.slice(-2))}</strong><span>週{weekdays[new Date(`${dateKey}T00:00:00.000Z`).getUTCDay()]}</span></div>
-                  <div className="my-week-content"><ShiftDetail entry={entryByDate.get(dateKey)} compact /></div>
+                  <div className="my-week-content"><ShiftDetail entry={entryByDate.get(dateKey)} dayOff={daysOff.has(dateKey)} compact /></div>
                 </article>)}
               </div>
             ) : (
@@ -103,10 +105,10 @@ export default async function MySchedulePage({
                   {dates.map((dateKey) => {
                     const entry = entryByDate.get(dateKey);
                     const outside = !dateKey.startsWith(monthKey);
-                    const label = `${dateLabel(dateKey)}，${entry && !outside ? `${entry.shiftName}，${entry.segments.map((segment) => `${shiftMinuteLabel(segment.startMinute)}到${shiftMinuteLabel(segment.endMinute)}`).join("、")}` : outside ? "非本月" : "未排班"}`;
+                    const label = `${dateLabel(dateKey)}，${entry && !outside ? `${entry.shiftName}，${entry.segments.map((segment) => `${shiftMinuteLabel(segment.startMinute)}到${shiftMinuteLabel(segment.endMinute)}`).join("、")}` : outside ? "非本月" : daysOff.has(dateKey) ? "休假" : "未排班"}`;
                     return <Link prefetch={false} href={outside ? `/my-schedule?month=${dateKey.slice(0, 7)}&day=${dateKey}` : `/my-schedule?month=${monthKey}&day=${dateKey}#my-day-detail`} aria-label={label} aria-current={dateKey === selectedDay ? "date" : undefined} className={`my-month-day${outside ? " outside" : ""}${dateKey === today ? " today" : ""}${dateKey === selectedDay ? " selected" : ""}`} key={dateKey}>
                       <span className="my-month-date">{Number(dateKey.slice(-2))}{dateKey === today ? <i>今天</i> : null}</span>
-                      {!outside && entry ? <span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span> : !outside ? <span className="my-no-shift">未排班</span> : null}
+                      {!outside && entry ? <span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span> : !outside && daysOff.has(dateKey) ? <span className="my-shift-badge off">休假</span> : !outside ? <span className="my-no-shift">未排班</span> : null}
                       {!outside && entry ? <span className="my-month-hours">{entry.segments.map((segment) => `${shiftMinuteLabel(segment.startMinute)}–${shiftMinuteLabel(segment.endMinute)}`).join(" / ")}</span> : null}
                     </Link>;
                   })}
@@ -114,7 +116,7 @@ export default async function MySchedulePage({
               </>
             )}
           </section>
-          {!isWeek ? <section className="my-day-detail" id="my-day-detail"><div className="my-day-detail-heading"><span className="eyebrow">當日班次</span><h2>{dateLabel(selectedDay)}</h2></div><ShiftDetail entry={entryByDate.get(selectedDay)} /></section> : null}
+          {!isWeek ? <section className="my-day-detail" id="my-day-detail"><div className="my-day-detail-heading"><span className="eyebrow">當日安排</span><h2>{dateLabel(selectedDay)}</h2></div><ShiftDetail entry={entryByDate.get(selectedDay)} dayOff={daysOff.has(selectedDay)} /></section> : null}
         </>
       )}
     </WorkspaceShell>

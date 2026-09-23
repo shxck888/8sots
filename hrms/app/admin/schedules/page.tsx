@@ -5,6 +5,7 @@ import { getAdminContext } from "@/lib/admin";
 import {
   assignmentFieldName,
   buildWeekDates,
+  DAY_OFF_VALUE,
   defaultShiftCodeForDate,
   getWeekStart,
   HOLIDAY_SHIFT_CODE,
@@ -98,12 +99,12 @@ export default async function SchedulesPage({ searchParams }: {
   const selectedVersion = draft ?? published;
 
   const assignmentsResult = selectedVersion
-    ? await supabase.from("schedule_assignments").select("employee_id, work_date, shift_id")
+    ? await supabase.from("schedule_assignments").select("employee_id, work_date, shift_id, is_day_off")
       .eq("tenant_id", admin.tenantId).eq("schedule_version_id", selectedVersion.id)
     : { data: [], error: null };
   const assignmentRows = assignmentsResult.data ?? [];
   const assignmentMap = new Map(
-    assignmentRows.map((item) => [`${item.employee_id}:${item.work_date}`, item.shift_id]),
+    assignmentRows.map((item) => [`${item.employee_id}:${item.work_date}`, item.is_day_off ? DAY_OFF_VALUE : item.shift_id]),
   );
   const scheduleWarnings = computeScheduleWarnings({
     weekDates, employees, holidays, assignments: assignmentRows,
@@ -143,7 +144,7 @@ export default async function SchedulesPage({ searchParams }: {
         <article><span><CalendarDays size={18} /></span><div><small>目前版本</small><strong>{selectedVersion ? `V${selectedVersion.version}` : "尚未建立"}</strong></div></article>
         <article><div><small>狀態</small><strong className={`schedule-status ${selectedVersion?.status ?? "empty"}`}>{selectedVersion?.status === "draft" ? "草稿" : selectedVersion?.status === "published" ? "已發布" : "未排班"}</strong></div></article>
         <article><div><small>在職員工</small><strong>{employees.length} 位</strong></div></article>
-        <article><div><small>已排格數</small><strong>{assignmentMap.size} 格</strong></div></article>
+        <article><div><small>已指定班次</small><strong>{assignmentRows.filter((item) => item.shift_id).length} 格</strong></div></article>
       </section>
 
       {loadError ? (
@@ -155,7 +156,7 @@ export default async function SchedulesPage({ searchParams }: {
       ) : !draft && !published ? (
         <section className="admin-panel schedule-empty">
           <CalendarDays size={34} /><strong>本週尚未建立排班</strong>
-          <p>建立後會自動套用平日班與假日班，主管只需調整未排班員工。</p>
+          <p>建立後會自動套用平日班與假日班，再逐日選擇班次、休假或未排班。</p>
           <form action={createScheduleDraft}>
             <input name="periodStart" type="hidden" value={weekStart} />
             <input name="periodEnd" type="hidden" value={weekEnd} />
@@ -182,11 +183,11 @@ export default async function SchedulesPage({ searchParams }: {
                 <tr key={employee.id}>
                   <th><strong>{employee.full_name}</strong><small>{employee.employee_no}</small></th>
                   {weekDates.map((date) => {
-                    const shiftId = assignmentMap.get(`${employee.id}:${date}`);
+                    const selection = assignmentMap.get(`${employee.id}:${date}`);
                     return (
                       <td key={date}>
-                        <div className={shiftId ? "schedule-readonly-shift" : "schedule-readonly-empty"}>
-                          {shiftId ? shiftLabels.get(shiftId) ?? "班別資料不存在" : "未排班"}
+                        <div className={selection === DAY_OFF_VALUE ? "schedule-readonly-off" : selection ? "schedule-readonly-shift" : "schedule-readonly-empty"}>
+                          {selection === DAY_OFF_VALUE ? "休假" : selection ? shiftLabels.get(selection) ?? "班別資料不存在" : "未排班"}
                         </div>
                       </td>
                     );
@@ -202,7 +203,7 @@ export default async function SchedulesPage({ searchParams }: {
             <input name="scheduleVersionId" type="hidden" value={draft!.id} />
             <input name="weekStart" type="hidden" value={weekStart} />
             <div className="schedule-toolbar">
-              <div><strong>草稿 V{draft!.version}</strong><span>已自動套用預設班別；主管只需將個別休假日改為未排班。</span></div>
+              <div><strong>草稿 V{draft!.version}</strong><span>請逐日選擇班次、休假或未排班；休假會顯示在員工班表。</span></div>
               <button className="admin-button primary" type="submit"><Save size={16} /> 儲存草稿</button>
             </div>
             <div className="schedule-grid-wrap">
@@ -222,7 +223,8 @@ export default async function SchedulesPage({ searchParams }: {
                             name={assignmentFieldName(employee.id, date)}
                           >
                             {defaultShift ? <option value={defaultShift.id}>{shiftLabels.get(defaultShift.id)}</option> : null}
-                            <option value="">{shiftCode ? "未排班" : "店休（未排班）"}</option>
+                            <option value={DAY_OFF_VALUE}>休假</option>
+                            <option value="">未排班</option>
                           </select>
                         </td>
                       );
@@ -234,7 +236,7 @@ export default async function SchedulesPage({ searchParams }: {
           </form>
           <ScheduleWarnings warnings={scheduleWarnings} />
           <div className="schedule-publish-bar">
-            <div><strong>發布本週班表</strong><span>{assignmentMap.size === 0 ? "至少安排一個班別並儲存後才能發布。" : "請先儲存草稿。發布後本版本不可直接修改。"}</span></div>
+            <div><strong>發布本週班表</strong><span>{assignmentMap.size === 0 ? "至少指定一個班次或休假並儲存後才能發布。" : "請先儲存草稿。發布後本版本不可直接修改。"}</span></div>
             <form action={publishSchedule}>
               <input name="scheduleVersionId" type="hidden" value={draft!.id} />
               <input name="weekStart" type="hidden" value={weekStart} />

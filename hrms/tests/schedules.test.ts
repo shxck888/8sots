@@ -48,16 +48,18 @@ describe("schedule week helpers", () => {
 });
 
 describe("schedule assignment form", () => {
-  it("parses selected shifts and explicit unassigned cells", () => {
+  it("parses shifts, days off, and unassigned cells separately", () => {
     const employeeId = "11111111-1111-4111-8111-111111111111";
     const shiftId = "22222222-2222-4222-8222-222222222222";
     const form = new FormData();
     form.set(assignmentFieldName(employeeId, "2026-08-24"), shiftId);
     form.set(assignmentFieldName(employeeId, "2026-08-25"), "");
+    form.set(assignmentFieldName(employeeId, "2026-08-26"), "day_off");
 
     expect(parseScheduleAssignments(form)).toEqual([
-      { employee_id: employeeId, work_date: "2026-08-24", shift_id: shiftId },
-      { employee_id: employeeId, work_date: "2026-08-25", shift_id: null },
+      { employee_id: employeeId, work_date: "2026-08-24", shift_id: shiftId, is_day_off: false },
+      { employee_id: employeeId, work_date: "2026-08-25", shift_id: null, is_day_off: false },
+      { employee_id: employeeId, work_date: "2026-08-26", shift_id: null, is_day_off: true },
     ]);
   });
 
