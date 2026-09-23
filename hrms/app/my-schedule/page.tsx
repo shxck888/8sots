@@ -72,7 +72,7 @@ export default async function MySchedulePage({
   return (
     <WorkspaceShell activePath="/my-schedule" canManage={workspace.canManage} displayName={workspace.displayName} email={workspace.email} tenantName={workspace.tenantName}>
       <header className="my-schedule-header">
-        <div><span className="date-label">EMPLOYEE SCHEDULE</span><h1>我的班表</h1><p>查看已發布班次、店休與休假。未排班表示尚未指定安排。</p></div>
+        <div><h1>我的班表</h1><p>查看已發布班次、店休與休假。未排班表示尚未指定安排。</p></div>
         <nav className="my-view-switch" aria-label="班表顯示方式">
           <Link className={!isWeek ? "active" : ""} aria-current={!isWeek ? "page" : undefined} href={`/my-schedule?month=${monthKey}`}>月曆</Link>
           <Link className={isWeek ? "active" : ""} aria-current={isWeek ? "page" : undefined} href={`/my-schedule?view=week&week=${isWeek ? weekStart : getWeekStart(selectedDay)}`}>週檢視</Link>

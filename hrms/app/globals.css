@@ -175,6 +175,7 @@ button { color: inherit; }
 .attendance-event { width: max-content; padding: 5px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; }
 .attendance-event.clock_in { color: #21624f; background: #dcebe4; }.attendance-event.clock_out { color: #725324; background: #efe4cf; }
 .attendance-evidence { justify-items: end; color: #486960; font-size: 10px; }.attendance-evidence span { display: flex; align-items: center; gap: 5px; }
+.attendance-evidence .attendance-gps-accuracy { display: inline; white-space: nowrap; }
 .admin-table td > svg { vertical-align: -2px; }.admin-table td small { color: var(--muted); font-size: 9px; }
 .attendance-list-heading { padding: 15px 18px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(23,63,54,.1); border-radius: 15px; background: var(--paper); }
 .attendance-list-heading h2, .correction-card h2, .attendance-summary-list h2, .attendance-results h2, .correction-review h2 { margin: 3px 0 0; font: 600 21px/1.2 Georgia, 'Noto Serif TC', serif; }
