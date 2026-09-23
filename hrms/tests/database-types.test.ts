@@ -51,6 +51,7 @@ describe("generated database types", () => {
           "guard_payroll_configuration_version",
           "guard_annual_leave_policy_version",
           "allocate_approved_annual_leave",
+          "guard_hire_date_annual_leave_history",
         ].includes(entity),
     );
 

@@ -39,7 +39,10 @@ function employeeRpcPayload(tenantId: string, data: EmployeeFormInput, protected
   };
 }
 
-function databaseMessage(code?: string): string {
+function databaseMessage(code?: string, detail?: string): string {
+  if (detail?.includes("hire date change requires annual leave reconciliation")) {
+    return "此員工已有特休使用或人工調整，變更到職日會影響既有紀錄；請先由管理員核對特休台帳。";
+  }
   if (code === "23505") return "員工編號或身分證字號已存在，請重新確認。";
   if (code === "42501") return "你沒有維護員工資料的權限。";
   return "員工資料儲存失敗，請稍後再試。";
@@ -127,7 +130,7 @@ export async function updateEmployee(
   const { error } = await supabase.rpc("update_employee_master", {
     ...employeeRpcPayload(admin.tenantId, parsed.data, protectedId), p_employee_id: employeeId,
   });
-  if (error) return failure(values, { message: databaseMessage(error.code) });
+  if (error) return failure(values, { message: databaseMessage(error.code, error.message) });
 
   const photoOkay = photo.file
     ? await uploadPhoto(employeeId, admin.tenantId, photo.file, current?.photo_path as string | null)

@@ -2866,6 +2866,10 @@ export type Database = {
       }
     }
     Views: {
+      valid_annual_leave_grants: {
+        Row: Database["public"]["Tables"]["annual_leave_grants"]["Row"]
+        Relationships: []
+      }
       employee_master_current: {
         Row: {
           address: string | null
@@ -2950,6 +2954,16 @@ export type Database = {
       annual_leave_days_for_milestone: {
         Args: { p_service_milestone_months: number }
         Returns: number
+      }
+      annual_leave_grant_matches_hire_date: {
+        Args: {
+          p_days: number
+          p_end_exclusive: string
+          p_hire_date: string
+          p_milestone_months: number
+          p_start: string
+        }
+        Returns: boolean
       }
       annual_leave_statutory_tiers: { Args: never; Returns: Json }
       archive_employee: {

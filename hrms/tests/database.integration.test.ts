@@ -691,6 +691,55 @@ describe("database migrations and critical workflows", () => {
     ]));
   });
 
+  it("excludes leave grants from a corrected hire date and retains their audit history", async () => {
+    await db.exec("begin");
+    try {
+      await setUser(fixtureIds.admin);
+      const employeeId = crypto.randomUUID();
+      await db.query(`insert into public.employees(id,tenant_id,employee_no,full_name,hire_date,status)
+        values($1,$2,'E-HIRE-FIX','到職日修正測試','2026-03-03','active')`,
+      [employeeId, fixtureIds.tenant]);
+      const balance = (asOf: string) => db.query<{
+        balance: { available_minutes: number; grants: Array<{ id: string; granted_days: number; period_start: string }> }
+      }>("select public.get_annual_leave_balance($1,$2,$3) balance", [fixtureIds.tenant, employeeId, asOf]);
+      const initial = await balance("2026-09-23");
+      expect(initial.rows[0].balance.available_minutes).toBe(1_440);
+      expect(initial.rows[0].balance.grants).toHaveLength(1);
+
+      await db.query("update public.employees set hire_date='2021-03-03' where id=$1", [employeeId]);
+      const corrected = await balance("2026-09-23");
+      expect(corrected.rows[0].balance.available_minutes).toBe(7_200);
+      expect(corrected.rows[0].balance.grants).toMatchObject([
+        { granted_days: 15, period_start: "2026-03-03" },
+      ]);
+      const retained = await db.query<{ count: number }>(
+        "select count(*)::integer count from public.annual_leave_grants where employee_id=$1", [employeeId]);
+      expect(retained.rows[0].count).toBe(2);
+      await db.exec("savepoint old_grant_adjustment");
+      await expect(db.query("select public.add_annual_leave_adjustment($1,$2,60,$3)", [
+        fixtureIds.tenant, initial.rows[0].balance.grants[0].id, "舊到職日批次不可調整",
+      ])).rejects.toThrow(/superseded by hire date/);
+      await db.exec("rollback to savepoint old_grant_adjustment");
+
+      await db.query("update public.employees set hire_date='2021-03-04' where id=$1", [employeeId]);
+      const correctedAgain = await balance("2026-09-23");
+      expect(correctedAgain.rows[0].balance.available_minutes).toBe(7_200);
+      expect(correctedAgain.rows[0].balance.grants).toMatchObject([
+        { granted_days: 15, period_start: "2026-03-04" },
+      ]);
+      await db.query("select public.add_annual_leave_adjustment($1,$2,60,$3)", [
+        fixtureIds.tenant, correctedAgain.rows[0].balance.grants[0].id, "測試人工調整保護",
+      ]);
+      await db.exec("savepoint guarded_hire_date");
+      await expect(db.query("update public.employees set hire_date='2021-03-05' where id=$1", [employeeId]))
+        .rejects.toThrow(/requires annual leave reconciliation/);
+      await db.exec("rollback to savepoint guarded_hire_date");
+    } finally {
+      await db.exec("rollback");
+      await setUser(fixtureIds.admin);
+    }
+  });
+
   it("charges full-day leave as one standard workday while keeping timed leave hourly", async () => {
     await setUser(fixtureIds.employeeUser);
     const leaveType = await db.query<{ id: string }>(
