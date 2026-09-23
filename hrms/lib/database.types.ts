@@ -2312,6 +2312,7 @@ export type Database = {
           employee_id: string
           id: string
           is_day_off: boolean
+          is_store_closed: boolean
           notes: string | null
           schedule_version_id: string
           shift_id: string | null
@@ -2325,6 +2326,7 @@ export type Database = {
           employee_id: string
           id?: string
           is_day_off?: boolean
+          is_store_closed?: boolean
           notes?: string | null
           schedule_version_id: string
           shift_id?: string | null
@@ -2338,6 +2340,7 @@ export type Database = {
           employee_id?: string
           id?: string
           is_day_off?: boolean
+          is_store_closed?: boolean
           notes?: string | null
           schedule_version_id?: string
           shift_id?: string | null
@@ -3174,6 +3177,10 @@ export type Database = {
         Returns: Json
       }
       get_my_published_days_off: {
+        Args: { p_date_from: string; p_date_to: string }
+        Returns: { work_date: string }[]
+      }
+      get_my_published_store_closed: {
         Args: { p_date_from: string; p_date_to: string }
         Returns: { work_date: string }[]
       }

@@ -27,16 +27,18 @@ export async function getMyPublishedSchedule({
   dateFrom: string;
   dateTo: string;
   employeeId: string | null;
-}): Promise<{ employeeId: string | null; entries: MyScheduleEntry[]; daysOff: string[] }> {
-  if (!employeeId) return { employeeId: null, entries: [], daysOff: [] };
+}): Promise<{ employeeId: string | null; entries: MyScheduleEntry[]; daysOff: string[]; storeClosed: string[] }> {
+  if (!employeeId) return { employeeId: null, entries: [], daysOff: [], storeClosed: [] };
 
   const supabase = await createSupabaseServerClient();
-  const [{ data, error }, { data: daysOffData, error: daysOffError }] = await Promise.all([
+  const [{ data, error }, { data: daysOffData, error: daysOffError }, { data: storeClosedData, error: storeClosedError }] = await Promise.all([
     supabase.rpc("get_my_published_schedule", { p_date_from: dateFrom, p_date_to: dateTo }),
     supabase.rpc("get_my_published_days_off", { p_date_from: dateFrom, p_date_to: dateTo }),
+    supabase.rpc("get_my_published_store_closed", { p_date_from: dateFrom, p_date_to: dateTo }),
   ]);
   if (error) throw error;
   if (daysOffError) throw daysOffError;
+  if (storeClosedError) throw storeClosedError;
 
   const entriesByDate = new Map<string, MyScheduleEntry>();
   for (const row of data ?? []) {
@@ -62,5 +64,6 @@ export async function getMyPublishedSchedule({
     employeeId,
     entries: [...entriesByDate.values()].sort((left, right) => left.workDate.localeCompare(right.workDate)),
     daysOff: (daysOffData ?? []).map((row) => row.work_date),
+    storeClosed: (storeClosedData ?? []).map((row) => row.work_date),
   };
 }

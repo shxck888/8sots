@@ -192,6 +192,11 @@ describe("database migrations and critical workflows", () => {
       { work_date: "2026-11-07", code: "WEEKDAY_SPLIT" },
       { work_date: "2026-11-08", code: "HOLIDAY_CONTINUOUS" },
     ]);
+    const mondayClosure = await db.query<{ is_store_closed: boolean; shift_id: string | null }>(
+      "select is_store_closed,shift_id from public.schedule_assignments where schedule_version_id=$1 and work_date='2026-11-02'",
+      [draft.rows[0].id],
+    );
+    expect(mondayClosure.rows).toEqual([{ is_store_closed: true, shift_id: null }]);
 
     await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant,
@@ -202,7 +207,7 @@ describe("database migrations and critical workflows", () => {
       "select count(*)::integer count from public.schedule_assignments where schedule_version_id=$1",
       [draft.rows[0].id],
     );
-    expect(remaining.rows[0].count).toBe(4);
+    expect(remaining.rows[0].count).toBe(5);
 
     await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant,
@@ -266,6 +271,92 @@ describe("database migrations and critical workflows", () => {
       [nextDraft.rows[0].id],
     );
     expect(copiedOff.rows[0].count).toBe(2);
+  });
+
+  it("defaults Monday to store closure and permits opening or leaving it unassigned", async () => {
+    await setUser(fixtureIds.admin);
+    const draft = await db.query<{ id: string }>(
+      "select public.create_schedule_draft($1,'2026-11-09','2026-11-15') id", [fixtureIds.tenant],
+    );
+    const monday = "2026-11-09";
+    const readMonday = () => db.query<{ shift_id: string | null; is_store_closed: boolean }>(
+      "select shift_id,is_store_closed from public.schedule_assignments where schedule_version_id=$1 and work_date=$2",
+      [draft.rows[0].id, monday],
+    );
+    expect((await readMonday()).rows).toEqual([{ shift_id: null, is_store_closed: true }]);
+
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: fixtureIds.weekdayShift }]),
+    ]);
+    expect((await readMonday()).rows).toEqual([{ shift_id: fixtureIds.weekdayShift, is_store_closed: false }]);
+
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: null }]),
+    ]);
+    expect((await readMonday()).rows).toEqual([]);
+
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: null, is_store_closed: true }]),
+    ]);
+    expect((await readMonday()).rows).toEqual([{ shift_id: null, is_store_closed: true }]);
+    await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-10", shift_id: null, is_store_closed: true }]),
+    ])).rejects.toThrow(/store closure must be a Monday/);
+
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, draft.rows[0].id]);
+    await setUser(fixtureIds.employeeUser);
+    const closed = await db.query<{ work_date: string }>(
+      "select work_date::text from public.get_my_published_store_closed('2026-11-09','2026-11-15')",
+    );
+    expect(closed.rows).toEqual([{ work_date: monday }]);
+    const shifts = await db.query<{ work_date: string }>(
+      "select distinct work_date::text from public.get_my_published_schedule('2026-11-09','2026-11-15')",
+    );
+    expect(shifts.rows.map((row) => row.work_date)).not.toContain(monday);
+
+    await setUser(fixtureIds.admin);
+    const run = await db.query<{ id: string }>(
+      "select public.calculate_attendance_v1($1,'2026-11-09','2026-11-09') id", [fixtureIds.tenant],
+    );
+    const closureAttendance = await db.query<{ count: number }>(
+      "select count(*)::integer count from public.attendance_days where calculation_run_id=$1", [run.rows[0].id],
+    );
+    expect(closureAttendance.rows[0].count).toBe(0);
+    const nextDraft = await db.query<{ id: string }>(
+      "select public.create_schedule_draft($1,'2026-11-09','2026-11-15') id", [fixtureIds.tenant],
+    );
+    const copied = await db.query<{ is_store_closed: boolean }>(
+      "select is_store_closed from public.schedule_assignments where schedule_version_id=$1 and work_date=$2",
+      [nextDraft.rows[0].id, monday],
+    );
+    expect(copied.rows).toEqual([{ is_store_closed: true }]);
+
+    await db.query(
+      "insert into public.holiday_calendar_entries(tenant_id,holiday_date,name,kind) values($1,'2026-11-16','測試週一國定假日','national')",
+      [fixtureIds.tenant],
+    );
+    const specialDraft = await db.query<{ id: string }>(
+      "select public.create_schedule_draft($1,'2026-11-16','2026-11-22') id", [fixtureIds.tenant],
+    );
+    const specialDefault = await db.query<{ is_store_closed: boolean }>(
+      "select is_store_closed from public.schedule_assignments where schedule_version_id=$1 and work_date='2026-11-16'",
+      [specialDraft.rows[0].id],
+    );
+    expect(specialDefault.rows).toEqual([{ is_store_closed: true }]);
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, specialDraft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-16", shift_id: fixtureIds.weekdayShift }]),
+    ]);
+    await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, specialDraft.rows[0].id]);
+    await setUser(fixtureIds.employeeUser);
+    const openedMonday = await db.query<{ work_date: string; shift_code: string }>(
+      "select distinct work_date::text,shift_code from public.get_my_published_schedule('2026-11-16','2026-11-16')",
+    );
+    expect(openedMonday.rows).toEqual([{ work_date: "2026-11-16", shift_code: "WEEKDAY_SPLIT" }]);
   });
 
   it("keeps an in-progress overnight checkout on the original work date", async () => {

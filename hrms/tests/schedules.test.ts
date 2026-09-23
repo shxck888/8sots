@@ -5,6 +5,7 @@ import {
   defaultShiftCodeForDate,
   getScheduleDayKind,
   getWeekStart,
+  isMonday,
   parseScheduleAssignments,
   schedulePeriodSchema,
   shiftMinuteLabel,
@@ -35,6 +36,9 @@ describe("schedule week helpers", () => {
 
   it("uses the restaurant default shift for each operating day", () => {
     expect(getScheduleDayKind("2026-09-28")).toBe("closed");
+    expect(isMonday("2026-09-28")).toBe(true);
+    expect(defaultShiftCodeForDate("2026-09-28")).toBeNull();
+    expect(defaultShiftCodeForDate("2026-09-28", "national")).toBeNull();
     expect(defaultShiftCodeForDate("2026-09-29")).toBe("WEEKDAY_SPLIT");
     expect(defaultShiftCodeForDate("2026-10-03")).toBe("HOLIDAY_CONTINUOUS");
     expect(defaultShiftCodeForDate("2026-10-04")).toBe("HOLIDAY_CONTINUOUS");
@@ -48,18 +52,20 @@ describe("schedule week helpers", () => {
 });
 
 describe("schedule assignment form", () => {
-  it("parses shifts, days off, and unassigned cells separately", () => {
+  it("parses shifts, days off, store closures, and unassigned cells separately", () => {
     const employeeId = "11111111-1111-4111-8111-111111111111";
     const shiftId = "22222222-2222-4222-8222-222222222222";
     const form = new FormData();
     form.set(assignmentFieldName(employeeId, "2026-08-24"), shiftId);
     form.set(assignmentFieldName(employeeId, "2026-08-25"), "");
     form.set(assignmentFieldName(employeeId, "2026-08-26"), "day_off");
+    form.set(assignmentFieldName(employeeId, "2026-08-27"), "store_closed");
 
     expect(parseScheduleAssignments(form)).toEqual([
-      { employee_id: employeeId, work_date: "2026-08-24", shift_id: shiftId, is_day_off: false },
-      { employee_id: employeeId, work_date: "2026-08-25", shift_id: null, is_day_off: false },
-      { employee_id: employeeId, work_date: "2026-08-26", shift_id: null, is_day_off: true },
+      { employee_id: employeeId, work_date: "2026-08-24", shift_id: shiftId, is_day_off: false, is_store_closed: false },
+      { employee_id: employeeId, work_date: "2026-08-25", shift_id: null, is_day_off: false, is_store_closed: false },
+      { employee_id: employeeId, work_date: "2026-08-26", shift_id: null, is_day_off: true, is_store_closed: false },
+      { employee_id: employeeId, work_date: "2026-08-27", shift_id: null, is_day_off: false, is_store_closed: true },
     ]);
   });
 

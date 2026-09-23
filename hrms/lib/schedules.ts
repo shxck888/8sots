@@ -25,9 +25,11 @@ export type ScheduleAssignmentInput = {
   work_date: string;
   shift_id: string | null;
   is_day_off: boolean;
+  is_store_closed: boolean;
 };
 
 export const DAY_OFF_VALUE = "day_off";
+export const STORE_CLOSED_VALUE = "store_closed";
 
 function parseIsoDate(value: string): Date | null {
   if (!isoDatePattern.test(value)) return null;
@@ -66,12 +68,18 @@ export function getScheduleDayKind(date: string, holidayKind?: HolidayKind): Sch
   const parsed = parseIsoDate(date);
   if (!parsed) throw new Error("Invalid schedule date");
   if (holidayKind === "company") return "closed";
+  if (parsed.getUTCDay() === 1) return "closed";
   if (holidayKind === "makeup_workday") return "weekday";
   if (holidayKind === "national") return "holiday";
   const weekday = parsed.getUTCDay();
-  if (weekday === 1) return "closed";
   if (weekday === 0 || weekday === 6) return "holiday";
   return "weekday";
+}
+
+export function isMonday(date: string): boolean {
+  const parsed = parseIsoDate(date);
+  if (!parsed) throw new Error("Invalid schedule date");
+  return parsed.getUTCDay() === 1;
 }
 
 export function defaultShiftCodeForDate(date: string, holidayKind?: HolidayKind): string | null {
@@ -100,8 +108,9 @@ export function parseScheduleAssignments(formData: FormData): ScheduleAssignment
     assignments.push({
       employee_id: match[1].toLowerCase(),
       work_date: match[2],
-      shift_id: value === "" || value === DAY_OFF_VALUE ? null : z.string().uuid().parse(value),
+      shift_id: value === "" || value === DAY_OFF_VALUE || value === STORE_CLOSED_VALUE ? null : z.string().uuid().parse(value),
       is_day_off: value === DAY_OFF_VALUE,
+      is_store_closed: value === STORE_CLOSED_VALUE,
     });
   }
   return assignments;
