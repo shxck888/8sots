@@ -130,7 +130,7 @@ export function KioskPanel() {
   return <main className="kiosk-shell">
     <header className="kiosk-header"><span><MonitorCheck size={25} /> 海之星打卡機</span><div className="kiosk-header-actions"><KioskInstall /><time>{time}</time></div></header>
     {!loaded ? <div className="kiosk-center"><RefreshCw className="spin" size={34} /><p>正在載入機器授權…</p></div> : !device ? <div className="kiosk-pair-card">
-      <QrCode size={38} /><h1>配對打卡機器</h1><p>請管理員先到「管理後台 → 動態 QR 機器」新增此機器，並提供一次性配對碼。配對後這台機器不需登入。</p>
+      <QrCode size={38} /><h1>配對打卡機器</h1><p>若要安裝成 App，請先點右上角下載圖示，從桌面圖示開啟打卡機後，再輸入配對碼。請管理員到「管理後台 → 動態 QR 機器」新增此機器。配對後不需登入。</p>
       <form onSubmit={pair}><label>一次性配對碼<input autoCapitalize="characters" autoComplete="off" autoCorrect="off" maxLength={24} onChange={(event) => setCode(event.target.value)} placeholder="XXXX XXXX XXXX XXXX" required spellCheck={false} value={code} /></label><button disabled={pending} type="submit">{pending ? "配對中…" : "授權這台機器"}</button></form>
       {message ? <p aria-live="polite" className="kiosk-error">{message}</p> : null}
     </div> : <div className="kiosk-display">
