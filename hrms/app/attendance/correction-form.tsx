@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { actionEventType, punchActionLabels, punchActionSchema } from "@/lib/punch-flow";
 import { requestPunchCorrection } from "./actions";
 
-export function CorrectionForm({ enabled }: { enabled: boolean }) {
+export function CorrectionForm({ enabled, compact = false }: { enabled: boolean; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
@@ -44,7 +44,7 @@ export function CorrectionForm({ enabled }: { enabled: boolean }) {
   return (
     <>
       <button className="attendance-correction-trigger" disabled={!enabled} onClick={() => setOpen(true)} type="button">
-        <Plus size={18} /> 申請補打卡
+        <Plus size={18} /> {compact ? "補打卡" : "申請補打卡"}
       </button>
       {open ? createPortal(
         <div className="correction-drawer-backdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) setOpen(false); }}>

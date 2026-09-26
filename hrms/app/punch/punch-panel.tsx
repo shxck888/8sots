@@ -1,7 +1,7 @@
 "use client";
 
-import { Camera, Clock3, LoaderCircle, QrCode, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { Camera, ChevronDown, Clock3, List, LoaderCircle, QrCode, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { parseQrPunchValue, type PunchActionState } from "@/lib/punch-contract";
 import { getPunchFlow, punchActionLabels, type PunchAction, type FlowRecord } from "@/lib/punch-flow";
@@ -16,8 +16,8 @@ function geolocationMessage(error: GeolocationPositionError): string {
   return "目前無法取得定位，請移至訊號較好的位置再試。";
 }
 
-export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLunchBreak }: {
-  enabled: boolean; records: FlowRecord[]; initialTimestamp: string; workDate: string; hasLunchBreak: boolean;
+export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLunchBreak, children }: {
+  enabled: boolean; records: FlowRecord[]; initialTimestamp: string; workDate: string; hasLunchBreak: boolean; children?: ReactNode;
 }) {
   const router = useRouter();
   const [consent, setConsent] = useState(false);
@@ -157,37 +157,60 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
     );
   }
 
+  const nextHints: Record<PunchAction, string> = {
+    clock_in: "開始今天的工作，請選擇打卡方式",
+    meal_morning: "休息 30 分鐘，結束後自動接續工作",
+    lunch_start: "開始午休，返回時請打午休結束卡",
+    lunch_end: "結束午休後，記得開始下午吃飯休息",
+    meal_afternoon: "預定 16:30–17:00・休息 30 分鐘",
+    meal_end: "提前結束會依實際休息時間計算",
+    clock_out: "離開前完成下班打卡",
+  };
+  const mealEndLabel = flow.mealEndsAt ? new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(flow.mealEndsAt) : "";
+
   return (
-    <div className="punch-panel">
-      <div className="punch-flow-status" aria-live="polite">
-        <strong>{flow.status}</strong>
+    <>
+    <section className="punch-panel home-punch-card" aria-label="打卡操作">
+      <div className="punch-flow-status">
+        <span className="home-flow-state"><i />{flow.status}</span>
         {flow.remainingSeconds > 0 ? <>
-          <div className="meal-countdown" aria-label="吃飯剩餘時間">{String(Math.floor(flow.remainingSeconds / 60)).padStart(2, "0")}:{String(flow.remainingSeconds % 60).padStart(2, "0")}</div>
-          <small>{flow.remainingSeconds <= 180 ? "剩不到 3 分鐘，請準備返回工作" : "滿 30 分鐘自動結束，不需再打卡"}</small>
-        </> : <small>下午預定 16:30–17:00 吃飯 · 21:00 下班</small>}
+          <div className="meal-countdown" role="timer" aria-label="吃飯剩餘時間" aria-live="off">{String(Math.floor(flow.remainingSeconds / 60)).padStart(2, "0")}:{String(flow.remainingSeconds % 60).padStart(2, "0")}</div>
+          <strong>{flow.remainingSeconds <= 180 ? "剩不到 3 分鐘，準備返回工作" : "好好休息，稍後再回到工作"}</strong>
+          <small>{mealEndLabel} 自動結束，不需再次打卡</small>
+        </> : <>
+          <h2>{flow.suggested ? `下一步：${punchActionLabels[flow.suggested]}` : "今天辛苦了"}</h2>
+          <small>{flow.suggested ? nextHints[flow.suggested] : "今日打卡已完成，可在下方查看紀錄"}</small>
+        </>}
       </div>
       {dayChanged ? <p className="punch-flow-warning">已跨日，請重新整理取得今天的班表與打卡紀錄。</p> : null}
       {flow.missing.length ? <p className="punch-flow-warning">待確認：{flow.missing.map(action => punchActionLabels[action]).join("、")}。可繼續打卡，再申請補正；未記錄的吃飯不會自動扣工時。</p> : null}
-      <button className="clock-button" disabled={!enabled || isPending || !flow.suggested || flow.remainingSeconds > 0 || dayChanged} onClick={() => {
+      {flow.remainingSeconds === 0 && flow.suggested ? <button className="clock-button" disabled={!enabled || isPending || dayChanged} onClick={() => {
         if (flow.suggested) { setSelectedAction(flow.suggested); setMethodOpen(true); }
       }} type="button">
         {isPending ? <LoaderCircle className="spin" size={22} /> : <Clock3 size={22} />}
-        {isPending ? "正在打卡…" : flow.remainingSeconds > 0 ? "吃飯休息中" : flow.suggested ? punchActionLabels[flow.suggested] : "今日已下班"}
-      </button>
+        {isPending ? "正在打卡…" : punchActionLabels[flow.suggested]}
+      </button> : null}
       <div className="punch-flow-tools">
-        <button disabled={!enabled || isPending || dayChanged} onClick={() => setOtherOpen(!otherOpen)} aria-expanded={otherOpen} type="button">其他打卡</button>
-        <CorrectionForm enabled={enabled} />
+        <button disabled={!enabled || isPending || dayChanged} onClick={() => setOtherOpen(!otherOpen)} aria-expanded={otherOpen} aria-controls="home-punch-options" type="button"><List size={18} />其他打卡</button>
+        <CorrectionForm enabled={enabled} compact />
       </div>
-      {otherOpen ? <div className="punch-action-options">{(Object.keys(punchActionLabels) as PunchAction[])
+      {otherOpen ? <div id="home-punch-options" className="punch-action-options">{(Object.keys(punchActionLabels) as PunchAction[])
         .filter(action => (hasLunchBreak || !["lunch_start", "lunch_end"].includes(action)) && (action !== "meal_end" || flow.remainingSeconds > 0))
         .map(action => <button disabled={isPending || (action !== "meal_end" && flow.done.has(action))} key={action} onClick={() => { setSelectedAction(action); setMethodOpen(true); }} type="button">{punchActionLabels[action]}{flow.done.has(action) && action !== "meal_end" ? " ✓" : ""}</button>)}</div> : null}
       <PushReminderSettings />
-      <p aria-live="polite" className="punch-message">{message || "正式時間以伺服器收到打卡的時間為準。"}</p>
-      {flow.events.length ? <details className="punch-today-events"><summary>今日紀錄 · {flow.events.length} 筆</summary><ol>{flow.events.map(event => <li key={event.id}>
+      {flow.remainingSeconds > 0 ? <button className="home-early-end" disabled={!enabled || isPending || dayChanged} onClick={() => { setSelectedAction("meal_end"); setMethodOpen(true); }} type="button">提前結束休息</button> : null}
+      {message ? <p aria-live="polite" className="punch-message">{message}</p> : null}
+    </section>
+    {children}
+    <details className="punch-today-events home-events-card"><summary><span><Clock3 size={18} />今日打卡紀錄 <small>{flow.events.length} 筆</small></span><ChevronDown size={18} /></summary>
+      {flow.events.length ? <ol>{flow.events.map(event => <li key={event.id}>
         <time>{new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit" }).format(new Date(event.occurred_at))}</time>
         <span>{punchActionLabels[event.action]}</span>
-        {["meal_morning", "meal_afternoon"].includes(event.action) && now >= Date.parse(event.occurred_at) + 30 * 60_000 ? <small>計時已結束</small> : null}
-      </li>)}</ol></details> : null}
+      </li>)}</ol> : <p className="home-schedule-note">今天還沒有打卡紀錄</p>}
+      <p className="home-schedule-note">正式時間以伺服器收到打卡的時間為準。</p>
+    </details>
       {methodOpen ? createPortal(<div className="qr-scanner-backdrop">
         <div className="qr-scanner-card" role="dialog" aria-modal="true" aria-labelledby="punch-method-title">
           <div className="qr-scanner-heading"><strong id="punch-method-title">{punchActionLabels[selectedAction]}</strong><button aria-label="關閉打卡選擇" disabled={isPending} onClick={() => setMethodOpen(false)} type="button"><X size={22} /></button></div>
@@ -214,6 +237,6 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
           </div>
         </div>
       </div>, document.body) : null}
-    </div>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 export function PushReminderSettings() {
   const [status, setStatus] = useState("checking");
@@ -54,7 +55,7 @@ export function PushReminderSettings() {
     } catch { setMessage("提醒設定未完成，請確認網路與通知權限後重試。"); }
     finally { setBusy(false); }
   }
-  return <div className="push-reminder-settings">
+  return <div className="push-reminder-settings"><Bell size={15} aria-hidden="true" />
     {status === "unsupported" ? <span>iPhone 請先加入主畫面，再開啟通知提醒。</span>
       : status === "unconfigured" ? <span>推播提醒尚未啟用；首頁仍顯示倒數。</span>
       : status === "denied" ? <span>通知權限已關閉，請至裝置設定允許通知。</span>
