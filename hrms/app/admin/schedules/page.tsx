@@ -70,7 +70,6 @@ export default async function SchedulesPage({ searchParams }: {
   const weekStart = getWeekStart(params.week);
   const weekDates = buildWeekDates(weekStart);
   const weekEnd = weekDates[6];
-  const displayDates = [weekDates[6], ...weekDates.slice(0, 6)];
   const supabase = await createSupabaseServerClient();
 
   const [employeesResult, shiftsResult, segmentsResult, versionsResult, holidaysResult] = await Promise.all([
@@ -181,11 +180,11 @@ export default async function SchedulesPage({ searchParams }: {
           </div>
           <div className="schedule-grid-wrap">
             <table className="schedule-grid schedule-grid-readonly">
-              <thead><tr><th>員工</th>{displayDates.map((date) => <th key={date}>{dateLabel(date)}</th>)}</tr></thead>
+              <thead><tr><th>員工</th>{weekDates.map((date) => <th key={date}>{dateLabel(date)}</th>)}</tr></thead>
               <tbody>{employees.map((employee) => (
                 <tr key={employee.id}>
                   <th><strong>{employee.full_name}</strong><small>{employee.employee_no}</small></th>
-                  {displayDates.map((date) => {
+                  {weekDates.map((date) => {
                     const selection = assignmentMap.get(`${employee.id}:${date}`);
                     return (
                       <td key={date}>
@@ -211,11 +210,11 @@ export default async function SchedulesPage({ searchParams }: {
             </div>
             <div className="schedule-grid-wrap">
               <table className="schedule-grid">
-                <thead><tr><th>員工</th>{displayDates.map((date) => <th key={date}>{dateLabel(date)}</th>)}</tr></thead>
+                <thead><tr><th>員工</th>{weekDates.map((date) => <th key={date}>{dateLabel(date)}</th>)}</tr></thead>
                 <tbody>{employees.map((employee) => (
                   <tr key={employee.id}>
                     <th><strong>{employee.full_name}</strong><small>{employee.employee_no}</small></th>
-                    {displayDates.map((date) => {
+                    {weekDates.map((date) => {
                       const shiftCode = defaultShiftCodeForDate(date, holidayKindByDate.get(date));
                       const defaultShift = shiftCode ? defaultShifts.get(shiftCode) : null;
                       const monday = isMonday(date);
