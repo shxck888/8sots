@@ -14,86 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      meal_push_jobs: {
-        Row: {
-          id: string
-          tenant_id: string
-          employee_id: string
-          punch_id: string
-          kind: string
-          due_at: string
-          expires_at: string
-          lease_until: string | null
-          lease_id: string | null
-          delivered_subscription_ids: string[]
-          attempts: number
-          completed_at: string | null
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          employee_id: string
-          punch_id: string
-          kind: string
-          due_at: string
-          expires_at: string
-          lease_until?: string | null
-          lease_id?: string | null
-          delivered_subscription_ids?: string[]
-          attempts?: number
-          completed_at?: string | null
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          employee_id?: string
-          punch_id?: string
-          kind?: string
-          due_at?: string
-          expires_at?: string
-          lease_until?: string | null
-          lease_id?: string | null
-          delivered_subscription_ids?: string[]
-          attempts?: number
-          completed_at?: string | null
-        }
-        Relationships: []
-      }
-
-      employee_push_subscriptions: {
-        Row: {
-          id: string
-          tenant_id: string
-          employee_id: string
-          user_id: string
-          endpoint: string
-          p256dh: string
-          auth_key: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          employee_id: string
-          user_id: string
-          endpoint: string
-          p256dh: string
-          auth_key: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          employee_id?: string
-          user_id?: string
-          endpoint?: string
-          p256dh?: string
-          auth_key?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-
       annual_leave_adjustments: {
         Row: {
           adjustment_minutes: number
@@ -152,6 +72,13 @@ export type Database = {
             columns: ["tenant_id", "grant_id"]
             isOneToOne: false
             referencedRelation: "annual_leave_grants"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_adjustments_tenant_id_grant_id_fkey"
+            columns: ["tenant_id", "grant_id"]
+            isOneToOne: false
+            referencedRelation: "valid_annual_leave_grants"
             referencedColumns: ["tenant_id", "id"]
           },
         ]
@@ -332,6 +259,13 @@ export type Database = {
             referencedColumns: ["tenant_id", "id"]
           },
           {
+            foreignKeyName: "annual_leave_usages_tenant_id_grant_id_fkey"
+            columns: ["tenant_id", "grant_id"]
+            isOneToOne: false
+            referencedRelation: "valid_annual_leave_grants"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
             foreignKeyName: "annual_leave_usages_tenant_id_work_request_id_fkey"
             columns: ["tenant_id", "work_request_id"]
             isOneToOne: false
@@ -387,7 +321,6 @@ export type Database = {
       }
       attendance_days: {
         Row: {
-          payroll_regular_minutes: number
           actual_minutes: number
           approved_leave_minutes: number
           approved_overtime_minutes: number
@@ -396,6 +329,7 @@ export type Database = {
           employee_id: string
           exception_count: number
           id: string
+          payroll_regular_minutes: number
           rule_set_id: string
           schedule_assignment_id: string | null
           scheduled_minutes: number
@@ -404,7 +338,6 @@ export type Database = {
           work_date: string
         }
         Insert: {
-          payroll_regular_minutes?: number
           actual_minutes?: number
           approved_leave_minutes?: number
           approved_overtime_minutes?: number
@@ -413,6 +346,7 @@ export type Database = {
           employee_id: string
           exception_count?: number
           id?: string
+          payroll_regular_minutes?: number
           rule_set_id: string
           schedule_assignment_id?: string | null
           scheduled_minutes?: number
@@ -421,7 +355,6 @@ export type Database = {
           work_date: string
         }
         Update: {
-          payroll_regular_minutes?: number
           actual_minutes?: number
           approved_leave_minutes?: number
           approved_overtime_minutes?: number
@@ -430,6 +363,7 @@ export type Database = {
           employee_id?: string
           exception_count?: number
           id?: string
+          payroll_regular_minutes?: number
           rule_set_id?: string
           schedule_assignment_id?: string | null
           scheduled_minutes?: number
@@ -645,7 +579,28 @@ export type Database = {
             foreignKeyName: "attendance_segments_tenant_id_clock_in_correction_id_fkey"
             columns: ["tenant_id", "clock_in_correction_id"]
             isOneToOne: false
+            referencedRelation: "attendance_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_in_correction_id_fkey"
+            columns: ["tenant_id", "clock_in_correction_id"]
+            isOneToOne: false
             referencedRelation: "punch_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_in_punch_id_fkey"
+            columns: ["tenant_id", "clock_in_punch_id"]
+            isOneToOne: false
+            referencedRelation: "active_punch_records"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_in_punch_id_fkey"
+            columns: ["tenant_id", "clock_in_punch_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_punch_records"
             referencedColumns: ["tenant_id", "id"]
           },
           {
@@ -659,7 +614,28 @@ export type Database = {
             foreignKeyName: "attendance_segments_tenant_id_clock_out_correction_id_fkey"
             columns: ["tenant_id", "clock_out_correction_id"]
             isOneToOne: false
+            referencedRelation: "attendance_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_out_correction_id_fkey"
+            columns: ["tenant_id", "clock_out_correction_id"]
+            isOneToOne: false
             referencedRelation: "punch_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_out_punch_id_fkey"
+            columns: ["tenant_id", "clock_out_punch_id"]
+            isOneToOne: false
+            referencedRelation: "active_punch_records"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "attendance_segments_tenant_id_clock_out_punch_id_fkey"
+            columns: ["tenant_id", "clock_out_punch_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_punch_records"
             referencedColumns: ["tenant_id", "id"]
           },
           {
@@ -1029,6 +1005,61 @@ export type Database = {
           },
           {
             foreignKeyName: "employee_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          employee_id: string
+          endpoint: string
+          id: string
+          p256dh: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          employee_id: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          employee_id?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_push_subscriptions_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_push_subscriptions_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "employee_push_subscriptions_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1526,6 +1557,94 @@ export type Database = {
           },
           {
             foreignKeyName: "locations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_push_jobs: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          delivered_subscription_ids: string[]
+          due_at: string
+          employee_id: string
+          expires_at: string
+          id: string
+          kind: string
+          lease_id: string | null
+          lease_until: string | null
+          punch_id: string
+          tenant_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          delivered_subscription_ids?: string[]
+          due_at: string
+          employee_id: string
+          expires_at: string
+          id?: string
+          kind: string
+          lease_id?: string | null
+          lease_until?: string | null
+          punch_id: string
+          tenant_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          delivered_subscription_ids?: string[]
+          due_at?: string
+          employee_id?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          lease_id?: string | null
+          lease_until?: string | null
+          punch_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_push_jobs_punch_id_fkey"
+            columns: ["punch_id"]
+            isOneToOne: false
+            referencedRelation: "active_punch_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_push_jobs_punch_id_fkey"
+            columns: ["punch_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_punch_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_push_jobs_punch_id_fkey"
+            columns: ["punch_id"]
+            isOneToOne: false
+            referencedRelation: "punch_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_push_jobs_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "meal_push_jobs_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "meal_push_jobs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2126,6 +2245,13 @@ export type Database = {
             foreignKeyName: "punch_correction_decisions_tenant_id_correction_request_id_fkey"
             columns: ["tenant_id", "correction_request_id"]
             isOneToOne: false
+            referencedRelation: "attendance_correction_requests"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_correction_decisions_tenant_id_correction_request_id_fkey"
+            columns: ["tenant_id", "correction_request_id"]
+            isOneToOne: false
             referencedRelation: "punch_correction_requests"
             referencedColumns: ["tenant_id", "id"]
           },
@@ -2140,12 +2266,12 @@ export type Database = {
       }
       punch_correction_requests: {
         Row: {
-          punch_action: string | null
           employee_id: string
           id: string
           idempotency_key: string
           proposed_event_type: Database["public"]["Enums"]["punch_event_type"]
           proposed_occurred_at: string
+          punch_action: string | null
           reason: string
           requested_at: string
           requested_by: string
@@ -2154,12 +2280,12 @@ export type Database = {
           work_date: string
         }
         Insert: {
-          punch_action?: string | null
           employee_id: string
           id?: string
           idempotency_key: string
           proposed_event_type: Database["public"]["Enums"]["punch_event_type"]
           proposed_occurred_at: string
+          punch_action?: string | null
           reason: string
           requested_at?: string
           requested_by: string
@@ -2168,12 +2294,12 @@ export type Database = {
           work_date: string
         }
         Update: {
-          punch_action?: string | null
           employee_id?: string
           id?: string
           idempotency_key?: string
           proposed_event_type?: Database["public"]["Enums"]["punch_event_type"]
           proposed_occurred_at?: string
+          punch_action?: string | null
           reason?: string
           requested_at?: string
           requested_by?: string
@@ -2269,7 +2395,6 @@ export type Database = {
       }
       punch_records: {
         Row: {
-          punch_action: string | null
           accuracy_m: number | null
           client_occurred_at: string
           created_at: string
@@ -2285,6 +2410,7 @@ export type Database = {
           location_verification: Database["public"]["Enums"]["punch_location_verification"]
           longitude: number | null
           occurred_at: string
+          punch_action: string | null
           qr_device_id: string | null
           qr_token_hash: string | null
           source: Database["public"]["Enums"]["punch_source"]
@@ -2297,7 +2423,6 @@ export type Database = {
           workplace_setting_version_id: string | null
         }
         Insert: {
-          punch_action?: string | null
           accuracy_m?: number | null
           client_occurred_at: string
           created_at?: string
@@ -2313,6 +2438,7 @@ export type Database = {
           location_verification?: Database["public"]["Enums"]["punch_location_verification"]
           longitude?: number | null
           occurred_at?: string
+          punch_action?: string | null
           qr_device_id?: string | null
           qr_token_hash?: string | null
           source: Database["public"]["Enums"]["punch_source"]
@@ -2325,7 +2451,6 @@ export type Database = {
           workplace_setting_version_id?: string | null
         }
         Update: {
-          punch_action?: string | null
           accuracy_m?: number | null
           client_occurred_at?: string
           created_at?: string
@@ -2341,6 +2466,7 @@ export type Database = {
           location_verification?: Database["public"]["Enums"]["punch_location_verification"]
           longitude?: number | null
           occurred_at?: string
+          punch_action?: string | null
           qr_device_id?: string | null
           qr_token_hash?: string | null
           source?: Database["public"]["Enums"]["punch_source"]
@@ -2353,6 +2479,13 @@ export type Database = {
           workplace_setting_version_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "punch_records_qr_device_fk"
+            columns: ["tenant_id", "qr_device_id"]
+            isOneToOne: false
+            referencedRelation: "punch_qr_devices"
+            referencedColumns: ["tenant_id", "id"]
+          },
           {
             foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
             columns: ["tenant_id", "employee_id"]
@@ -3023,9 +3156,350 @@ export type Database = {
       }
     }
     Views: {
-      valid_annual_leave_grants: {
-        Row: Database["public"]["Tables"]["annual_leave_grants"]["Row"]
-        Relationships: []
+      active_punch_records: {
+        Row: {
+          accuracy_m: number | null
+          client_occurred_at: string | null
+          created_at: string | null
+          created_by: string | null
+          employee_id: string | null
+          event_type: Database["public"]["Enums"]["punch_event_type"] | null
+          id: string | null
+          idempotency_key: string | null
+          latitude: number | null
+          location_consent_at: string | null
+          location_distance_m: number | null
+          location_id: string | null
+          location_verification:
+            | Database["public"]["Enums"]["punch_location_verification"]
+            | null
+          longitude: number | null
+          occurred_at: string | null
+          punch_action: string | null
+          qr_device_id: string | null
+          qr_token_hash: string | null
+          source: Database["public"]["Enums"]["punch_source"] | null
+          tenant_id: string | null
+          timezone: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+          work_date: string | null
+          workplace_setting_version_id: string | null
+        }
+        Insert: {
+          accuracy_m?: number | null
+          client_occurred_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          employee_id?: string | null
+          event_type?: Database["public"]["Enums"]["punch_event_type"] | null
+          id?: string | null
+          idempotency_key?: string | null
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_distance_m?: number | null
+          location_id?: string | null
+          location_verification?:
+            | Database["public"]["Enums"]["punch_location_verification"]
+            | null
+          longitude?: number | null
+          occurred_at?: string | null
+          punch_action?: string | null
+          qr_device_id?: string | null
+          qr_token_hash?: string | null
+          source?: Database["public"]["Enums"]["punch_source"] | null
+          tenant_id?: string | null
+          timezone?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          work_date?: string | null
+          workplace_setting_version_id?: string | null
+        }
+        Update: {
+          accuracy_m?: number | null
+          client_occurred_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          employee_id?: string | null
+          event_type?: Database["public"]["Enums"]["punch_event_type"] | null
+          id?: string | null
+          idempotency_key?: string | null
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_distance_m?: number | null
+          location_id?: string | null
+          location_verification?:
+            | Database["public"]["Enums"]["punch_location_verification"]
+            | null
+          longitude?: number | null
+          occurred_at?: string | null
+          punch_action?: string | null
+          qr_device_id?: string | null
+          qr_token_hash?: string | null
+          source?: Database["public"]["Enums"]["punch_source"] | null
+          tenant_id?: string | null
+          timezone?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          work_date?: string | null
+          workplace_setting_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_records_qr_device_fk"
+            columns: ["tenant_id", "qr_device_id"]
+            isOneToOne: false
+            referencedRelation: "punch_qr_devices"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_location_id_fkey"
+            columns: ["tenant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_workplace_version_fk"
+            columns: ["tenant_id", "workplace_setting_version_id"]
+            isOneToOne: false
+            referencedRelation: "workplace_setting_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
+      attendance_correction_requests: {
+        Row: {
+          employee_id: string | null
+          id: string | null
+          idempotency_key: string | null
+          proposed_event_type:
+            | Database["public"]["Enums"]["punch_event_type"]
+            | null
+          proposed_occurred_at: string | null
+          punch_action: string | null
+          reason: string | null
+          requested_at: string | null
+          requested_by: string | null
+          tenant_id: string | null
+          timezone: string | null
+          work_date: string | null
+        }
+        Insert: {
+          employee_id?: string | null
+          id?: string | null
+          idempotency_key?: string | null
+          proposed_event_type?:
+            | Database["public"]["Enums"]["punch_event_type"]
+            | null
+          proposed_occurred_at?: string | null
+          punch_action?: string | null
+          reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
+          tenant_id?: string | null
+          timezone?: string | null
+          work_date?: string | null
+        }
+        Update: {
+          employee_id?: string | null
+          id?: string | null
+          idempotency_key?: string | null
+          proposed_event_type?:
+            | Database["public"]["Enums"]["punch_event_type"]
+            | null
+          proposed_occurred_at?: string | null
+          punch_action?: string | null
+          reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
+          tenant_id?: string | null
+          timezone?: string | null
+          work_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_correction_requests_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_correction_requests_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_correction_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_punch_records: {
+        Row: {
+          accuracy_m: number | null
+          client_occurred_at: string | null
+          created_at: string | null
+          created_by: string | null
+          employee_id: string | null
+          event_type: Database["public"]["Enums"]["punch_event_type"] | null
+          id: string | null
+          idempotency_key: string | null
+          latitude: number | null
+          location_consent_at: string | null
+          location_distance_m: number | null
+          location_id: string | null
+          location_verification:
+            | Database["public"]["Enums"]["punch_location_verification"]
+            | null
+          longitude: number | null
+          occurred_at: string | null
+          punch_action: string | null
+          qr_device_id: string | null
+          qr_token_hash: string | null
+          source: Database["public"]["Enums"]["punch_source"] | null
+          tenant_id: string | null
+          timezone: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+          work_date: string | null
+          workplace_setting_version_id: string | null
+        }
+        Insert: {
+          accuracy_m?: number | null
+          client_occurred_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          employee_id?: string | null
+          event_type?: Database["public"]["Enums"]["punch_event_type"] | null
+          id?: string | null
+          idempotency_key?: string | null
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_distance_m?: number | null
+          location_id?: string | null
+          location_verification?:
+            | Database["public"]["Enums"]["punch_location_verification"]
+            | null
+          longitude?: number | null
+          occurred_at?: string | null
+          punch_action?: string | null
+          qr_device_id?: string | null
+          qr_token_hash?: string | null
+          source?: Database["public"]["Enums"]["punch_source"] | null
+          tenant_id?: string | null
+          timezone?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          work_date?: string | null
+          workplace_setting_version_id?: string | null
+        }
+        Update: {
+          accuracy_m?: number | null
+          client_occurred_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          employee_id?: string | null
+          event_type?: Database["public"]["Enums"]["punch_event_type"] | null
+          id?: string | null
+          idempotency_key?: string | null
+          latitude?: number | null
+          location_consent_at?: string | null
+          location_distance_m?: number | null
+          location_id?: string | null
+          location_verification?:
+            | Database["public"]["Enums"]["punch_location_verification"]
+            | null
+          longitude?: number | null
+          occurred_at?: string | null
+          punch_action?: string | null
+          qr_device_id?: string | null
+          qr_token_hash?: string | null
+          source?: Database["public"]["Enums"]["punch_source"] | null
+          tenant_id?: string | null
+          timezone?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          work_date?: string | null
+          workplace_setting_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_records_qr_device_fk"
+            columns: ["tenant_id", "qr_device_id"]
+            isOneToOne: false
+            referencedRelation: "punch_qr_devices"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_records_tenant_id_location_id_fkey"
+            columns: ["tenant_id", "location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "punch_workplace_version_fk"
+            columns: ["tenant_id", "workplace_setting_version_id"]
+            isOneToOne: false
+            referencedRelation: "workplace_setting_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
       }
       employee_master_current: {
         Row: {
@@ -3074,137 +3548,53 @@ export type Database = {
           },
         ]
       }
+      valid_annual_leave_grants: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          granted_days: number | null
+          granted_minutes: number | null
+          id: string | null
+          period_end_exclusive: string | null
+          period_start: string | null
+          policy_version_id: string | null
+          service_milestone_months: number | null
+          settlement_status: string | null
+          tenant_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_master_current"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_employee_id_fkey"
+            columns: ["tenant_id", "employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["tenant_id", "id"]
+          },
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_leave_grants_tenant_id_policy_version_id_fkey"
+            columns: ["tenant_id", "policy_version_id"]
+            isOneToOne: false
+            referencedRelation: "annual_leave_policy_versions"
+            referencedColumns: ["tenant_id", "id"]
+          },
+        ]
+      }
     }
     Functions: {
-      mark_meal_push_delivered: {
-        Args: { p_job_id: string; p_lease_id: string; p_subscription_id: string }
-        Returns: undefined
-      }
-      complete_meal_push_job: {
-        Args: {
-          p_job_id: string
-          p_lease_id: string
-        }
-        Returns: undefined
-      }
-
-      claim_meal_push_jobs: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-
-      remove_my_push_subscription: {
-        Args: {
-          p_endpoint: string
-        }
-        Returns: undefined
-      }
-
-      save_my_push_subscription: {
-        Args: {
-          p_tenant_id: string
-          p_endpoint: string
-          p_p256dh: string
-          p_auth_key: string
-        }
-        Returns: string
-      }
-
-      meal_break_intervals: {
-        Args: {
-          p_tenant_id: string
-          p_employee_id: string
-          p_work_date: string
-        }
-        Returns: { starts_at: string; ends_at: string }[]
-      }
-
-      validate_punch_action: {
-        Args: {
-          p_tenant_id: string
-          p_employee_id: string
-          p_work_date: string
-          p_action: string
-        }
-        Returns: Database["public"]["Enums"]["punch_event_type"]
-      }
-
-      request_punch_correction_action: {
-        Args: {
-          p_tenant_id: string
-          p_work_date: string
-          p_event_type: Database["public"]["Enums"]["punch_event_type"]
-          p_proposed_occurred_at: string
-          p_timezone: string
-          p_reason: string
-          p_idempotency_key: string
-          p_action: string
-        }
-        Returns: string
-      }
-
-      record_qr_punch_action: {
-        Args: {
-          p_tenant_id: string
-          p_device_id: string
-          p_token: string
-          p_idempotency_key: string
-          p_action: string
-        }
-        Returns: string
-      }
-
-      record_gps_punch_action: {
-        Args: {
-          p_tenant_id: string
-          p_idempotency_key: string
-          p_client_occurred_at: string
-          p_timezone: string
-          p_latitude: number
-          p_longitude: number
-          p_accuracy_m: number
-          p_location_consent: boolean
-          p_action: string
-        }
-        Returns: string
-      }
-
-      create_punch_qr_device: {
-        Args: { p_tenant_id: string; p_name: string }
-        Returns: { device_id: string; pairing_code: string; pairing_expires_at: string }[]
-      }
-      pair_punch_qr_device: {
-        Args: { p_pairing_code: string }
-        Returns: { device_id: string; credential: string; device_name: string; tenant_name: string }[]
-      }
-      issue_punch_qr_token: {
-        Args: { p_device_id: string; p_credential: string }
-        Returns: { qr_value: string; expires_at: string; device_name: string; tenant_name: string }[]
-      }
-      renew_punch_qr_pairing: {
-        Args: { p_tenant_id: string; p_device_id: string }
-        Returns: { pairing_code: string; pairing_expires_at: string }[]
-      }
-      revoke_punch_qr_device: {
-        Args: { p_tenant_id: string; p_device_id: string }
-        Returns: undefined
-      }
-      record_qr_punch: {
-        Args: { p_tenant_id: string; p_device_id: string; p_token: string; p_idempotency_key: string }
-        Returns: string
-      }
-      validate_punch_qr_token: {
-        Args: {
-          p_device_id: string
-          p_token: string
-          p_credential_hash: string | null
-          p_current_hash: string | null
-          p_current_expires_at: string | null
-          p_previous_hash: string | null
-          p_previous_expires_at: string | null
-        }
-        Returns: boolean
-      }
       add_annual_leave_adjustment: {
         Args: {
           p_adjustment_minutes: number
@@ -3302,6 +3692,11 @@ export type Database = {
         Args: { p_employee_id: string; p_tenant_id: string; p_username: string }
         Returns: undefined
       }
+      claim_meal_push_jobs: { Args: never; Returns: Json }
+      complete_meal_push_job: {
+        Args: { p_job_id: string; p_lease_id: string }
+        Returns: undefined
+      }
       create_attendance_rule_set: {
         Args: {
           p_early_leave_grace_minutes: number
@@ -3361,6 +3756,14 @@ export type Database = {
         }
         Returns: string
       }
+      create_punch_qr_device: {
+        Args: { p_name: string; p_tenant_id: string }
+        Returns: {
+          device_id: string
+          pairing_code: string
+          pairing_expires_at: string
+        }[]
+      }
       create_schedule_draft: {
         Args: {
           p_period_end: string
@@ -3386,10 +3789,6 @@ export type Database = {
         Returns: boolean
       }
       current_user_tenant_ids: { Args: never; Returns: string[] }
-      get_stale_voided_punch_dates: {
-        Args: { p_tenant_id: string }
-        Returns: { work_date: string }[]
-      }
       decide_punch_correction: {
         Args: {
           p_decision: Database["public"]["Enums"]["punch_correction_decision_type"]
@@ -3491,11 +3890,9 @@ export type Database = {
       }
       get_my_published_days_off: {
         Args: { p_date_from: string; p_date_to: string }
-        Returns: { work_date: string }[]
-      }
-      get_my_published_store_closed: {
-        Args: { p_date_from: string; p_date_to: string }
-        Returns: { work_date: string }[]
+        Returns: {
+          work_date: string
+        }[]
       }
       get_my_published_schedule: {
         Args: { p_date_from: string; p_date_to: string }
@@ -3510,7 +3907,29 @@ export type Database = {
           work_date: string
         }[]
       }
+      get_my_published_store_closed: {
+        Args: { p_date_from: string; p_date_to: string }
+        Returns: {
+          work_date: string
+        }[]
+      }
       get_my_punch_policy: { Args: never; Returns: Json }
+      get_stale_voided_punch_dates: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          work_date: string
+        }[]
+      }
+      invoke_meal_push_scheduler: { Args: never; Returns: undefined }
+      issue_punch_qr_token: {
+        Args: { p_credential: string; p_device_id: string }
+        Returns: {
+          device_name: string
+          expires_at: string
+          qr_value: string
+          tenant_name: string
+        }[]
+      }
       link_employee_auth_account: {
         Args: {
           p_auth_user_id: string
@@ -3524,9 +3943,28 @@ export type Database = {
         Args: { p_tenant_id: string }
         Returns: number
       }
+      mark_meal_push_delivered: {
+        Args: {
+          p_job_id: string
+          p_lease_id: string
+          p_subscription_id: string
+        }
+        Returns: undefined
+      }
       mark_notification_read: {
         Args: { p_notification_id: string }
         Returns: undefined
+      }
+      meal_break_intervals: {
+        Args: {
+          p_employee_id: string
+          p_tenant_id: string
+          p_work_date: string
+        }
+        Returns: {
+          ends_at: string
+          starts_at: string
+        }[]
       }
       notify_permission_holders: {
         Args: {
@@ -3541,6 +3979,15 @@ export type Database = {
           p_title: string
         }
         Returns: undefined
+      }
+      pair_punch_qr_device: {
+        Args: { p_pairing_code: string }
+        Returns: {
+          credential: string
+          device_id: string
+          device_name: string
+          tenant_name: string
+        }[]
       }
       payroll_premium_cents: {
         Args: {
@@ -3579,16 +4026,73 @@ export type Database = {
         }
         Returns: string
       }
+      record_gps_punch_action: {
+        Args: {
+          p_accuracy_m: number
+          p_action: string
+          p_client_occurred_at: string
+          p_idempotency_key: string
+          p_latitude: number
+          p_location_consent: boolean
+          p_longitude: number
+          p_tenant_id: string
+          p_timezone: string
+        }
+        Returns: string
+      }
+      record_qr_punch: {
+        Args: {
+          p_device_id: string
+          p_idempotency_key: string
+          p_tenant_id: string
+          p_token: string
+        }
+        Returns: string
+      }
+      record_qr_punch_action: {
+        Args: {
+          p_action: string
+          p_device_id: string
+          p_idempotency_key: string
+          p_tenant_id: string
+          p_token: string
+        }
+        Returns: string
+      }
       record_self_password_change: {
         Args: { p_tenant_id: string }
+        Returns: undefined
+      }
+      remove_my_push_subscription: {
+        Args: { p_endpoint: string }
         Returns: undefined
       }
       remove_payroll_adjustment: {
         Args: { p_item_id: string; p_tenant_id: string }
         Returns: undefined
       }
+      renew_punch_qr_pairing: {
+        Args: { p_device_id: string; p_tenant_id: string }
+        Returns: {
+          pairing_code: string
+          pairing_expires_at: string
+        }[]
+      }
       request_punch_correction: {
         Args: {
+          p_event_type: Database["public"]["Enums"]["punch_event_type"]
+          p_idempotency_key: string
+          p_proposed_occurred_at: string
+          p_reason: string
+          p_tenant_id: string
+          p_timezone: string
+          p_work_date: string
+        }
+        Returns: string
+      }
+      request_punch_correction_action: {
+        Args: {
+          p_action: string
           p_event_type: Database["public"]["Enums"]["punch_event_type"]
           p_idempotency_key: string
           p_proposed_occurred_at: string
@@ -3609,6 +4113,10 @@ export type Database = {
           p_review_note: string
           p_tenant_id: string
         }
+        Returns: undefined
+      }
+      revoke_punch_qr_device: {
+        Args: { p_device_id: string; p_tenant_id: string }
         Returns: undefined
       }
       save_annual_leave_policy: {
@@ -3653,6 +4161,15 @@ export type Database = {
           p_leave_type_id: string
           p_note: string
           p_paid_ratio_ppm: number
+          p_tenant_id: string
+        }
+        Returns: string
+      }
+      save_my_push_subscription: {
+        Args: {
+          p_auth_key: string
+          p_endpoint: string
+          p_p256dh: string
           p_tenant_id: string
         }
         Returns: string
@@ -3713,14 +4230,6 @@ export type Database = {
         }
         Returns: string
       }
-      set_employee_auth_account_status: {
-        Args: {
-          p_employee_id: string
-          p_status: Database["public"]["Enums"]["employee_auth_status"]
-          p_tenant_id: string
-        }
-        Returns: undefined
-      }
       set_employee_admin_permissions: {
         Args: {
           p_employee_id: string
@@ -3728,6 +4237,14 @@ export type Database = {
           p_tenant_id: string
         }
         Returns: Json
+      }
+      set_employee_auth_account_status: {
+        Args: {
+          p_employee_id: string
+          p_status: Database["public"]["Enums"]["employee_auth_status"]
+          p_tenant_id: string
+        }
+        Returns: undefined
       }
       set_employee_photo: {
         Args: {
@@ -3837,13 +4354,34 @@ export type Database = {
         }
         Returns: string
       }
-      withdraw_work_request: {
-        Args: { p_request_id: string; p_tenant_id: string }
-        Returns: string
+      validate_punch_action: {
+        Args: {
+          p_action: string
+          p_employee_id: string
+          p_tenant_id: string
+          p_work_date: string
+        }
+        Returns: Database["public"]["Enums"]["punch_event_type"]
+      }
+      validate_punch_qr_token: {
+        Args: {
+          p_credential_hash: string
+          p_current_expires_at: string
+          p_current_hash: string
+          p_device_id: string
+          p_previous_expires_at: string
+          p_previous_hash: string
+          p_token: string
+        }
+        Returns: boolean
       }
       void_punch_records: {
         Args: { p_punch_ids: string[]; p_reason: string; p_tenant_id: string }
         Returns: number
+      }
+      withdraw_work_request: {
+        Args: { p_request_id: string; p_tenant_id: string }
+        Returns: string
       }
     }
     Enums: {

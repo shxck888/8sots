@@ -16,7 +16,7 @@
 1. 先備份並套用 `202609260002`、`202609260003`、`202609260004` 三個 migration，再部署前端。
 2. 設定伺服器環境變數：`VAPID_PUBLIC_KEY`、`VAPID_PRIVATE_KEY`、`VAPID_SUBJECT`、`CRON_SECRET`。私鑰與 cron secret 不可加入 Git。
 3. 首次用 `web-push.generateVAPIDKeys()` 產生固定金鑰；此工作區已於忽略的 `.env.local` 準備一組。日後保留同一組金鑰，避免既有訂閱失效。
-4. `vercel.json` 設定每分鐘執行 `/api/cron/meal-reminders`。Vercel 每分鐘 cron 需要 Pro 或 Enterprise；Hobby 不能直接部署此 cron 設定。若目前是 Hobby，需改用能每分鐘呼叫該端點的外部排程，攜帶 `Authorization: Bearer <CRON_SECRET>`，再移除 Vercel cron 設定。不可未經同意升級付費方案。
+4. 正式環境使用 Supabase `pg_cron`＋`pg_net`，每分鐘檢查提醒佇列；僅有到期且尚未完成的提醒時才呼叫 Vercel 推播端點。將與 Vercel 相同的 `CRON_SECRET` 存入 Vault 的 `hrms_meal_cron_secret`，再執行 `supabase/operations/meal_push_scheduler.sql`。排程函式禁止一般使用者及 service role 呼叫，不會把金鑰寫入 cron 指令。Vercel 使用原 Hobby 方案，不需升級。
 5. iPhone 員工須加入主畫面，再從首頁「開啟吃飯推播提醒」允許通知。Android／桌面依瀏覽器支援開啟通知。
 6. 正式驗收需在實機執行一次吃飯休息，切到背景或鎖屏，確認提醒；程式與模擬測試無法保證各手機通知實際送達。
 
