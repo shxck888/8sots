@@ -158,7 +158,7 @@ export default async function SchedulesPage({ searchParams }: {
       ) : !draft && !published ? (
         <section className="admin-panel schedule-empty">
           <CalendarDays size={34} /><strong>本週尚未建立排班</strong>
-          <p>週一預設店休，其他日期套用平日班或假日班；可逐日調整。</p>
+          <p>週一預設例假（店休），其他日期套用平日班或假日班；可逐日調整。</p>
           <form action={createScheduleDraft}>
             <input name="periodStart" type="hidden" value={weekStart} />
             <input name="periodEnd" type="hidden" value={weekEnd} />
@@ -189,7 +189,7 @@ export default async function SchedulesPage({ searchParams }: {
                     return (
                       <td key={date}>
                         <div className={selection === STORE_CLOSED_VALUE ? "schedule-readonly-closed" : selection === DAY_OFF_VALUE ? "schedule-readonly-off" : selection ? "schedule-readonly-shift" : "schedule-readonly-empty"}>
-                          {selection === STORE_CLOSED_VALUE ? "店休" : selection === DAY_OFF_VALUE ? "休假" : selection ? shiftLabels.get(selection) ?? "班別資料不存在" : "未排班"}
+                          {selection === STORE_CLOSED_VALUE ? "例假（店休）" : selection === DAY_OFF_VALUE ? "休息日（休假）" : selection ? shiftLabels.get(selection) ?? "班別資料不存在" : "未排班"}
                         </div>
                       </td>
                     );
@@ -205,7 +205,7 @@ export default async function SchedulesPage({ searchParams }: {
             <input name="scheduleVersionId" type="hidden" value={draft!.id} />
             <input name="weekStart" type="hidden" value={weekStart} />
             <div className="schedule-toolbar">
-              <div><strong>草稿 V{draft!.version}</strong><span>週一預設店休；如有開店，可改為平日班。未排班與休假仍可個別選擇。</span></div>
+              <div><strong>草稿 V{draft!.version}</strong><span>週一預設例假（店休）；如有開店，可改為平日班。未排班與休息日（休假）可個別選擇。</span></div>
               <button className="admin-button primary" type="submit"><Save size={16} /> 儲存草稿</button>
             </div>
             <div className="schedule-grid-wrap">
@@ -218,6 +218,7 @@ export default async function SchedulesPage({ searchParams }: {
                       const shiftCode = defaultShiftCodeForDate(date, holidayKindByDate.get(date));
                       const defaultShift = shiftCode ? defaultShifts.get(shiftCode) : null;
                       const monday = isMonday(date);
+                      const weekday = new Date(`${date}T00:00:00.000Z`).getUTCDay();
                       const mondayOpenShift = monday && holidayKindByDate.get(date) !== "company" ? defaultShifts.get(WEEKDAY_SHIFT_CODE) : null;
                       const mondayHolidayShift = monday && holidayKindByDate.get(date) === "national" ? defaultShifts.get(HOLIDAY_SHIFT_CODE) : null;
                       return (
@@ -227,12 +228,13 @@ export default async function SchedulesPage({ searchParams }: {
                             defaultValue={assignmentMap.get(`${employee.id}:${date}`) ?? ""}
                             name={assignmentFieldName(employee.id, date)}
                           >
-                            {monday ? <option value={STORE_CLOSED_VALUE}>店休</option> : null}
+                            {monday ? <option value={STORE_CLOSED_VALUE}>例假（店休）</option> : null}
                             {defaultShift ? <option value={defaultShift.id}>{shiftLabels.get(defaultShift.id)}</option> : null}
                             {mondayOpenShift ? <option value={mondayOpenShift.id}>{shiftLabels.get(mondayOpenShift.id)}</option> : null}
                             {mondayHolidayShift ? <option value={mondayHolidayShift.id}>{shiftLabels.get(mondayHolidayShift.id)}</option> : null}
-                            <option value={DAY_OFF_VALUE}>休假</option>
+                            <option value={DAY_OFF_VALUE}>休息日（休假）</option>
                             <option value="">未排班</option>
+                            {weekday >= 2 && weekday <= 5 ? <option value={STORE_CLOSED_VALUE}>例假（店休）</option> : null}
                           </select>
                         </td>
                       );
@@ -244,7 +246,7 @@ export default async function SchedulesPage({ searchParams }: {
           </form>
           <ScheduleWarnings warnings={scheduleWarnings} />
           <div className="schedule-publish-bar">
-            <div><strong>發布本週班表</strong><span>{assignmentMap.size === 0 ? "至少指定一個班次、休假或店休並儲存後才能發布。" : "請先儲存草稿。發布後本版本不可直接修改。"}</span></div>
+            <div><strong>發布本週班表</strong><span>{assignmentMap.size === 0 ? "至少指定一個班次、休息日（休假）或例假（店休）並儲存後才能發布。" : "請先儲存草稿。發布後本版本不可直接修改。"}</span></div>
             <form action={publishSchedule}>
               <input name="scheduleVersionId" type="hidden" value={draft!.id} />
               <input name="weekStart" type="hidden" value={weekStart} />

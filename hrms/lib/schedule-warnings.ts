@@ -66,7 +66,7 @@ export function computeScheduleWarnings(input: ScheduleWarningInput): ScheduleWa
     warnings.push({
       level: "warn",
       code: "employee_no_shift",
-      message: `整週未排任何班的員工：${names}。請確認休假日已明確選擇「休假」，其餘未排班日仍待安排。`,
+      message: `整週未排任何班的員工：${names}。請確認休假日已明確選擇「休息日（休假）」，其餘未排班日仍待安排。`,
     });
   }
 

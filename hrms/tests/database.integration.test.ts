@@ -302,17 +302,26 @@ describe("database migrations and critical workflows", () => {
       JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: null, is_store_closed: true }]),
     ]);
     expect((await readMonday()).rows).toEqual([{ shift_id: null, is_store_closed: true }]);
-    await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+    await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant, draft.rows[0].id,
       JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-10", shift_id: null, is_store_closed: true }]),
-    ])).rejects.toThrow(/store closure must be a Monday/);
+    ]);
+    const weekdayClosure = await db.query<{ is_store_closed: boolean; shift_id: string | null }>(
+      "select is_store_closed,shift_id from public.schedule_assignments where schedule_version_id=$1 and work_date='2026-11-10'",
+      [draft.rows[0].id],
+    );
+    expect(weekdayClosure.rows).toEqual([{ is_store_closed: true, shift_id: null }]);
+    await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+      fixtureIds.tenant, draft.rows[0].id,
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-14", shift_id: null, is_store_closed: true }]),
+    ])).rejects.toThrow(/store closure must be a weekday/);
 
     await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, draft.rows[0].id]);
     await setUser(fixtureIds.employeeUser);
     const closed = await db.query<{ work_date: string }>(
       "select work_date::text from public.get_my_published_store_closed('2026-11-09','2026-11-15')",
     );
-    expect(closed.rows).toEqual([{ work_date: monday }]);
+    expect(closed.rows).toEqual([{ work_date: monday }, { work_date: "2026-11-10" }]);
     const shifts = await db.query<{ work_date: string }>(
       "select distinct work_date::text from public.get_my_published_schedule('2026-11-09','2026-11-15')",
     );
