@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { punchActionSchema, type PunchAction } from "./punch-flow";
 
 export const punchInputSchema = z.object({
   idempotencyKey: z.uuid(),
+  action: punchActionSchema,
   clientOccurredAt: z.iso.datetime({ offset: true }),
   timezone: z.string().trim().min(1).max(64)
     .regex(/^[A-Za-z_]+\/[A-Za-z0-9_+/-]+(?:\/[A-Za-z0-9_+/-]+)*$/),
@@ -18,6 +20,7 @@ export const qrPunchInputSchema = z.object({
   deviceId: z.uuid(),
   token: z.string().regex(/^(?:[0-9a-f]{64}|[23]:(?:0|[1-9][0-9]{0,11}):[0-9a-f]{64})$/),
   idempotencyKey: z.uuid(),
+  action: punchActionSchema,
 });
 
 export function parseQrPunchValue(value: string): { deviceId: string; token: string } | null {
@@ -32,7 +35,7 @@ export function parseQrPunchValue(value: string): { deviceId: string; token: str
 }
 
 export type PunchActionState =
-  | { ok: true; eventType: PunchEventType; occurredAt: string; workDate: string }
+  | { ok: true; eventType: PunchEventType; action: PunchAction; id: string; occurredAt: string; workDate: string }
   | { ok: false; message: string; code?: "qr_already_used" };
 
 export const punchEventLabels: Record<PunchEventType, string> = {

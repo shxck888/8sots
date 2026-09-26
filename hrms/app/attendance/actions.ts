@@ -11,8 +11,9 @@ export async function requestPunchCorrection(input: unknown): Promise<Correction
   const workspace = await getWorkspaceContext();
   if (!workspace?.tenantId) return { ok: false, message: "登入或組織資料已失效。" };
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("request_punch_correction", {
+  const { error } = await supabase.rpc("request_punch_correction_action", {
     p_event_type: parsed.data.eventType,
+    p_action: parsed.data.action,
     p_idempotency_key: parsed.data.idempotencyKey,
     p_proposed_occurred_at: parsed.data.proposedOccurredAt,
     p_reason: parsed.data.reason,

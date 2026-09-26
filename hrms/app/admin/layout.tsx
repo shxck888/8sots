@@ -1,8 +1,7 @@
-import { LogOut } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { logout } from "@/app/login/actions";
+import { LogoutForm } from "@/app/logout-form";
 import { getAdminShellContext } from "@/lib/admin";
 import { AdminNav } from "./admin-nav";
 
@@ -27,9 +26,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         </Link>
         <AdminNav permissions={admin.permissions} />
         <div className="admin-tenant"><small>目前組織</small><strong>{admin.tenantName}</strong></div>
-        <form action={logout}>
-          <button className="admin-logout" type="submit"><LogOut size={17} /> 登出</button>
-        </form>
+        <LogoutForm variant="admin" />
       </aside>
       <section className="admin-content">{children}</section>
     </main>

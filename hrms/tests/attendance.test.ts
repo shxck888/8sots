@@ -12,6 +12,7 @@ describe("attendance contracts", () => {
   it("requires a specific correction reason and valid proposed timestamp", () => {
     const input = {
       eventType: "clock_out",
+      action: "clock_out",
       idempotencyKey: "35cfa1d3-f9b5-48b0-a200-2f463990e4d6",
       proposedOccurredAt: "2026-08-25T13:00:00.000Z",
       reason: "下班時裝置沒有網路，回家後才發現缺卡",

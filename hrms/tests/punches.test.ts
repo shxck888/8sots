@@ -4,6 +4,7 @@ import { nextPunchLabel, parseQrPunchValue, punchDisplayLabel, punchInputSchema,
 import { createKioskQrValue, QR_SLOT_MS } from "../lib/qr-kiosk-token";
 
 const validInput = {
+  action: "clock_in",
   accuracyM: 18.4,
   clientOccurredAt: "2026-08-25T03:00:00.000Z",
   idempotencyKey: "4c44df53-0470-4b4f-8239-7f901f2bb43e",
@@ -66,7 +67,7 @@ describe("QR punch contract", () => {
   });
 
   it("rejects malformed QR punch submissions before calling the database", () => {
-    const valid = { deviceId, token, idempotencyKey: crypto.randomUUID() };
+    const valid = { action: "clock_in", deviceId, token, idempotencyKey: crypto.randomUUID() };
     expect(qrPunchInputSchema.safeParse(valid).success).toBe(true);
     expect(qrPunchInputSchema.safeParse({ ...valid, token: `2:59642320:${token}` }).success).toBe(true);
     expect(qrPunchInputSchema.safeParse({ ...valid, token: `3:178926960:${token}` }).success).toBe(true);

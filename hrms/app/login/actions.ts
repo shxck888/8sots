@@ -49,9 +49,13 @@ export async function login(
   redirect(nextPath);
 }
 
-export async function logout() {
+export async function logout(formData?: FormData) {
   try {
     const supabase = await createSupabaseServerClient();
+    const endpoint = formData?.get("pushEndpoint");
+    if (typeof endpoint === "string" && endpoint.length <= 2048) {
+      await supabase.rpc("remove_my_push_subscription", { p_endpoint: endpoint });
+    }
     await supabase.auth.signOut();
   } finally {
     redirect("/login");

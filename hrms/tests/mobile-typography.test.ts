@@ -16,8 +16,10 @@ describe("mobile readability contract", () => {
   });
 
   it("keeps an explicit logout action in the mobile navigation", () => {
-    expect(workspaceShell).toContain('<form action={logout}><button aria-label="登出"');
-    expect(workspaceShell).toContain("<span>登出</span>");
+    expect(workspaceShell).toContain('<LogoutForm variant="menu" />');
+    const logoutForm = readFileSync(join(process.cwd(), "app/logout-form.tsx"), "utf8");
+    expect(logoutForm).toContain('aria-label="登出"');
+    expect(logoutForm).toContain("await logout(formData)");
     expect(css).not.toContain(".profile-mini svg { display: none; }");
   });
 });

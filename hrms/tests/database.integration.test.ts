@@ -93,6 +93,111 @@ beforeAll(async () => {
 afterAll(async () => { await db?.close(); });
 
 describe("database migrations and critical workflows", () => {
+  async function mealSchedule(date: string) {
+    await setUser(fixtureIds.admin);
+    const result = await db.query<{id: string}>(`insert into public.schedule_versions(tenant_id,period_start,period_end,version,status,created_by)
+      values($1,$2,$2,401,'draft',$3) returning id`, [fixtureIds.tenant,date,fixtureIds.admin]);
+    await db.query(`insert into public.schedule_assignments(tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by)
+      values($1,$2,$3,$4,$5,$6)`, [fixtureIds.tenant,result.rows[0].id,fixtureIds.employee,date,fixtureIds.weekdayShift,fixtureIds.admin]);
+    await db.query('select public.publish_schedule($1,$2)', [fixtureIds.tenant,result.rows[0].id]);
+  }
+  async function mealEvent(date: string, time: string, action: string) {
+    return db.query<{id: string}>(`insert into public.punch_records(tenant_id,employee_id,work_date,event_type,punch_action,
+      occurred_at,client_occurred_at,timezone,source,latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by)
+      values($1,$2,$3,case when $4 in ('clock_in','lunch_end','meal_end') then 'clock_in'::public.punch_event_type else 'clock_out'::public.punch_event_type end,
+      $4,($3::date+$5::time) at time zone 'Asia/Taipei',($3::date+$5::time) at time zone 'Asia/Taipei','Asia/Taipei','web_gps',
+      25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$6) returning id`, [fixtureIds.tenant,fixtureIds.employee,date,action,time,fixtureIds.employeeUser]);
+  }
+  it("deducts only recorded meals and reports actual work beyond eight hours", async () => {
+    await db.exec('begin');
+    try {
+      const date='2026-09-15';
+      await mealSchedule(date);
+      for (const [time,action] of [['10:00','clock_in'],['11:00','meal_morning'],['14:00','lunch_start'],['16:00','lunch_end'],['16:30','meal_afternoon'],['21:15','clock_out']])
+        await mealEvent(date,time,action);
+      const run=await db.query<{id: string}>(`select public.calculate_attendance_v1($1,$2,$2) id`,[fixtureIds.tenant,date]);
+      const day=await db.query<{actual_minutes: number; payroll_regular_minutes: number; exception_count: number}>(`select actual_minutes,payroll_regular_minutes,exception_count from public.attendance_days where calculation_run_id=$1`,[run.rows[0].id]);
+      expect(day.rows[0]).toEqual({actual_minutes:495,payroll_regular_minutes:480,exception_count:0});
+    } finally { await db.exec('rollback'); }
+  });
+  it("does not shift afternoon punches into a missing morning boundary or deduct an absent meal", async () => {
+    await db.exec('begin');
+    try {
+      const date='2026-09-15'; await mealSchedule(date);
+      for (const [time,action] of [['14:00','lunch_start'],['16:00','lunch_end'],['21:00','clock_out']]) await mealEvent(date,time,action);
+      const run=await db.query<{id: string}>(`select public.calculate_attendance_v1($1,$2,$2) id`,[fixtureIds.tenant,date]);
+      const segments=await db.query<{segment_order: number; actual_minutes: number; effective_clock_in_at: string | null}>(`select s.segment_order,s.actual_minutes,s.effective_clock_in_at from public.attendance_segments s join public.attendance_days d on d.id=s.attendance_day_id where d.calculation_run_id=$1 order by segment_order`,[run.rows[0].id]);
+      expect(segments.rows[0].effective_clock_in_at).toBeNull();
+      expect(segments.rows[1].actual_minutes).toBe(300);
+    } finally { await db.exec('rollback'); }
+  });
+  it("uses the actual end for an interrupted meal and excludes voided meals", async () => {
+    await db.exec('begin');
+    try {
+      const date='2026-09-15'; await mealSchedule(date);
+      for (const [time,action] of [['10:00','clock_in'],['11:00','meal_morning'],['11:20','meal_end'],['14:00','lunch_start'],['16:00','lunch_end'],['21:00','clock_out']]) await mealEvent(date,time,action);
+      const run=await db.query<{id: string}>(`select public.calculate_attendance_v1($1,$2,$2) id`,[fixtureIds.tenant,date]);
+      const day=await db.query<{actual_minutes: number}>(`select actual_minutes from public.attendance_days where calculation_run_id=$1`,[run.rows[0].id]);
+      expect(day.rows[0].actual_minutes).toBe(520);
+      const meal=await db.query<{id:string}>(`select id from public.punch_records where tenant_id=$1 and work_date=$2 and punch_action='meal_morning'`,[fixtureIds.tenant,date]);
+      await db.query(`select public.void_punch_records($1,$2::uuid[],'測試取消錯誤吃飯紀錄')`,[fixtureIds.tenant,[meal.rows[0].id]]);
+      const intervals=await db.query(`select * from public.meal_break_intervals($1,$2,$3)`,[fixtureIds.tenant,fixtureIds.employee,date]);
+      expect(intervals.rows).toHaveLength(0);
+    } finally { await db.exec('rollback'); }
+  });
+  it("records explicit later events through the authenticated GPS RPC with no preceding punch", async () => {
+    await db.exec('begin');
+    try {
+      await setUser(fixtureIds.employeeUser);
+      const result=await db.query<{id:string}>(`select public.record_gps_punch_action($1,gen_random_uuid(),statement_timestamp(),'Asia/Taipei',25.1291,121.7841,15,true,'lunch_end') id`,[fixtureIds.tenant]);
+      const row=await db.query<{punch_action:string;event_type:string}>(`select punch_action,event_type from public.punch_records where id=$1`,[result.rows[0].id]);
+      expect(row.rows[0]).toEqual({punch_action:'lunch_end',event_type:'clock_in'});
+    } finally { await db.exec('rollback'); }
+  });
+  it("records an explicit meal with QR verification and consumes the code globally once", async () => {
+    await db.exec('begin');
+    try {
+      const token='a'.repeat(64), key=crypto.randomUUID();
+      const device=await db.query<{id:string}>(`insert into public.punch_qr_devices(tenant_id,name,paired_at,current_qr_hash,current_qr_expires_at,created_by)
+        values($1,'測試打卡機',statement_timestamp(),encode(sha256(convert_to($2,'UTF8')),'hex'),statement_timestamp()+interval '2 minutes',$3) returning id`,[fixtureIds.tenant,token,fixtureIds.admin]);
+      await setUser(fixtureIds.employeeUser);
+      const result=await db.query<{id:string}>(`select public.record_qr_punch_action($1,$2,$3,$4,'meal_afternoon') id`,[fixtureIds.tenant,device.rows[0].id,token,key]);
+      const row=await db.query<{punch_action:string; source:string}>(`select punch_action,source from public.punch_records where id=$1`,[result.rows[0].id]);
+      expect(row.rows[0]).toEqual({punch_action:'meal_afternoon',source:'qr'});
+      const retry=await db.query<{id:string}>(`select public.record_qr_punch_action($1,$2,$3,$4,'meal_afternoon') id`,[fixtureIds.tenant,device.rows[0].id,token,key]);
+      expect(retry.rows[0].id).toBe(result.rows[0].id);
+      await expect(db.query(`select public.record_qr_punch_action($1,$2,$3,gen_random_uuid(),'clock_out')`,[fixtureIds.tenant,device.rows[0].id,token])).rejects.toThrow('QR token already used');
+    } finally { await db.exec('rollback'); }
+  });
+  it("records a meal correction with its purpose and keeps it pending manager approval", async () => {
+    await db.exec('begin');
+    try {
+      await setUser(fixtureIds.employeeUser);
+      const result=await db.query<{id:string}>(`select public.request_punch_correction_action($1,(statement_timestamp() at time zone 'Asia/Taipei')::date,'clock_out',statement_timestamp(),'Asia/Taipei','上午吃飯時忘記進行打卡申請',gen_random_uuid(),'meal_morning') id`,[fixtureIds.tenant]);
+      const row=await db.query<{punch_action:string}>(`select punch_action from public.punch_correction_requests where id=$1`,[result.rows[0].id]);
+      expect(row.rows[0].punch_action).toBe('meal_morning');
+      const decisions=await db.query(`select * from public.punch_correction_decisions where correction_request_id=$1`,[result.rows[0].id]);
+      expect(decisions.rows).toHaveLength(0);
+    } finally { await db.exec('rollback'); }
+  });
+  it("leases due push jobs once and cancels reminders for interrupted meals", async () => {
+    await db.exec('begin');
+    try {
+      const date=(await db.query<{date:string}>(`select to_char((statement_timestamp() at time zone 'Asia/Taipei')::date,'YYYY-MM-DD') date`)).rows[0].date;
+      const meal=await db.query<{id:string}>(`insert into public.punch_records(tenant_id,employee_id,work_date,event_type,punch_action,occurred_at,client_occurred_at,timezone,source,latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by)
+        values($1,$2,$3,'clock_out','meal_morning',statement_timestamp()-interval '27 minutes',statement_timestamp()-interval '27 minutes','Asia/Taipei','web_gps',25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$4) returning id`,[fixtureIds.tenant,fixtureIds.employee,date,fixtureIds.employeeUser]);
+      const first=await db.query<{jobs: {id:string}[]}>(`select public.claim_meal_push_jobs() jobs`);
+      expect(first.rows[0].jobs).toHaveLength(1);
+      const second=await db.query<{jobs: unknown[]}>(`select public.claim_meal_push_jobs() jobs`);
+      expect(second.rows[0].jobs).toHaveLength(0);
+      await db.query(`insert into public.punch_records(tenant_id,employee_id,work_date,event_type,punch_action,occurred_at,client_occurred_at,timezone,source,latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by)
+        values($1,$2,$3,'clock_in','meal_end',statement_timestamp(),statement_timestamp(),'Asia/Taipei','web_gps',25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$4)`,[fixtureIds.tenant,fixtureIds.employee,date,fixtureIds.employeeUser]);
+      await db.query(`select public.claim_meal_push_jobs()`);
+      const job=await db.query<{completed_at:string|null}>(`select completed_at from public.meal_push_jobs where punch_id=$1`,[meal.rows[0].id]);
+      expect(job.rows[0].completed_at).not.toBeNull();
+    } finally { await db.exec('rollback'); }
+  });
+
   it("applies every migration to a real PostgreSQL-compatible engine", async () => {
     const result = await db.query<{ count: number }>("select count(*)::integer count from public.payroll_periods");
     expect(result.rows[0].count).toBe(0);

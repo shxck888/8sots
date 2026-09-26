@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { punchActionSchema } from "./punch-flow";
 
 export const attendanceRangeSchema = z.object({
   dateFrom: z.iso.date(),
@@ -12,6 +13,7 @@ export const attendanceRangeSchema = z.object({
 export const correctionInputSchema = z.object({
   workDate: z.iso.date(),
   eventType: z.enum(["clock_in", "clock_out"]),
+  action: punchActionSchema,
   proposedOccurredAt: z.iso.datetime({ offset: true }),
   timezone: z.string().trim().min(1).max(64)
     .regex(/^[A-Za-z_]+\/[A-Za-z0-9_+/-]+(?:\/[A-Za-z0-9_+/-]+)*$/),

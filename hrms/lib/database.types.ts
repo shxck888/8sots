@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      meal_push_jobs: {
+        Row: {
+          id: string
+          tenant_id: string
+          employee_id: string
+          punch_id: string
+          kind: string
+          due_at: string
+          expires_at: string
+          lease_until: string | null
+          lease_id: string | null
+          delivered_subscription_ids: string[]
+          attempts: number
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          employee_id: string
+          punch_id: string
+          kind: string
+          due_at: string
+          expires_at: string
+          lease_until?: string | null
+          lease_id?: string | null
+          delivered_subscription_ids?: string[]
+          attempts?: number
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          employee_id?: string
+          punch_id?: string
+          kind?: string
+          due_at?: string
+          expires_at?: string
+          lease_until?: string | null
+          lease_id?: string | null
+          delivered_subscription_ids?: string[]
+          attempts?: number
+          completed_at?: string | null
+        }
+        Relationships: []
+      }
+
+      employee_push_subscriptions: {
+        Row: {
+          id: string
+          tenant_id: string
+          employee_id: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth_key: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          employee_id: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth_key: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          employee_id?: string
+          user_id?: string
+          endpoint?: string
+          p256dh?: string
+          auth_key?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+
       annual_leave_adjustments: {
         Row: {
           adjustment_minutes: number
@@ -307,6 +387,7 @@ export type Database = {
       }
       attendance_days: {
         Row: {
+          payroll_regular_minutes: number
           actual_minutes: number
           approved_leave_minutes: number
           approved_overtime_minutes: number
@@ -323,6 +404,7 @@ export type Database = {
           work_date: string
         }
         Insert: {
+          payroll_regular_minutes?: number
           actual_minutes?: number
           approved_leave_minutes?: number
           approved_overtime_minutes?: number
@@ -339,6 +421,7 @@ export type Database = {
           work_date: string
         }
         Update: {
+          payroll_regular_minutes?: number
           actual_minutes?: number
           approved_leave_minutes?: number
           approved_overtime_minutes?: number
@@ -2057,6 +2140,7 @@ export type Database = {
       }
       punch_correction_requests: {
         Row: {
+          punch_action: string | null
           employee_id: string
           id: string
           idempotency_key: string
@@ -2070,6 +2154,7 @@ export type Database = {
           work_date: string
         }
         Insert: {
+          punch_action?: string | null
           employee_id: string
           id?: string
           idempotency_key: string
@@ -2083,6 +2168,7 @@ export type Database = {
           work_date: string
         }
         Update: {
+          punch_action?: string | null
           employee_id?: string
           id?: string
           idempotency_key?: string
@@ -2183,6 +2269,7 @@ export type Database = {
       }
       punch_records: {
         Row: {
+          punch_action: string | null
           accuracy_m: number | null
           client_occurred_at: string
           created_at: string
@@ -2210,6 +2297,7 @@ export type Database = {
           workplace_setting_version_id: string | null
         }
         Insert: {
+          punch_action?: string | null
           accuracy_m?: number | null
           client_occurred_at: string
           created_at?: string
@@ -2237,6 +2325,7 @@ export type Database = {
           workplace_setting_version_id?: string | null
         }
         Update: {
+          punch_action?: string | null
           accuracy_m?: number | null
           client_occurred_at?: string
           created_at?: string
@@ -2987,6 +3076,99 @@ export type Database = {
       }
     }
     Functions: {
+      mark_meal_push_delivered: {
+        Args: { p_job_id: string; p_lease_id: string; p_subscription_id: string }
+        Returns: undefined
+      }
+      complete_meal_push_job: {
+        Args: {
+          p_job_id: string
+          p_lease_id: string
+        }
+        Returns: undefined
+      }
+
+      claim_meal_push_jobs: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+
+      remove_my_push_subscription: {
+        Args: {
+          p_endpoint: string
+        }
+        Returns: undefined
+      }
+
+      save_my_push_subscription: {
+        Args: {
+          p_tenant_id: string
+          p_endpoint: string
+          p_p256dh: string
+          p_auth_key: string
+        }
+        Returns: string
+      }
+
+      meal_break_intervals: {
+        Args: {
+          p_tenant_id: string
+          p_employee_id: string
+          p_work_date: string
+        }
+        Returns: { starts_at: string; ends_at: string }[]
+      }
+
+      validate_punch_action: {
+        Args: {
+          p_tenant_id: string
+          p_employee_id: string
+          p_work_date: string
+          p_action: string
+        }
+        Returns: Database["public"]["Enums"]["punch_event_type"]
+      }
+
+      request_punch_correction_action: {
+        Args: {
+          p_tenant_id: string
+          p_work_date: string
+          p_event_type: Database["public"]["Enums"]["punch_event_type"]
+          p_proposed_occurred_at: string
+          p_timezone: string
+          p_reason: string
+          p_idempotency_key: string
+          p_action: string
+        }
+        Returns: string
+      }
+
+      record_qr_punch_action: {
+        Args: {
+          p_tenant_id: string
+          p_device_id: string
+          p_token: string
+          p_idempotency_key: string
+          p_action: string
+        }
+        Returns: string
+      }
+
+      record_gps_punch_action: {
+        Args: {
+          p_tenant_id: string
+          p_idempotency_key: string
+          p_client_occurred_at: string
+          p_timezone: string
+          p_latitude: number
+          p_longitude: number
+          p_accuracy_m: number
+          p_location_consent: boolean
+          p_action: string
+        }
+        Returns: string
+      }
+
       create_punch_qr_device: {
         Args: { p_tenant_id: string; p_name: string }
         Returns: { device_id: string; pairing_code: string; pairing_expires_at: string }[]

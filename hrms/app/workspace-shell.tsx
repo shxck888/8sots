@@ -1,9 +1,9 @@
 import {
-  Banknote, Bell, CalendarDays, Clock3, LayoutDashboard, LogOut, MapPin, Menu, ReceiptText, Settings,
+  Banknote, Bell, CalendarDays, Clock3, LayoutDashboard, MapPin, Menu, ReceiptText, Settings,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { logout } from "@/app/login/actions";
+import { LogoutForm } from "@/app/logout-form";
 
 const nav = [
   { label: "工作台", mobileLabel: "首頁", icon: LayoutDashboard, href: "/" },
@@ -42,7 +42,7 @@ export function WorkspaceShell({
         <div className="store-card"><span className="eyebrow">目前所屬組織</span><strong>{tenantName}</strong><span><MapPin size={14} /> 門市資料尚待建立</span></div>
         <div className="profile-mini">
           <div className="avatar">{avatarText}</div><div><strong>{displayName}</strong><span>{email}</span></div>
-          <form action={logout}><button aria-label="登出" className="logout-icon" title="登出" type="submit"><LogOut size={17} /><span className="sr-only">登出</span></button></form>
+          <LogoutForm />
         </div>
       </aside>
       <section className="content">
@@ -54,7 +54,7 @@ export function WorkspaceShell({
             <div className="mobile-more-menu">
               {secondaryMobileNav.map(({ label, icon: Icon, href }) => <Link aria-current={activePath === href ? "page" : undefined} className={activePath === href ? "active" : ""} href={href} key={label}><Icon size={20} /><span>{label}</span>{href === "/notifications" && notificationUnreadCount > 0 ? <i className="nav-badge">{Math.min(notificationUnreadCount, 99)}</i> : null}</Link>)}
               {canManage ? <Link href="/admin"><Settings size={20} /><span>管理後台</span></Link> : null}
-              <form action={logout}><button aria-label="登出" type="submit"><LogOut size={20} /><span>登出</span></button></form>
+              <LogoutForm variant="menu" />
             </div>
           </details>
         </nav>

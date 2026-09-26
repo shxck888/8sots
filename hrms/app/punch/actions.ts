@@ -6,6 +6,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getWorkspaceContext } from "@/lib/workspace";
 
 function safeMessage(message: string): string {
+  if (message.includes("punch_action_once_per_day")) return "今天已記錄這個事件，請重新整理查看；若時間有誤，請申請補正。";
+  if (message.includes("no active meal break")) return "目前沒有進行中的吃飯休息。";
+  if (message.includes("meal break already active")) return "目前已有吃飯休息正在計時。";
   if (message.includes("active linked employee")) return "此帳號尚未連結在職員工資料。";
   if (message.includes("client timestamp")) return "定位資料已逾時，請重新取得定位後打卡。";
   if (message.includes("invalid GPS")) return "定位資料或精度不符合要求，請移至訊號較好的位置再試。";
@@ -26,7 +29,7 @@ export async function recordGpsPunch(input: unknown): Promise<PunchActionState> 
   if (!workspace?.tenantId) return { ok: false, message: "登入或組織資料已失效，請重新登入。" };
 
   const supabase = await createSupabaseServerClient();
-  const { data: punchId, error } = await supabase.rpc("record_gps_punch", {
+  const { data: punchId, error } = await supabase.rpc("record_gps_punch_action", {
     p_accuracy_m: parsed.data.accuracyM,
     p_client_occurred_at: parsed.data.clientOccurredAt,
     p_idempotency_key: parsed.data.idempotencyKey,
@@ -34,13 +37,14 @@ export async function recordGpsPunch(input: unknown): Promise<PunchActionState> 
     p_location_consent: parsed.data.locationConsent,
     p_longitude: parsed.data.longitude,
     p_tenant_id: workspace.tenantId,
+    p_action: parsed.data.action,
     p_timezone: parsed.data.timezone,
   });
   if (error || !punchId) return { ok: false, message: safeMessage(error?.message ?? "") };
 
   const { data: record, error: readError } = await supabase
     .from("punch_records")
-    .select("event_type, occurred_at, work_date")
+    .select("id, event_type, occurred_at, work_date")
     .eq("tenant_id", workspace.tenantId)
     .eq("id", punchId)
     .is("voided_at", null)
@@ -50,7 +54,7 @@ export async function recordGpsPunch(input: unknown): Promise<PunchActionState> 
   revalidatePath("/");
   revalidatePath("/attendance");
   revalidatePath("/admin/attendance");
-  return { ok: true, eventType: record.event_type, occurredAt: record.occurred_at, workDate: record.work_date };
+  return { ok: true, eventType: record.event_type, action: parsed.data.action, id: record.id, occurredAt: record.occurred_at, workDate: record.work_date };
 }
 
 export async function recordQrPunch(input: unknown): Promise<PunchActionState> {
@@ -61,8 +65,9 @@ export async function recordQrPunch(input: unknown): Promise<PunchActionState> {
   if (!workspace?.tenantId) return { ok: false, message: "登入或組織資料已失效，請重新登入。" };
 
   const supabase = await createSupabaseServerClient();
-  const { data: punchId, error } = await supabase.rpc("record_qr_punch", {
+  const { data: punchId, error } = await supabase.rpc("record_qr_punch_action", {
     p_tenant_id: workspace.tenantId,
+    p_action: parsed.data.action,
     p_device_id: parsed.data.deviceId,
     p_token: parsed.data.token,
     p_idempotency_key: parsed.data.idempotencyKey,
@@ -73,12 +78,12 @@ export async function recordQrPunch(input: unknown): Promise<PunchActionState> {
   if (error || !punchId) return { ok: false, message: safeMessage(error?.message ?? "") };
 
   const { data: record, error: readError } = await supabase.from("punch_records")
-    .select("event_type, occurred_at, work_date")
+    .select("id, event_type, occurred_at, work_date")
     .eq("tenant_id", workspace.tenantId).eq("id", punchId).is("voided_at", null).single();
   if (readError || !record) return { ok: false, message: "打卡已送出，但紀錄讀取失敗，請至出勤紀錄確認。" };
 
   revalidatePath("/");
   revalidatePath("/attendance");
   revalidatePath("/admin/attendance");
-  return { ok: true, eventType: record.event_type, occurredAt: record.occurred_at, workDate: record.work_date };
+  return { ok: true, eventType: record.event_type, action: parsed.data.action, id: record.id, occurredAt: record.occurred_at, workDate: record.work_date };
 }

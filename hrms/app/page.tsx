@@ -30,7 +30,7 @@ export default async function Home() {
       ? await Promise.all([getMyPublishedSchedule({
         ...getMonthBounds(today),
         employeeId: workspace.employeeId,
-      }), getEmployeePunchContext({ employeeId: workspace.employeeId, tenantId: workspace.tenantId }), getUnreadNotificationCount(workspace.tenantId)])
+      }), getEmployeePunchContext({ limit: 200, employeeId: workspace.employeeId, tenantId: workspace.tenantId }), getUnreadNotificationCount(workspace.tenantId)])
     : [{ employeeId: null, entries: [] }, { employeeId: null, records: [], policy: { configured: false } }, 0];
   const todaySchedule = schedule.entries.find((entry) => entry.workDate === today);
   const scheduledMinutes = schedule.entries.reduce((total, entry) => total + entry.totalMinutes, 0);
@@ -65,8 +65,9 @@ export default async function Home() {
             <p className="location-label"><MapPin size={15} />{punches.policy.configured
               ? `${punches.policy.name ?? "門市"} · ${punches.policy.mode === "enforced" ? `範圍 ${punches.policy.radius_m ?? "—"}m` : "記錄定位"}`
               : "店址圍欄尚未設定"}</p>
-            <PunchPanel enabled={Boolean(punches.employeeId)} lastEventType={punches.records[0]?.event_type ?? null}
-              scheduledPunchCount={todaySchedule ? punches.records.filter((record) => record.work_date === today).length : null}
+            <PunchPanel key={`${today}:${punches.records.map(record => record.id).join(",")}`} enabled={Boolean(punches.employeeId)}
+              records={punches.records.filter((record) => record.work_date === today)}
+              initialTimestamp={now.toISOString()} workDate={today}
               hasLunchBreak={todaySchedule?.shiftCode === "WEEKDAY_SPLIT" && todaySchedule.segments.length === 2} />
           </div>
         </section>

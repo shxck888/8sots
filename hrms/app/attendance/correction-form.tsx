@@ -2,6 +2,8 @@
 
 import { Plus, Send, X } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
+import { actionEventType, punchActionLabels, punchActionSchema } from "@/lib/punch-flow";
 import { requestPunchCorrection } from "./actions";
 
 export function CorrectionForm({ enabled }: { enabled: boolean }) {
@@ -27,7 +29,8 @@ export function CorrectionForm({ enabled }: { enabled: boolean }) {
     }
     startTransition(async () => {
       const result = await requestPunchCorrection({
-        eventType: formData.get("eventType"),
+        eventType: actionEventType(punchActionSchema.parse(formData.get("action"))),
+        action: formData.get("action"),
         idempotencyKey: crypto.randomUUID(),
         proposedOccurredAt: localDate.toISOString(),
         reason: formData.get("reason"),
@@ -43,7 +46,7 @@ export function CorrectionForm({ enabled }: { enabled: boolean }) {
       <button className="attendance-correction-trigger" disabled={!enabled} onClick={() => setOpen(true)} type="button">
         <Plus size={18} /> 申請補打卡
       </button>
-      {open ? (
+      {open ? createPortal(
         <div className="correction-drawer-backdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) setOpen(false); }}>
           <aside aria-labelledby="correction-drawer-title" aria-modal="true" className="correction-drawer" role="dialog">
             <header>
@@ -52,14 +55,14 @@ export function CorrectionForm({ enabled }: { enabled: boolean }) {
             </header>
             <form action={submit} className="correction-form">
               <label>工作日<input disabled={!enabled || pending} name="workDate" required type="date" /></label>
-              <label>事件<select disabled={!enabled || pending} name="eventType"><option value="clock_in">上班</option><option value="clock_out">下班</option></select></label>
+              <label>事件<select disabled={!enabled || pending} name="action">{punchActionSchema.options.map(action => <option key={action} value={action}>{punchActionLabels[action]}</option>)}</select></label>
               <label>建議時間<input disabled={!enabled || pending} name="proposedLocal" required type="datetime-local" /></label>
               <label className="correction-reason">原因<textarea disabled={!enabled || pending} maxLength={500} minLength={10} name="reason" placeholder="請具體說明缺卡原因（至少 10 字）" required rows={4} /></label>
               <button className="admin-button" disabled={!enabled || pending} type="submit"><Send size={17} /> {pending ? "送出中…" : "送出申請"}</button>
             </form>
             <p aria-live="polite" className="correction-message">{message}</p>
           </aside>
-        </div>
+        </div>, document.body
       ) : null}
     </>
   );

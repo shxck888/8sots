@@ -52,6 +52,7 @@ describe("generated database types", () => {
           "guard_annual_leave_policy_version",
           "allocate_approved_annual_leave",
           "guard_hire_date_annual_leave_history",
+          "queue_meal_push",
         ].includes(entity),
     );
 

@@ -1,3 +1,4 @@
+import { punchActionLabels, punchActionSchema } from "@/lib/punch-flow";
 import { AlertTriangle, Clock3, MapPin } from "lucide-react";
 import { redirect } from "next/navigation";
 import { CorrectionForm } from "@/app/attendance/correction-form";
@@ -31,7 +32,7 @@ export default async function AttendancePage() {
   return (
     <WorkspaceShell activePath="/attendance" canManage={workspace.canManage} displayName={workspace.displayName} email={workspace.email} tenantName={workspace.tenantName}>
       <header className="my-schedule-header attendance-page-header"><div><h1>出勤紀錄</h1><p>每日結果與原始打卡集中顯示；正式時間採用伺服器時間。</p></div><CorrectionForm enabled={Boolean(workspace.employeeId)} /></header>
-      {overview.requests.length ? <section className="attendance-summary-list"><header><div><h2>我的更正申請</h2></div></header>{overview.requests.map((request) => <article key={request.id}><strong>{request.work_date}</strong><span>{punchEventLabels[request.proposed_event_type]} · {formatTaipeiDateTime(request.proposed_occurred_at)}</span><span className={`correction-status ${request.decision ?? "pending"}`}>{request.decision === "approved" ? "已核准" : request.decision === "rejected" ? "已拒絕" : "待審核"}</span><em title={request.reason}>{request.reason}</em></article>)}</section> : null}
+      {overview.requests.length ? <section className="attendance-summary-list"><header><div><h2>我的更正申請</h2></div></header>{overview.requests.map((request) => <article key={request.id}><strong>{request.work_date}</strong><span>{(punchActionSchema.safeParse(request.punch_action).success ? punchActionLabels[request.punch_action as keyof typeof punchActionLabels] : punchEventLabels[request.proposed_event_type])} · {formatTaipeiDateTime(request.proposed_occurred_at)}</span><span className={`correction-status ${request.decision ?? "pending"}`}>{request.decision === "approved" ? "已核准" : request.decision === "rejected" ? "已拒絕" : "待審核"}</span><em title={request.reason}>{request.reason}</em></article>)}</section> : null}
       {!workspace.employeeId ? (
         <section className="my-schedule-empty"><Clock3 size={30} /><strong>此帳號尚未連結在職員工資料</strong><p>請聯絡管理員建立或連結員工登入帳號。</p></section>
       ) : workDates.length === 0 ? (
@@ -50,7 +51,7 @@ export default async function AttendancePage() {
               </div>
               <div className="attendance-daily-punches">
                 {punches.length ? punches.map((record) => <div className="attendance-daily-punch" key={record.id}>
-                  <span className={`attendance-event ${record.event_type}`}>{punchDisplayLabel(record.event_type, chronologicalPunches.findIndex((item) => item.id === record.id), lunchByWorkDate.get(workDate) === true)}</span>
+                  <span className={`attendance-event ${record.event_type}`}>{(punchActionSchema.safeParse(record.punch_action).success ? punchActionLabels[record.punch_action as keyof typeof punchActionLabels] : punchDisplayLabel(record.event_type, chronologicalPunches.findIndex((item) => item.id === record.id), lunchByWorkDate.get(workDate) === true))}</span>
                   <div><strong>{formatTaipeiDateTime(record.occurred_at)}</strong><small>{punchSourceLabels[record.source]}</small></div>
                   <div className="attendance-evidence">
                     <span><MapPin size={14} /> {record.source === "qr" ? "已驗證授權機器" : locationVerificationLabels[record.location_verification]}</span>
