@@ -18,11 +18,26 @@ describe("explicit punch flow", () => {
     expect(flow.suggested).toBe("lunch_end");
     expect(flow.missing).toContain("clock_in");
   });
-  it("does not automatically start eating when lunch ends", () => {
+  it("keeps historical lunch-end records without an automatic meal unchanged", () => {
     const records = [record("lunch_end", "16:00")];
     const flow = getPunchFlow(records, at("16:30"), true);
     expect(flow.remainingSeconds).toBe(0);
     expect(flow.suggested).toBe("meal_afternoon");
+  });
+  it("starts an automatic afternoon countdown from the recorded lunch end and resumes at 30 minutes", () => {
+    const records = [{ ...record("lunch_end", "16:00"), starts_afternoon_meal: true }];
+    const flow = getPunchFlow(records, at("16:27"), true);
+    expect(flow.remainingSeconds).toBe(180);
+    expect(flow.status).toBe("吃飯休息中");
+    expect(flow.done.has("meal_afternoon")).toBe(true);
+    expect(getPunchFlow(records, at("16:30"), true).suggested).toBe("clock_out");
+    const finished = getPunchFlow([...records, record("clock_out", "21:00")], at("21:01"), true);
+    expect(finished.missing).not.toContain("meal_afternoon");
+  });
+  it("ends an automatic meal early and retains the recorded rule if the schedule changes", () => {
+    const records = [{ ...record("lunch_end", "16:00"), starts_afternoon_meal: true }];
+    expect(getPunchFlow(records, at("16:05"), false).remainingSeconds).toBe(1500);
+    expect(getPunchFlow([...records, record("meal_end", "16:10")], at("16:11"), true).remainingSeconds).toBe(0);
   });
   it("does not suggest lunch punches on a continuous shift", () => {
     const flow = getPunchFlow([record("clock_in", "10:00")], at("14:00"), false);

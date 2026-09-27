@@ -2275,6 +2275,7 @@ export type Database = {
           reason: string
           requested_at: string
           requested_by: string
+          starts_afternoon_meal: boolean
           tenant_id: string
           timezone: string
           work_date: string
@@ -2289,6 +2290,7 @@ export type Database = {
           reason: string
           requested_at?: string
           requested_by: string
+          starts_afternoon_meal?: boolean
           tenant_id: string
           timezone: string
           work_date: string
@@ -2303,6 +2305,7 @@ export type Database = {
           reason?: string
           requested_at?: string
           requested_by?: string
+          starts_afternoon_meal?: boolean
           tenant_id?: string
           timezone?: string
           work_date?: string
@@ -2414,6 +2417,7 @@ export type Database = {
           qr_device_id: string | null
           qr_token_hash: string | null
           source: Database["public"]["Enums"]["punch_source"]
+          starts_afternoon_meal: boolean
           tenant_id: string
           timezone: string
           void_reason: string | null
@@ -2442,6 +2446,7 @@ export type Database = {
           qr_device_id?: string | null
           qr_token_hash?: string | null
           source: Database["public"]["Enums"]["punch_source"]
+          starts_afternoon_meal?: boolean
           tenant_id: string
           timezone: string
           void_reason?: string | null
@@ -2470,6 +2475,7 @@ export type Database = {
           qr_device_id?: string | null
           qr_token_hash?: string | null
           source?: Database["public"]["Enums"]["punch_source"]
+          starts_afternoon_meal?: boolean
           tenant_id?: string
           timezone?: string
           void_reason?: string | null
@@ -3179,6 +3185,7 @@ export type Database = {
           qr_device_id: string | null
           qr_token_hash: string | null
           source: Database["public"]["Enums"]["punch_source"] | null
+          starts_afternoon_meal: boolean | null
           tenant_id: string | null
           timezone: string | null
           void_reason: string | null
@@ -3209,6 +3216,7 @@ export type Database = {
           qr_device_id?: string | null
           qr_token_hash?: string | null
           source?: Database["public"]["Enums"]["punch_source"] | null
+          starts_afternoon_meal?: boolean | null
           tenant_id?: string | null
           timezone?: string | null
           void_reason?: string | null
@@ -3239,6 +3247,7 @@ export type Database = {
           qr_device_id?: string | null
           qr_token_hash?: string | null
           source?: Database["public"]["Enums"]["punch_source"] | null
+          starts_afternoon_meal?: boolean | null
           tenant_id?: string | null
           timezone?: string | null
           void_reason?: string | null

@@ -44,7 +44,7 @@ export async function recordGpsPunch(input: unknown): Promise<PunchActionState> 
 
   const { data: record, error: readError } = await supabase
     .from("punch_records")
-    .select("id, event_type, occurred_at, work_date")
+    .select("id, event_type, occurred_at, work_date, starts_afternoon_meal")
     .eq("tenant_id", workspace.tenantId)
     .eq("id", punchId)
     .is("voided_at", null)
@@ -54,7 +54,7 @@ export async function recordGpsPunch(input: unknown): Promise<PunchActionState> 
   revalidatePath("/");
   revalidatePath("/attendance");
   revalidatePath("/admin/attendance");
-  return { ok: true, eventType: record.event_type, action: parsed.data.action, id: record.id, occurredAt: record.occurred_at, workDate: record.work_date };
+  return { ok: true, eventType: record.event_type, action: parsed.data.action, id: record.id, occurredAt: record.occurred_at, workDate: record.work_date, startsAfternoonMeal: record.starts_afternoon_meal };
 }
 
 export async function recordQrPunch(input: unknown): Promise<PunchActionState> {
@@ -78,12 +78,12 @@ export async function recordQrPunch(input: unknown): Promise<PunchActionState> {
   if (error || !punchId) return { ok: false, message: safeMessage(error?.message ?? "") };
 
   const { data: record, error: readError } = await supabase.from("punch_records")
-    .select("id, event_type, occurred_at, work_date")
+    .select("id, event_type, occurred_at, work_date, starts_afternoon_meal")
     .eq("tenant_id", workspace.tenantId).eq("id", punchId).is("voided_at", null).single();
   if (readError || !record) return { ok: false, message: "打卡已送出，但紀錄讀取失敗，請至出勤紀錄確認。" };
 
   revalidatePath("/");
   revalidatePath("/attendance");
   revalidatePath("/admin/attendance");
-  return { ok: true, eventType: record.event_type, action: parsed.data.action, id: record.id, occurredAt: record.occurred_at, workDate: record.work_date };
+  return { ok: true, eventType: record.event_type, action: parsed.data.action, id: record.id, occurredAt: record.occurred_at, workDate: record.work_date, startsAfternoonMeal: record.starts_afternoon_meal };
 }

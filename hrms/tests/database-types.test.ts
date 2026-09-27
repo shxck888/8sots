@@ -53,6 +53,7 @@ describe("generated database types", () => {
           "allocate_approved_annual_leave",
           "guard_hire_date_annual_leave_history",
           "queue_meal_push",
+          "stamp_afternoon_meal",
         ].includes(entity),
     );
 

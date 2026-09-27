@@ -113,14 +113,14 @@ describe("database migrations and critical workflows", () => {
     try {
       const date='2026-09-15';
       await mealSchedule(date);
-      for (const [time,action] of [['10:00','clock_in'],['11:00','meal_morning'],['14:00','lunch_start'],['16:00','lunch_end'],['16:30','meal_afternoon'],['21:15','clock_out']])
+      for (const [time,action] of [['10:00','clock_in'],['11:00','meal_morning'],['14:00','lunch_start'],['16:00','lunch_end'],['21:15','clock_out']])
         await mealEvent(date,time,action);
       const run=await db.query<{id: string}>(`select public.calculate_attendance_v1($1,$2,$2) id`,[fixtureIds.tenant,date]);
       const day=await db.query<{actual_minutes: number; payroll_regular_minutes: number; exception_count: number}>(`select actual_minutes,payroll_regular_minutes,exception_count from public.attendance_days where calculation_run_id=$1`,[run.rows[0].id]);
       expect(day.rows[0]).toEqual({actual_minutes:495,payroll_regular_minutes:480,exception_count:0});
     } finally { await db.exec('rollback'); }
   });
-  it("does not shift afternoon punches into a missing morning boundary or deduct an absent meal", async () => {
+  it("keeps the missing morning boundary while deducting the automatic afternoon meal", async () => {
     await db.exec('begin');
     try {
       const date='2026-09-15'; await mealSchedule(date);
@@ -128,7 +128,7 @@ describe("database migrations and critical workflows", () => {
       const run=await db.query<{id: string}>(`select public.calculate_attendance_v1($1,$2,$2) id`,[fixtureIds.tenant,date]);
       const segments=await db.query<{segment_order: number; actual_minutes: number; effective_clock_in_at: string | null}>(`select s.segment_order,s.actual_minutes,s.effective_clock_in_at from public.attendance_segments s join public.attendance_days d on d.id=s.attendance_day_id where d.calculation_run_id=$1 order by segment_order`,[run.rows[0].id]);
       expect(segments.rows[0].effective_clock_in_at).toBeNull();
-      expect(segments.rows[1].actual_minutes).toBe(300);
+      expect(segments.rows[1].actual_minutes).toBe(270);
     } finally { await db.exec('rollback'); }
   });
   it("uses the actual end for an interrupted meal and excludes voided meals", async () => {
@@ -138,11 +138,84 @@ describe("database migrations and critical workflows", () => {
       for (const [time,action] of [['10:00','clock_in'],['11:00','meal_morning'],['11:20','meal_end'],['14:00','lunch_start'],['16:00','lunch_end'],['21:00','clock_out']]) await mealEvent(date,time,action);
       const run=await db.query<{id: string}>(`select public.calculate_attendance_v1($1,$2,$2) id`,[fixtureIds.tenant,date]);
       const day=await db.query<{actual_minutes: number}>(`select actual_minutes from public.attendance_days where calculation_run_id=$1`,[run.rows[0].id]);
-      expect(day.rows[0].actual_minutes).toBe(520);
+      expect(day.rows[0].actual_minutes).toBe(490);
       const meal=await db.query<{id:string}>(`select id from public.punch_records where tenant_id=$1 and work_date=$2 and punch_action='meal_morning'`,[fixtureIds.tenant,date]);
       await db.query(`select public.void_punch_records($1,$2::uuid[],'測試取消錯誤吃飯紀錄')`,[fixtureIds.tenant,[meal.rows[0].id]]);
       const intervals=await db.query(`select * from public.meal_break_intervals($1,$2,$3)`,[fixtureIds.tenant,fixtureIds.employee,date]);
+      expect(intervals.rows).toHaveLength(1);
+    } finally { await db.exec('rollback'); }
+  });
+  it("keeps no-schedule and continuous-shift lunch ends from starting an automatic meal", async () => {
+    await db.exec('begin');
+    try {
+      const date='2026-09-15';
+      const absent=await mealEvent(date,'16:00','lunch_end');
+      expect((await db.query<{starts_afternoon_meal:boolean}>(`select starts_afternoon_meal from public.punch_records where id=$1`,[absent.rows[0].id])).rows[0].starts_afternoon_meal).toBe(false);
+      await mealSchedule('2026-09-16');
+      const manual=await mealEvent('2026-09-16','15:30','meal_afternoon');
+      const lunch=await mealEvent('2026-09-16','16:00','lunch_end');
+      expect((await db.query<{starts_afternoon_meal:boolean}>(`select starts_afternoon_meal from public.punch_records where id=$1`,[lunch.rows[0].id])).rows[0].starts_afternoon_meal).toBe(false);
+      expect(manual.rows).toHaveLength(1);
+      await setUser(fixtureIds.admin);
+      const version=await db.query<{id:string}>(`insert into public.schedule_versions(tenant_id,period_start,period_end,version,status,created_by) values($1,'2026-09-17','2026-09-17',402,'draft',$2) returning id`,[fixtureIds.tenant,fixtureIds.admin]);
+      await db.query(`insert into public.schedule_assignments(tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by) values($1,$2,$3,'2026-09-17',$4,$5)`,[fixtureIds.tenant,version.rows[0].id,fixtureIds.employee,fixtureIds.holidayShift,fixtureIds.admin]);
+      await db.query('select public.publish_schedule($1,$2)',[fixtureIds.tenant,version.rows[0].id]);
+      const continuous=await mealEvent('2026-09-17','16:00','lunch_end');
+      expect((await db.query<{starts_afternoon_meal:boolean}>(`select starts_afternoon_meal from public.punch_records where id=$1`,[continuous.rows[0].id])).rows[0].starts_afternoon_meal).toBe(false);
+    } finally { await db.exec('rollback'); }
+  });
+  it("deducts the automatic meal on a lunch-end correction only after manager approval", async () => {
+    await db.exec('begin');
+    try {
+      const date=(await db.query<{date:string}>(`select to_char((statement_timestamp() at time zone 'Asia/Taipei')::date,'YYYY-MM-DD') date`)).rows[0].date;
+      await mealSchedule(date); await setUser(fixtureIds.employeeUser);
+      const correction=await db.query<{id:string}>(`select public.request_punch_correction_action($1,$2,'clock_in',statement_timestamp(),'Asia/Taipei','午休結束忘記打卡申請補正時間',gen_random_uuid(),'lunch_end') id`,[fixtureIds.tenant,date]);
+      expect((await db.query<{starts_afternoon_meal:boolean}>(`select starts_afternoon_meal from public.punch_correction_requests where id=$1`,[correction.rows[0].id])).rows[0].starts_afternoon_meal).toBe(true);
+      expect((await db.query(`select * from public.meal_break_intervals($1,$2,$3)`,[fixtureIds.tenant,fixtureIds.employee,date])).rows).toHaveLength(0);
+      await setUser(fixtureIds.admin);
+      await db.query(`select public.decide_punch_correction($1,$2,'approved','核准測試午休結束補卡')`,[fixtureIds.tenant,correction.rows[0].id]);
+      expect((await db.query(`select * from public.meal_break_intervals($1,$2,$3)`,[fixtureIds.tenant,fixtureIds.employee,date])).rows).toHaveLength(1);
+    } finally { await db.exec('rollback'); }
+  });
+  it("preserves legacy lunch-end evidence and does not infer a meal from a later schedule", async () => {
+    await db.exec('begin');
+    try {
+      const date='2026-09-15'; await mealSchedule(date);
+      await db.exec('alter table public.punch_records disable trigger punch_auto_afternoon_meal');
+      await mealEvent(date,'16:00','lunch_end');
+      await db.exec('alter table public.punch_records enable trigger punch_auto_afternoon_meal');
+      const intervals=await db.query(`select * from public.meal_break_intervals($1,$2,$3)`,[fixtureIds.tenant,fixtureIds.employee,date]);
       expect(intervals.rows).toHaveLength(0);
+    } finally { await db.exec('rollback'); }
+  });
+  it("starts a scheduled lunch-end meal in one authenticated GPS submission, queues the reminder and prevents duplicate starts", async () => {
+    await db.exec('begin');
+    try {
+      const date=(await db.query<{date:string}>(`select to_char((statement_timestamp() at time zone 'Asia/Taipei')::date,'YYYY-MM-DD') date`)).rows[0].date;
+      await mealSchedule(date); await setUser(fixtureIds.employeeUser);
+      const key=crypto.randomUUID();
+      const args=[fixtureIds.tenant,key];
+      const sql=`select public.record_gps_punch_action($1,$2,statement_timestamp(),'Asia/Taipei',25.1291,121.7841,15,true,'lunch_end') id`;
+      const result=await db.query<{id:string}>(sql,args);
+      expect((await db.query<{starts_afternoon_meal:boolean}>(`select starts_afternoon_meal from public.punch_records where id=$1`,[result.rows[0].id])).rows[0].starts_afternoon_meal).toBe(true);
+      expect((await db.query<{id:string}>(sql,args)).rows[0].id).toBe(result.rows[0].id);
+      expect((await db.query(`select * from public.punch_records where tenant_id=$1 and work_date=$2`,[fixtureIds.tenant,date])).rows).toHaveLength(1);
+      const job=await db.query<{kind:string;minutes:number}>(`select kind,extract(epoch from (due_at-p.occurred_at))/60 minutes from public.meal_push_jobs j join public.punch_records p on p.id=j.punch_id where p.id=$1`,[result.rows[0].id]);
+      expect(job.rows[0].kind).toBe('meal_ending');
+      expect(Number(job.rows[0].minutes)).toBe(27);
+      expect((await db.query<{event:string}>(`select public.validate_punch_action($1,$2,$3,'meal_end') event`,[fixtureIds.tenant,fixtureIds.employee,date])).rows[0].event).toBe('clock_in');
+      await expect(db.query(`select public.validate_punch_action($1,$2,$3,'meal_afternoon')`,[fixtureIds.tenant,fixtureIds.employee,date])).rejects.toThrow('punch_action_once_per_day');
+    } finally { await db.exec('rollback'); }
+  });
+  it("uses the actual early end of an automatic meal and removes the meal when lunch end is voided", async () => {
+    await db.exec('begin');
+    try {
+      const date='2026-09-15'; await mealSchedule(date);
+      const lunch=await mealEvent(date,'16:00','lunch_end'); await mealEvent(date,'16:12','meal_end');
+      const intervals=await db.query<{minutes:number}>(`select extract(epoch from (ends_at-starts_at))/60 minutes from public.meal_break_intervals($1,$2,$3)`,[fixtureIds.tenant,fixtureIds.employee,date]);
+      expect(Number(intervals.rows[0].minutes)).toBe(12);
+      await db.query(`select public.void_punch_records($1,$2::uuid[],'測試取消錯誤午休結束紀錄')`,[fixtureIds.tenant,[lunch.rows[0].id]]);
+      expect((await db.query(`select * from public.meal_break_intervals($1,$2,$3)`,[fixtureIds.tenant,fixtureIds.employee,date])).rows).toHaveLength(0);
     } finally { await db.exec('rollback'); }
   });
   it("records explicit later events through the authenticated GPS RPC with no preceding punch", async () => {
@@ -152,6 +225,21 @@ describe("database migrations and critical workflows", () => {
       const result=await db.query<{id:string}>(`select public.record_gps_punch_action($1,gen_random_uuid(),statement_timestamp(),'Asia/Taipei',25.1291,121.7841,15,true,'lunch_end') id`,[fixtureIds.tenant]);
       const row=await db.query<{punch_action:string;event_type:string}>(`select punch_action,event_type from public.punch_records where id=$1`,[result.rows[0].id]);
       expect(row.rows[0]).toEqual({punch_action:'lunch_end',event_type:'clock_in'});
+    } finally { await db.exec('rollback'); }
+  });
+  it("automatically starts the afternoon meal through QR without consuming another code", async () => {
+    await db.exec('begin');
+    try {
+      const date=(await db.query<{date:string}>(`select to_char((statement_timestamp() at time zone 'Asia/Taipei')::date,'YYYY-MM-DD') date`)).rows[0].date;
+      await mealSchedule(date);
+      const token='b'.repeat(64),key=crypto.randomUUID();
+      const device=await db.query<{id:string}>(`insert into public.punch_qr_devices(tenant_id,name,paired_at,current_qr_hash,current_qr_expires_at,created_by)
+        values($1,'自動吃飯測試機',statement_timestamp(),encode(sha256(convert_to($2,'UTF8')),'hex'),statement_timestamp()+interval '2 minutes',$3) returning id`,[fixtureIds.tenant,token,fixtureIds.admin]);
+      await setUser(fixtureIds.employeeUser);
+      const result=await db.query<{id:string}>(`select public.record_qr_punch_action($1,$2,$3,$4,'lunch_end') id`,[fixtureIds.tenant,device.rows[0].id,token,key]);
+      const row=await db.query<{starts_afternoon_meal:boolean;source:string}>(`select starts_afternoon_meal,source from public.punch_records where id=$1`,[result.rows[0].id]);
+      expect(row.rows[0]).toEqual({starts_afternoon_meal:true,source:'qr'});
+      await expect(db.query(`select public.record_qr_punch_action($1,$2,$3,gen_random_uuid(),'clock_out')`,[fixtureIds.tenant,device.rows[0].id,token])).rejects.toThrow('QR token already used');
     } finally { await db.exec('rollback'); }
   });
   it("records an explicit meal with QR verification and consumes the code globally once", async () => {

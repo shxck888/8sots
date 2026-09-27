@@ -6,7 +6,7 @@ export const punchActionLabels: Record<PunchAction, string> = {
   clock_in: "上班打卡", meal_morning: "開始上午吃飯", lunch_start: "開始午休",
   lunch_end: "午休結束", meal_afternoon: "開始下午吃飯", meal_end: "提前結束吃飯", clock_out: "下班打卡",
 };
-export type FlowRecord = { id: string; occurred_at: string; work_date: string; event_type: "clock_in" | "clock_out"; punch_action: string | null };
+export type FlowRecord = { id: string; occurred_at: string; work_date: string; event_type: "clock_in" | "clock_out"; punch_action: string | null; starts_afternoon_meal?: boolean };
 export const MEAL_DURATION_MS = 30 * 60_000;
 export function actionEventType(action: PunchAction): "clock_in" | "clock_out" {
   return ["clock_in", "lunch_end", "meal_end"].includes(action) ? "clock_in" : "clock_out";
@@ -26,8 +26,9 @@ export function getPunchFlow(records: FlowRecord[], now: number, hasLunch: boole
     return { ...record, action };
   });
   const done = new Set(events.map(event => event.action));
+  if (events.some(event => event.starts_afternoon_meal)) done.add("meal_afternoon");
   const last = events.at(-1);
-  const meal = last && ["meal_morning", "meal_afternoon"].includes(last.action) ? last : null;
+  const meal = last && (["meal_morning", "meal_afternoon"].includes(last.action) || last.starts_afternoon_meal) ? last : null;
   const mealEndsAt = meal ? Date.parse(meal.occurred_at) + MEAL_DURATION_MS : null;
   const remainingSeconds = mealEndsAt === null ? 0 : Math.max(0, Math.ceil((mealEndsAt - now) / 1000));
   const minute = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Taipei", hour: "2-digit", hourCycle: "h23" }).format(now)) * 60

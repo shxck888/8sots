@@ -64,14 +64,14 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
   const showPunchSuccess = useCallback((result: Extract<PunchActionState, { ok: true }>) => {
     setLocalRecords(current => current.some(record => record.id === result.id) ? current : [...current, {
       id: result.id, event_type: result.eventType, occurred_at: result.occurredAt,
-      work_date: result.workDate, punch_action: result.action,
+      work_date: result.workDate, punch_action: result.action, starts_afternoon_meal: result.startsAfternoonMeal,
     }]);
     anchor.current = { epoch: Date.parse(result.occurredAt), monotonic: performance.now() };
     setNow(Date.parse(result.occurredAt));
     const time = new Intl.DateTimeFormat("zh-TW", {
       hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Taipei",
     }).format(new Date(result.occurredAt));
-    setMessage(`${punchActionLabels[result.action]}成功，伺服器時間 ${time}。`);
+    setMessage(`${punchActionLabels[result.action]}成功，伺服器時間 ${time}。${result.startsAfternoonMeal ? "已自動開始下午吃飯 30 分鐘倒數。" : ""}`);
     setMethodOpen(false);
     setOtherOpen(false);
     router.refresh();
@@ -161,7 +161,7 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
     clock_in: "開始今天的工作，請選擇打卡方式",
     meal_morning: "休息 30 分鐘，結束後自動接續工作",
     lunch_start: "開始午休，返回時請打午休結束卡",
-    lunch_end: "結束午休後，記得開始下午吃飯休息",
+    lunch_end: "午休結束後，自動開始下午吃飯 30 分鐘倒數",
     meal_afternoon: "預定 16:30–17:00・休息 30 分鐘",
     meal_end: "提前結束會依實際休息時間計算",
     clock_out: "離開前完成下班打卡",
@@ -207,7 +207,7 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
     <details className="punch-today-events home-events-card"><summary><span><Clock3 size={18} />今日打卡紀錄 <small>{flow.events.length} 筆</small></span><ChevronDown size={18} /></summary>
       {flow.events.length ? <ol>{flow.events.map(event => <li key={event.id}>
         <time>{new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit" }).format(new Date(event.occurred_at))}</time>
-        <span>{punchActionLabels[event.action]}</span>
+        <span>{punchActionLabels[event.action]}{event.starts_afternoon_meal ? <small className="home-auto-meal-note">自動開始下午吃飯 30 分鐘</small> : null}</span>
       </li>)}</ol> : <p className="home-schedule-note">今天還沒有打卡紀錄</p>}
       <p className="home-schedule-note">正式時間以伺服器收到打卡的時間為準。</p>
     </details>

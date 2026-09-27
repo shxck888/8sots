@@ -35,7 +35,7 @@ export function parseQrPunchValue(value: string): { deviceId: string; token: str
 }
 
 export type PunchActionState =
-  | { ok: true; eventType: PunchEventType; action: PunchAction; id: string; occurredAt: string; workDate: string }
+  | { ok: true; eventType: PunchEventType; action: PunchAction; id: string; occurredAt: string; workDate: string; startsAfternoonMeal?: boolean }
   | { ok: false; message: string; code?: "qr_already_used" };
 
 export const punchEventLabels: Record<PunchEventType, string> = {
