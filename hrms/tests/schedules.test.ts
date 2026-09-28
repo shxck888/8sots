@@ -8,6 +8,7 @@ import {
   isMonday,
   parseScheduleAssignments,
   schedulePeriodSchema,
+  selectableShiftCodesForDate,
   shiftMinuteLabel,
 } from "../lib/schedules";
 
@@ -50,6 +51,19 @@ describe("schedule week helpers", () => {
     expect(defaultShiftCodeForDate("2026-10-06", "national")).toBe("HOLIDAY_CONTINUOUS");
     expect(defaultShiftCodeForDate("2026-10-03", "makeup_workday")).toBe("WEEKDAY_SPLIT_OCT2026");
     expect(defaultShiftCodeForDate("2026-10-06", "company")).toBeNull();
+  });
+
+  it("offers holiday shifts on weekdays without changing Monday closure defaults", () => {
+    for (const date of ["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"]) {
+      expect(selectableShiftCodesForDate(date)).toEqual(["WEEKDAY_SPLIT_OCT2026", "HOLIDAY_CONTINUOUS"]);
+    }
+    expect(defaultShiftCodeForDate("2026-10-12")).toBeNull();
+    expect(selectableShiftCodesForDate("2026-10-16", "national")).toEqual(["HOLIDAY_CONTINUOUS"]);
+    expect(selectableShiftCodesForDate("2026-10-12", "national")).toEqual(["WEEKDAY_SPLIT_OCT2026", "HOLIDAY_CONTINUOUS"]);
+    expect(selectableShiftCodesForDate("2026-09-28")).toEqual(["WEEKDAY_SPLIT", "HOLIDAY_CONTINUOUS"]);
+    expect(selectableShiftCodesForDate("2026-10-16", "company")).toEqual([]);
+    expect(selectableShiftCodesForDate("2026-10-17")).toEqual(["HOLIDAY_CONTINUOUS"]);
+    expect(selectableShiftCodesForDate("2026-10-17", "makeup_workday")).toEqual(["WEEKDAY_SPLIT_OCT2026"]);
   });
 });
 

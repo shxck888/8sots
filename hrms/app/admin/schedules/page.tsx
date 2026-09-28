@@ -6,17 +6,16 @@ import {
   assignmentFieldName,
   buildWeekDates,
   DAY_OFF_VALUE,
-  defaultShiftCodeForDate,
   getWeekStart,
   HOLIDAY_SHIFT_CODE,
   isMonday,
+  selectableShiftCodesForDate,
   shiftMinuteLabel,
   STORE_CLOSED_VALUE,
   toIsoDate,
   WEEKDAY_SHIFT_CODE,
   OCTOBER_WEEKDAY_SHIFT_CODE,
   isLunchShiftCode,
-  weekdayShiftCodeForDate,
 } from "@/lib/schedules";
 import { computeScheduleWarnings, type ScheduleWarning } from "@/lib/schedule-warnings";
 import type { HolidayKind } from "@/lib/holidays";
@@ -208,7 +207,7 @@ export default async function SchedulesPage({ searchParams }: {
             <input name="scheduleVersionId" type="hidden" value={draft!.id} />
             <input name="weekStart" type="hidden" value={weekStart} />
             <div className="schedule-toolbar">
-              <div><strong>草稿 V{draft!.version}</strong><span>週一預設例假（店休）；如有開店，可改為平日班。未排班與休息日（休假）可個別選擇。</span></div>
+              <div><strong>草稿 V{draft!.version}</strong><span>週一預設例假（店休）；如有開店，可選平日班或假日班。週二至週五遇連假或補休，也可改選假日班。</span></div>
               <button className="admin-button primary" type="submit"><Save size={16} /> 儲存草稿</button>
             </div>
             <div className="schedule-grid-wrap">
@@ -218,12 +217,10 @@ export default async function SchedulesPage({ searchParams }: {
                   <tr key={employee.id}>
                     <th><strong>{employee.full_name}</strong><small>{employee.employee_no}</small></th>
                     {weekDates.map((date) => {
-                      const shiftCode = defaultShiftCodeForDate(date, holidayKindByDate.get(date));
-                      const defaultShift = shiftCode ? defaultShifts.get(shiftCode) : null;
+                      const selectableShifts = selectableShiftCodesForDate(date, holidayKindByDate.get(date))
+                        .flatMap((code) => { const shift = defaultShifts.get(code); return shift ? [shift] : []; });
                       const monday = isMonday(date);
                       const weekday = new Date(`${date}T00:00:00.000Z`).getUTCDay();
-                      const mondayOpenShift = monday && holidayKindByDate.get(date) !== "company" ? defaultShifts.get(weekdayShiftCodeForDate(date)) : null;
-                      const mondayHolidayShift = monday && holidayKindByDate.get(date) === "national" ? defaultShifts.get(HOLIDAY_SHIFT_CODE) : null;
                       return (
                         <td key={date}>
                           <select
@@ -232,9 +229,7 @@ export default async function SchedulesPage({ searchParams }: {
                             name={assignmentFieldName(employee.id, date)}
                           >
                             {monday ? <option value={STORE_CLOSED_VALUE}>例假（店休）</option> : null}
-                            {defaultShift ? <option value={defaultShift.id}>{shiftLabels.get(defaultShift.id)}</option> : null}
-                            {mondayOpenShift ? <option value={mondayOpenShift.id}>{shiftLabels.get(mondayOpenShift.id)}</option> : null}
-                            {mondayHolidayShift ? <option value={mondayHolidayShift.id}>{shiftLabels.get(mondayHolidayShift.id)}</option> : null}
+                            {selectableShifts.map((shift) => <option key={shift.id} value={shift.id}>{shiftLabels.get(shift.id)}</option>)}
                             <option value={DAY_OFF_VALUE}>休息日（休假）</option>
                             <option value="">未排班</option>
                             {weekday >= 2 && weekday <= 5 ? <option value={STORE_CLOSED_VALUE}>例假（店休）</option> : null}

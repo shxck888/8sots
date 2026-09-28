@@ -122,6 +122,61 @@ describe("database migrations and critical workflows", () => {
       await expect(db.query('select public.save_schedule_assignments($1,$2,$3::jsonb)',[fixtureIds.tenant,draft.rows[0].id,JSON.stringify([{employee_id:fixtureIds.employee,work_date:'2026-10-01',shift_id:fixtureIds.weekdayShift}])])).rejects.toThrow('shift does not match date default');
     } finally {await db.exec('rollback');}
   });
+  it("publishes Monday and Friday holiday overrides without automatically starting an afternoon meal", async () => {
+    await db.exec("begin");
+    try {
+      await setUser(fixtureIds.admin);
+      const draft = await db.query<{ id: string }>(
+        "select public.create_schedule_draft($1,'2026-10-12','2026-10-18') id", [fixtureIds.tenant],
+      );
+      const defaults = await db.query<{ work_date: string; is_store_closed: boolean; shift_id: string | null }>(
+        "select work_date::text,is_store_closed,shift_id from public.schedule_assignments where schedule_version_id=$1 and work_date in ('2026-10-12','2026-10-16') order by work_date",
+        [draft.rows[0].id],
+      );
+      expect(defaults.rows).toEqual([
+        { work_date: "2026-10-12", is_store_closed: true, shift_id: null },
+        { work_date: "2026-10-16", is_store_closed: false, shift_id: fixtureIds.octoberShift },
+      ]);
+      await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+        fixtureIds.tenant, draft.rows[0].id,
+        JSON.stringify(["2026-10-12", "2026-10-16"].map((date) => ({
+          employee_id: fixtureIds.employee, work_date: date, shift_id: fixtureIds.holidayShift,
+        }))),
+      ]);
+      await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, draft.rows[0].id]);
+      await setUser(fixtureIds.employeeUser);
+      const published = await db.query<{ work_date: string; shift_code: string; start_minute: number; end_minute: number }>(
+        "select work_date::text,shift_code,start_minute,end_minute from public.get_my_published_schedule('2026-10-12','2026-10-16') where work_date in ('2026-10-12','2026-10-16') order by work_date",
+      );
+      expect(published.rows).toEqual([
+        { work_date: "2026-10-12", shift_code: "HOLIDAY_CONTINUOUS", start_minute: 600, end_minute: 1260 },
+        { work_date: "2026-10-16", shift_code: "HOLIDAY_CONTINUOUS", start_minute: 600, end_minute: 1260 },
+      ]);
+      for (const date of ["2026-10-12", "2026-10-16"]) {
+        const event = await mealEvent(date, "16:30", "lunch_end");
+        const recorded = await db.query<{ starts_afternoon_meal: boolean }>(
+          "select starts_afternoon_meal from public.punch_records where id=$1", [event.rows[0].id],
+        );
+        expect(recorded.rows[0].starts_afternoon_meal).toBe(false);
+      }
+    } finally { await db.exec("rollback"); }
+  });
+
+  it("still rejects holiday shifts during an explicit company shutdown", async () => {
+    await db.exec("begin");
+    try {
+      await setUser(fixtureIds.admin);
+      await db.query("insert into public.holiday_calendar_entries(tenant_id,holiday_date,name,kind) values($1,'2026-10-16','公司停業','company')", [fixtureIds.tenant]);
+      const draft = await db.query<{ id: string }>(
+        "select public.create_schedule_draft($1,'2026-10-12','2026-10-18') id", [fixtureIds.tenant],
+      );
+      await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
+        fixtureIds.tenant, draft.rows[0].id,
+        JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-10-16", shift_id: fixtureIds.holidayShift }]),
+      ])).rejects.toThrow(/shift does not match date default/);
+    } finally { await db.exec("rollback"); }
+  });
+
   it("counts the new weekday as eight hours with a real morning meal and automatic 16:30–17:00 meal", async () => {
     await db.exec('begin');
     try {

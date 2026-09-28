@@ -95,6 +95,21 @@ export function defaultShiftCodeForDate(date: string, holidayKind?: HolidayKind)
   return kind === "holiday" ? HOLIDAY_SHIFT_CODE : weekdayShiftCodeForDate(date);
 }
 
+export function selectableShiftCodesForDate(date: string, holidayKind?: HolidayKind): string[] {
+  const parsed = parseIsoDate(date);
+  if (!parsed) throw new Error("Invalid schedule date");
+  if (holidayKind === "company") return [];
+  const codes = new Set<string>();
+  const defaultCode = defaultShiftCodeForDate(date, holidayKind);
+  if (defaultCode) codes.add(defaultCode);
+  const weekday = parsed.getUTCDay();
+  if (weekday === 1) codes.add(weekdayShiftCodeForDate(date));
+  // Long weekends and compensatory holidays can be assigned manually,
+  // even when the holiday calendar has no entry for the date.
+  if (weekday >= 1 && weekday <= 5) codes.add(HOLIDAY_SHIFT_CODE);
+  return [...codes];
+}
+
 export function shiftMinuteLabel(minute: number): string {
   const day = Math.floor(minute / 1440);
   const withinDay = minute % 1440;
