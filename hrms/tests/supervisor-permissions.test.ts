@@ -6,8 +6,9 @@ import {
 } from "../lib/supervisor-permissions";
 
 describe("supervisor admin permissions", () => {
-  it("allows only the seven delegated back-office permissions", () => {
-    expect(supervisorPermissionDefinitions).toHaveLength(7);
+  it("allows delegated back-office permissions including break reminders", () => {
+    expect(supervisorPermissionDefinitions).toHaveLength(8);
+    expect(isSupervisorPermissionCode("attendance.break_notify")).toBe(true);
     expect(isSupervisorPermissionCode("schedule.manage")).toBe(true);
     expect(isSupervisorPermissionCode("platform.admin")).toBe(false);
     expect(isSupervisorPermissionCode("access.manage")).toBe(false);
@@ -17,11 +18,12 @@ describe("supervisor admin permissions", () => {
     const access = parseEmployeeAdminAccess({
       account_linked: true,
       account_status: "active",
-      permissions: ["schedule.manage", "request.manage", "platform.admin", 123],
+      permissions: ["schedule.manage", "request.manage", "attendance.break_notify", "platform.admin", 123],
     });
     expect(access.accountLinked).toBe(true);
     expect(access.permissions.schedules).toBe(true);
     expect(access.permissions.requests).toBe(true);
+    expect(access.permissions.breakNotifications).toBe(true);
     expect(access.permissions.payroll).toBe(false);
     expect(access.isPlatformAdmin).toBe(false);
   });

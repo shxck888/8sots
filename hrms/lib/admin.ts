@@ -10,6 +10,7 @@ export type AdminContext = {
     employees: boolean;
     schedules: boolean;
     attendance: boolean;
+    breakNotifications: boolean;
     requests: boolean;
     payroll: boolean;
     settings: boolean;
@@ -22,6 +23,7 @@ const permissionFields = {
   "employee.manage": "canManageEmployees",
   "schedule.manage": "canManageSchedules",
   "attendance.manage": "canManageAttendance",
+  "attendance.break_notify": "canReceiveBreakNotifications",
   "request.manage": "canManageRequests",
   "payroll.manage": "canManagePayroll",
   "settings.manage": "canManageSettings",
@@ -40,6 +42,7 @@ export async function getAdminContext(
     permissions: {
       employees: workspace.canManageEmployees, schedules: workspace.canManageSchedules,
       attendance: workspace.canManageAttendance, requests: workspace.canManageRequests,
+      breakNotifications: workspace.canReceiveBreakNotifications,
       payroll: workspace.canManagePayroll, settings: workspace.canManageSettings,
       audit: workspace.canReadAudit,
       access: workspace.canManageAccess,
@@ -55,6 +58,7 @@ export async function getAdminShellContext(): Promise<AdminContext | null> {
     permissions: {
       employees: workspace.canManageEmployees, schedules: workspace.canManageSchedules,
       attendance: workspace.canManageAttendance, requests: workspace.canManageRequests,
+      breakNotifications: workspace.canReceiveBreakNotifications,
       payroll: workspace.canManagePayroll, settings: workspace.canManageSettings,
       audit: workspace.canReadAudit,
       access: workspace.canManageAccess,

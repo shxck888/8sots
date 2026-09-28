@@ -112,6 +112,122 @@ describe("database migrations and critical workflows", () => {
       $4,($3::date+$5::time) at time zone 'Asia/Taipei',($3::date+$5::time) at time zone 'Asia/Taipei','Asia/Taipei','web_gps',
       25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$6) returning id`, [fixtureIds.tenant,fixtureIds.employee,date,action,time,fixtureIds.employeeUser]);
   }
+  async function breakRecipient() {
+    const user = crypto.randomUUID(), employee = crypto.randomUUID();
+    await db.query("insert into auth.users(id,email) values($1,$2)", [user, `${user}@example.test`]);
+    await db.query("insert into public.tenant_memberships(tenant_id,user_id,status) values($1,$2,'active')", [fixtureIds.tenant, user]);
+    await db.query("insert into public.employees(id,tenant_id,auth_user_id,employee_no,full_name,hire_date,status) values($1,$2,$3,$4,'通知測試主管','2026-01-01','active')", [employee, fixtureIds.tenant, user, user.slice(0, 8).toUpperCase()]);
+    await db.query("insert into public.employee_auth_accounts(employee_id,tenant_id,auth_user_id,username,status) values($1,$2,$3,$4,'active')", [employee, fixtureIds.tenant, user, user.replaceAll("-", "")]);
+    await setUser(fixtureIds.admin);
+    await db.query("select public.set_employee_admin_permissions($1,$2,$3)", [fixtureIds.tenant, employee, ["attendance.break_notify"]]);
+    await setUser(user);
+    const subscription = await db.query<{ id: string }>("select public.save_my_push_subscription($1,$2,$3,$4) id", [fixtureIds.tenant, `https://web.push.apple.com/${user}`, "A".repeat(65), "B".repeat(22)]);
+    return { user, employee, subscription: subscription.rows[0].id };
+  }
+
+  async function dueMeal(action = "meal_morning") {
+    const date = (await db.query<{ date: string }>("select (statement_timestamp() at time zone 'Asia/Taipei')::date::text date")).rows[0].date;
+    if (action === "lunch_end") await mealSchedule(date);
+    const punch = await db.query<{ id: string }>(`insert into public.punch_records(
+      tenant_id,employee_id,work_date,event_type,punch_action,occurred_at,client_occurred_at,timezone,source,
+      latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by)
+      values($1,$2,$3,case when $4='lunch_end' then 'clock_in'::public.punch_event_type else 'clock_out'::public.punch_event_type end,
+      $4,statement_timestamp()-interval '31 minutes',statement_timestamp()-interval '31 minutes','Asia/Taipei',
+      'web_gps',25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$5) returning id`,
+    [fixtureIds.tenant, fixtureIds.employee, date, action, fixtureIds.employeeUser]);
+    return punch.rows[0].id;
+  }
+
+  it.each(["meal_morning", "meal_afternoon", "lunch_end"])("notifies all authorized supervisors when %s completes, without an end punch", async (action) => {
+    await db.exec("begin");
+    try {
+      const manager1 = await breakRecipient(), manager2 = await breakRecipient();
+      await setUser(fixtureIds.admin);
+      const adminSubscription = await db.query<{ id: string }>("select public.save_my_push_subscription($1,$2,$3,$4) id", [fixtureIds.tenant, "https://web.push.apple.com/admin-device", "A".repeat(65), "B".repeat(22)]);
+      await setUser(fixtureIds.employeeUser);
+      await db.query("select public.save_my_push_subscription($1,$2,$3,$4)", [fixtureIds.tenant, "https://web.push.apple.com/ordinary-employee", "A".repeat(65), "B".repeat(22)]);
+      // A subscribed full administrator of a different tenant is never included.
+      const otherTenant = crypto.randomUUID(), otherRole = crypto.randomUUID();
+      await db.query("insert into public.tenants(id,name,slug) values($1,'Other tenant',$2)", [otherTenant, otherTenant]);
+      const membership = await db.query<{ id: string }>("insert into public.tenant_memberships(tenant_id,user_id,status) values($1,$2,'active') returning id", [otherTenant, fixtureIds.outsider]);
+      await db.query("insert into public.roles(id,tenant_id,code,name) values($1,$2,'platform_admin','Other admin')", [otherRole, otherTenant]);
+      await db.query("insert into public.role_permissions(tenant_id,role_id,permission_id) select $1,$2,id from public.permissions where code='platform.admin'", [otherTenant, otherRole]);
+      await db.query("insert into public.membership_roles(tenant_id,membership_id,role_id) values($1,$2,$3)", [otherTenant, membership.rows[0].id, otherRole]);
+      await setUser(fixtureIds.outsider);
+      await db.query("select public.save_my_push_subscription($1,$2,$3,$4)", [otherTenant, "https://web.push.apple.com/other-tenant", "A".repeat(65), "B".repeat(22)]);
+
+      const punch = await dueMeal(action);
+      const queued = await db.query<{ kind: string; minutes: number }>("select j.kind,(extract(epoch from (j.due_at-p.occurred_at))/60)::integer minutes from public.meal_push_jobs j join public.punch_records p on p.id=j.punch_id where j.punch_id=$1 order by j.kind", [punch]);
+      expect(queued.rows).toEqual([{ kind: "meal_ending", minutes: 27 }, { kind: "supervisor_meal_finished", minutes: 30 }]);
+      const beforeCount = (await db.query<{ count: number }>("select count(*)::integer count from public.punch_records")).rows[0].count;
+      type Claimed = { id: string; lease_id: string; kind: string; employee_name: string; subscriptions: { id: string }[] };
+      expect((await db.query<{ jobs: unknown[] }>("select public.claim_meal_push_jobs() jobs")).rows[0].jobs).toEqual([]);
+      const first = await db.query<{ jobs: Claimed[] }>("select public.claim_meal_push_jobs_v2() jobs");
+      expect(first.rows[0].jobs).toHaveLength(1);
+      const job = first.rows[0].jobs[0];
+      expect(job.kind).toBe("supervisor_meal_finished");
+      expect(job.employee_name).toBe("測試員工");
+      expect(job.subscriptions.map((s) => s.id).sort()).toEqual([manager1.subscription, manager2.subscription, adminSubscription.rows[0].id].sort());
+      expect((await db.query<{ jobs: unknown[] }>("select public.claim_meal_push_jobs_v2() jobs")).rows[0].jobs).toEqual([]);
+      await db.query("select public.mark_meal_push_delivered($1,$2,$3)", [job.id, job.lease_id, manager1.subscription]);
+      await db.query("update public.meal_push_jobs set lease_until=statement_timestamp()-interval '1 second' where id=$1", [job.id]);
+      const retry = (await db.query<{ jobs: Claimed[] }>("select public.claim_meal_push_jobs_v2() jobs")).rows[0].jobs[0];
+      expect(retry.subscriptions.map((s) => s.id).sort()).toEqual([manager2.subscription, adminSubscription.rows[0].id].sort());
+      expect((await db.query<{ count: number }>("select count(*)::integer count from public.punch_records")).rows[0].count).toBe(beforeCount);
+    } finally { await db.exec("rollback"); }
+  });
+
+  it.each(["revoked", "membership_suspended", "account_suspended", "employee_terminated"])("stops notifying a supervisor after %s", async (change) => {
+    await db.exec("begin");
+    try {
+      const manager = await breakRecipient();
+      await dueMeal();
+      await setUser(fixtureIds.admin);
+      if (change === "revoked") await db.query("select public.set_employee_admin_permissions($1,$2,$3)", [fixtureIds.tenant, manager.employee, []]);
+      if (change === "membership_suspended") await db.query("update public.tenant_memberships set status='suspended' where user_id=$1", [manager.user]);
+      if (change === "account_suspended") await db.query("update public.employee_auth_accounts set status='suspended' where employee_id=$1", [manager.employee]);
+      if (change === "employee_terminated") await db.query("update public.employees set status='terminated' where id=$1", [manager.employee]);
+      const result = await db.query<{ jobs: { subscriptions: unknown[] }[] }>("select public.claim_meal_push_jobs_v2() jobs");
+      expect(result.rows[0].jobs).toHaveLength(1);
+      expect(result.rows[0].jobs[0].subscriptions).toEqual([]);
+    } finally { await db.exec("rollback"); }
+  });
+
+  it.each(["early_end", "voided", "end_at_30"])("handles %s when determining whether a supervisor reminder is still due", async (change) => {
+    await db.exec("begin");
+    try {
+      await breakRecipient();
+      const punch = await dueMeal();
+      if (change === "voided") {
+        await setUser(fixtureIds.admin);
+        await db.query("select public.void_punch_records($1,$2::uuid[],'測試作廢錯誤休息卡')", [fixtureIds.tenant, [punch]]);
+      } else {
+        await db.query(`insert into public.punch_records(tenant_id,employee_id,work_date,event_type,punch_action,
+          occurred_at,client_occurred_at,timezone,source,latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by)
+          select tenant_id,employee_id,work_date,'clock_in','meal_end',occurred_at+make_interval(mins=>$2),
+          occurred_at+make_interval(mins=>$2),timezone,source,latitude,longitude,accuracy_m,location_consent_at,
+          gen_random_uuid(),created_by from public.punch_records where id=$1`, [punch, change === "early_end" ? 29 : 30]);
+      }
+      const result = await db.query<{ jobs: unknown[] }>("select public.claim_meal_push_jobs_v2() jobs");
+      expect(result.rows[0].jobs).toHaveLength(change === "end_at_30" ? 1 : 0);
+    } finally { await db.exec("rollback"); }
+  });
+
+  it("delegates break notifications independently and protects push subscriptions and cron RPCs", async () => {
+    await db.exec("begin");
+    try {
+      const manager = await breakRecipient();
+      const workspace = await db.query<{ can_receive_break_notifications: boolean; can_manage_attendance: boolean }>("select can_receive_break_notifications,can_manage_attendance from public.get_current_workspace_context()");
+      expect(workspace.rows[0]).toEqual({ can_receive_break_notifications: true, can_manage_attendance: false });
+      await setUser(fixtureIds.admin);
+      const permissions = await db.query<{ data: { permissions: string[] } }>("select public.get_employee_admin_permissions($1,$2) data", [fixtureIds.tenant, manager.employee]);
+      expect(permissions.rows[0].data.permissions).toEqual(["attendance.break_notify"]);
+      await setUser(fixtureIds.outsider);
+      await expect(db.query("select public.save_my_push_subscription($1,$2,$3,$4)", [fixtureIds.tenant, "https://web.push.apple.com/outsider", "A".repeat(65), "B".repeat(22)])).rejects.toThrow(/active tenant member required/);
+    } finally { await db.exec("rollback"); }
+    const execution = await db.query<{ anon: boolean; employee: boolean }>("select has_function_privilege('anon','public.claim_meal_push_jobs_v2()','execute') anon,has_function_privilege('authenticated','public.claim_meal_push_jobs_v2()','execute') employee");
+    expect(execution.rows[0]).toEqual({ anon: false, employee: false });
+  });
   it("selects old/new weekday templates across October 1 and rejects the wrong date version", async () => {
     await db.exec('begin');
     try {
@@ -360,15 +476,16 @@ describe("database migrations and critical workflows", () => {
       const date=(await db.query<{date:string}>(`select to_char((statement_timestamp() at time zone 'Asia/Taipei')::date,'YYYY-MM-DD') date`)).rows[0].date;
       const meal=await db.query<{id:string}>(`insert into public.punch_records(tenant_id,employee_id,work_date,event_type,punch_action,occurred_at,client_occurred_at,timezone,source,latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by)
         values($1,$2,$3,'clock_out','meal_morning',statement_timestamp()-interval '27 minutes',statement_timestamp()-interval '27 minutes','Asia/Taipei','web_gps',25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$4) returning id`,[fixtureIds.tenant,fixtureIds.employee,date,fixtureIds.employeeUser]);
-      const first=await db.query<{jobs: {id:string}[]}>(`select public.claim_meal_push_jobs() jobs`);
+      const first=await db.query<{jobs: {id:string}[]}>(`select public.claim_meal_push_jobs_v2() jobs`);
       expect(first.rows[0].jobs).toHaveLength(1);
-      const second=await db.query<{jobs: unknown[]}>(`select public.claim_meal_push_jobs() jobs`);
+      const second=await db.query<{jobs: unknown[]}>(`select public.claim_meal_push_jobs_v2() jobs`);
       expect(second.rows[0].jobs).toHaveLength(0);
       await db.query(`insert into public.punch_records(tenant_id,employee_id,work_date,event_type,punch_action,occurred_at,client_occurred_at,timezone,source,latitude,longitude,accuracy_m,location_consent_at,idempotency_key,created_by)
         values($1,$2,$3,'clock_in','meal_end',statement_timestamp(),statement_timestamp(),'Asia/Taipei','web_gps',25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$4)`,[fixtureIds.tenant,fixtureIds.employee,date,fixtureIds.employeeUser]);
-      await db.query(`select public.claim_meal_push_jobs()`);
+      await db.query(`select public.claim_meal_push_jobs_v2()`);
       const job=await db.query<{completed_at:string|null}>(`select completed_at from public.meal_push_jobs where punch_id=$1`,[meal.rows[0].id]);
-      expect(job.rows[0].completed_at).not.toBeNull();
+      expect(job.rows).toHaveLength(2);
+      expect(job.rows.every((row) => row.completed_at !== null)).toBe(true);
     } finally { await db.exec('rollback'); }
   });
 

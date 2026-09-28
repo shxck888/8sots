@@ -36,6 +36,14 @@ describe("server meal push delivery", () => {
     expect(mocks.remove).toHaveBeenCalledWith("id", "sub-1");
     expect(mocks.rpc).toHaveBeenCalledWith("complete_meal_push_job", expect.anything());
   });
+  it("names the employee in a supervisor reminder and opens the authorized reminders page", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ ...job(), kind: "supervisor_meal_finished", employee_name: "王小明" }], error: null });
+    await GET(request());
+    const payload = JSON.parse(mocks.send.mock.calls[0][1] as string);
+    expect(payload.title).toBe("王小明員工休息時間已到");
+    expect(payload.body).toContain("無需打結束卡");
+    expect(payload.url).toBe("/admin/break-reminders");
+  });
   it("does not send an expired job or contact an arbitrary host", async () => {
     const expired = job(); expired.expires_at = new Date(Date.now() - 1000).toISOString();
     const unsafe = job(); unsafe.subscriptions[0].endpoint = "https://127.0.0.1/internal";

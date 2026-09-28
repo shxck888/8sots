@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isAllowedPushEndpoint } from "@/lib/push-contract";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-type Job = { id: string; lease_id: string; kind: "meal_ending" | "afternoon_start"; expires_at: string;
+type Job = { id: string; lease_id: string; kind: "meal_ending" | "afternoon_start" | "supervisor_meal_finished"; employee_name?: string; expires_at: string;
   subscriptions: (webpush.PushSubscription & { id: string })[] };
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const publicKey = process.env.VAPID_PUBLIC_KEY, privateKey = process.env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) return Response.json({ error: "push not configured" }, { status: 503 });
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.rpc("claim_meal_push_jobs");
+  const { data, error } = await supabase.rpc("claim_meal_push_jobs_v2");
   if (error) return Response.json({ error: "queue unavailable" }, { status: 503 });
   const jobs = data as unknown as Job[];
   let sent = 0, failed = 0;
@@ -24,8 +24,10 @@ export async function GET(request: Request) {
     if (ttl > 0) await Promise.all(job.subscriptions.map(async subscription => {
       if (!isAllowedPushEndpoint(subscription.endpoint)) return;
       try {
-        await webpush.sendNotification(subscription, JSON.stringify({ title: job.kind === "meal_ending" ? "吃飯休息即將結束" : "下午吃飯時間到了",
-          body: job.kind === "meal_ending" ? "吃飯休息剩約 3 分鐘，請準備返回工作。" : "預定 16:30–17:00 吃飯；請實際開始休息時打卡。", tag: `meal-${job.id}` }),
+        const supervisor = job.kind === "supervisor_meal_finished";
+        await webpush.sendNotification(subscription, JSON.stringify({ title: supervisor ? `${job.employee_name ?? "該"}員工休息時間已到` : job.kind === "meal_ending" ? "吃飯休息即將結束" : "下午吃飯時間到了",
+          body: supervisor ? "吃飯休息已滿 30 分鐘，無需打結束卡，請確認員工返回工作。" : job.kind === "meal_ending" ? "吃飯休息剩約 3 分鐘，請準備返回工作。" : "預定 16:30–17:00 吃飯；請實際開始休息時打卡。",
+          tag: `meal-${job.id}`, url: supervisor ? "/admin/break-reminders" : "/" }),
         { TTL: ttl, urgency: "high", timeout: 5000, vapidDetails: { subject: process.env.VAPID_SUBJECT || "https://hrms.8sots.com.tw", publicKey, privateKey } });
         await supabase.rpc("mark_meal_push_delivered", { p_job_id: job.id, p_lease_id: job.lease_id, p_subscription_id: subscription.id });
         sent++;

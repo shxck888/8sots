@@ -18,7 +18,7 @@ export function EmployeePermissionPanel({ employeeId, access }: { employeeId: st
         <div>
           <span className="admin-eyebrow">BACK OFFICE ACCESS</span>
           <h2>主管後台權限</h2>
-          <p>只開放主管實際需要的功能；未勾選的後台頁面不會顯示，也無法直接存取。</p>
+          <p>只開放主管實際需要的功能；休息到時提醒另需主管在自己的裝置開啟推播。</p>
         </div>
         <span className="permission-admin-only"><ShieldCheck size={17} /> 僅完整 admin 可設定</span>
       </header>

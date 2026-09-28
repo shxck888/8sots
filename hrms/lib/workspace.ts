@@ -14,6 +14,7 @@ export type WorkspaceContext = {
   canManageEmployees: boolean;
   canManageSchedules: boolean;
   canManageAttendance: boolean;
+  canReceiveBreakNotifications: boolean;
   canManageRequests: boolean;
   canManagePayroll: boolean;
   canManageSettings: boolean;
@@ -33,6 +34,7 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
   const canManageEmployees = data.can_manage_employee === true;
   const canManageSchedules = data.can_manage_schedule === true;
   const canManageAttendance = data.can_manage_attendance === true;
+  const canReceiveBreakNotifications = data.can_receive_break_notifications === true;
   const canManageRequests = data.can_manage_request === true;
   const canManagePayroll = data.can_manage_payroll === true;
   const canManageSettings = data.can_manage_settings === true;
@@ -49,11 +51,12 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
     canManageEmployees,
     canManageSchedules,
     canManageAttendance,
+    canReceiveBreakNotifications,
     canManageRequests,
     canManagePayroll,
     canManageSettings,
     canReadAudit,
     canManageAccess,
-    canManage: canManageEmployees || canManageSchedules || canManageAttendance || canManageRequests || canManagePayroll || canManageSettings || canReadAudit || canManageAccess,
+    canManage: canManageEmployees || canManageSchedules || canManageAttendance || canReceiveBreakNotifications || canManageRequests || canManagePayroll || canManageSettings || canReadAudit || canManageAccess,
   };
 });

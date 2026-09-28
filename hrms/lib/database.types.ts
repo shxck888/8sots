@@ -1016,7 +1016,7 @@ export type Database = {
         Row: {
           auth_key: string
           created_at: string
-          employee_id: string
+          employee_id: string | null
           endpoint: string
           id: string
           p256dh: string
@@ -1026,7 +1026,7 @@ export type Database = {
         Insert: {
           auth_key: string
           created_at?: string
-          employee_id: string
+          employee_id?: string | null
           endpoint: string
           id?: string
           p256dh: string
@@ -1036,7 +1036,7 @@ export type Database = {
         Update: {
           auth_key?: string
           created_at?: string
-          employee_id?: string
+          employee_id?: string | null
           endpoint?: string
           id?: string
           p256dh?: string
@@ -3702,6 +3702,7 @@ export type Database = {
         Returns: undefined
       }
       claim_meal_push_jobs: { Args: never; Returns: Json }
+      claim_meal_push_jobs_v2: { Args: never; Returns: Json }
       complete_meal_push_job: {
         Args: { p_job_id: string; p_lease_id: string }
         Returns: undefined
@@ -3872,6 +3873,7 @@ export type Database = {
           can_manage_schedule: boolean
           can_manage_settings: boolean
           can_read_audit: boolean
+          can_receive_break_notifications: boolean
           email: string
           employee_id: string
           tenant_id: string

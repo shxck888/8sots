@@ -7,6 +7,7 @@ export default async function AdminPage() {
   const destinations: Array<[keyof typeof admin.permissions, string]> = [
     ["employees", "/admin/employees"], ["schedules", "/admin/schedules"],
     ["attendance", "/admin/attendance"], ["requests", "/admin/requests"],
+    ["breakNotifications", "/admin/break-reminders"],
     ["payroll", "/admin/payroll"], ["settings", "/admin/settings"],
     ["audit", "/admin/audit"],
   ];

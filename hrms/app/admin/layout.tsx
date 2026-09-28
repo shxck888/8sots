@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
-        <Link className="admin-brand" href="/admin/employees">
+        <Link className="admin-brand" href="/admin">
           <span><Image alt="" height={38} priority src="/haizhixing-logo-icon.png" width={38} /></span>
           <div><strong>海之星</strong><small>管理後台</small></div>
         </Link>

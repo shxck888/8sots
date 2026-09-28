@@ -2,6 +2,7 @@ export const supervisorPermissionDefinitions = [
   { key: "employees", code: "employee.manage", label: "員工管理", description: "檢視與維護員工資料、登入帳號及密碼。", sensitive: false },
   { key: "schedules", code: "schedule.manage", label: "排班管理", description: "建立、調整並發布班表與假日曆。", sensitive: false },
   { key: "attendance", code: "attendance.manage", label: "出勤與打卡", description: "查看打卡紀錄、處理補卡並重算出勤。", sensitive: false },
+  { key: "breakNotifications", code: "attendance.break_notify", label: "員工休息到時提醒", description: "員工上午或下午吃飯休息滿 30 分鐘時，接收推播提醒；需在自己的裝置開啟通知。", sensitive: false },
   { key: "requests", code: "request.manage", label: "申請審核", description: "審核請假、加班與其他員工申請。", sensitive: false },
   { key: "payroll", code: "payroll.manage", label: "薪資管理", description: "查看並處理薪資、投保與扣繳資料。", sensitive: true },
   { key: "settings", code: "settings.manage", label: "系統設定", description: "調整門市打卡範圍、薪資週期與制度設定。", sensitive: true },
@@ -28,7 +29,7 @@ export function isSupervisorPermissionCode(value: string): value is SupervisorPe
 }
 
 export function emptySupervisorPermissions(): Record<SupervisorPermissionKey, boolean> {
-  return { employees: false, schedules: false, attendance: false, requests: false, payroll: false, settings: false, audit: false };
+  return { employees: false, schedules: false, attendance: false, breakNotifications: false, requests: false, payroll: false, settings: false, audit: false };
 }
 
 export function parseEmployeeAdminAccess(value: unknown): EmployeeAdminAccess {

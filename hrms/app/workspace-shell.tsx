@@ -37,7 +37,7 @@ export function WorkspaceShell({
           {nav.map(({ label, icon: Icon, href }) => (
             <Link className={activePath === href ? "nav-item active" : "nav-item"} href={href} key={label}><Icon size={19} /><span>{label}</span>{href === "/notifications" && notificationUnreadCount > 0 ? <i className="nav-badge">{Math.min(notificationUnreadCount, 99)}</i> : null}</Link>
           ))}
-          {canManage ? <Link className="nav-item" href="/admin/employees"><Settings size={19} /><span>管理後台</span></Link> : null}
+          {canManage ? <Link className="nav-item" href="/admin"><Settings size={19} /><span>管理後台</span></Link> : null}
         </nav>
         <div className="store-card"><span className="eyebrow">目前所屬組織</span><strong>{tenantName}</strong><span><MapPin size={14} /> 門市資料尚待建立</span></div>
         <div className="profile-mini">
