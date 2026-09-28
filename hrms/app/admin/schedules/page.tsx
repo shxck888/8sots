@@ -14,6 +14,9 @@ import {
   STORE_CLOSED_VALUE,
   toIsoDate,
   WEEKDAY_SHIFT_CODE,
+  OCTOBER_WEEKDAY_SHIFT_CODE,
+  isLunchShiftCode,
+  weekdayShiftCodeForDate,
 } from "@/lib/schedules";
 import { computeScheduleWarnings, type ScheduleWarning } from "@/lib/schedule-warnings";
 import type { HolidayKind } from "@/lib/holidays";
@@ -115,13 +118,13 @@ export default async function SchedulesPage({ searchParams }: {
     const shiftSegments = segments.filter((segment) => segment.shift_id === shift.id);
     const parts = shiftSegments
       .map((segment) => `${shiftMinuteLabel(segment.start_minute)}–${shiftMinuteLabel(segment.end_minute)}`);
-    const lunch = shift.code === "WEEKDAY_SPLIT" && shiftSegments.length === 2
+    const lunch = isLunchShiftCode(shift.code) && shiftSegments.length === 2
       ? ` · 午休 ${shiftMinuteLabel(shiftSegments[0].end_minute)}–${shiftMinuteLabel(shiftSegments[1].start_minute)}`
       : "";
-    return [shift.id, `${shift.name} · ${parts.join("、")}${lunch}`];
+    return [shift.id, `${shift.name} · ${parts.join("、")}${lunch}${shift.code === OCTOBER_WEEKDAY_SHIFT_CODE ? " · 16:30–17:00 吃飯，17:00 開工" : ""}`];
   }));
   const defaultShifts = new Map(shifts
-    .filter((shift) => shift.code === WEEKDAY_SHIFT_CODE || shift.code === HOLIDAY_SHIFT_CODE)
+    .filter((shift) => isLunchShiftCode(shift.code) || shift.code === HOLIDAY_SHIFT_CODE)
     .map((shift) => [shift.code, shift]));
   const loadError = employeesResult.error || shiftsResult.error || segmentsResult.error
     || versionsResult.error || assignmentsResult.error;
@@ -151,7 +154,7 @@ export default async function SchedulesPage({ searchParams }: {
 
       {loadError ? (
         <section className="admin-panel admin-empty"><strong>排班資料讀取失敗</strong><p>請確認最新 database migration 已完成。</p></section>
-      ) : !defaultShifts.has(WEEKDAY_SHIFT_CODE) || !defaultShifts.has(HOLIDAY_SHIFT_CODE) ? (
+      ) : !defaultShifts.has(WEEKDAY_SHIFT_CODE) || !defaultShifts.has(HOLIDAY_SHIFT_CODE) || (weekEnd >= "2026-10-01" && !defaultShifts.has(OCTOBER_WEEKDAY_SHIFT_CODE)) ? (
         <section className="admin-panel admin-empty"><strong>預設班別尚未完整建立</strong><p>請先建立平日班與假日班。</p></section>
       ) : employees.length === 0 ? (
         <section className="admin-panel admin-empty"><strong>沒有可排班的在職員工</strong><p>請先在員工管理建立在職員工。</p></section>
@@ -219,7 +222,7 @@ export default async function SchedulesPage({ searchParams }: {
                       const defaultShift = shiftCode ? defaultShifts.get(shiftCode) : null;
                       const monday = isMonday(date);
                       const weekday = new Date(`${date}T00:00:00.000Z`).getUTCDay();
-                      const mondayOpenShift = monday && holidayKindByDate.get(date) !== "company" ? defaultShifts.get(WEEKDAY_SHIFT_CODE) : null;
+                      const mondayOpenShift = monday && holidayKindByDate.get(date) !== "company" ? defaultShifts.get(weekdayShiftCodeForDate(date)) : null;
                       const mondayHolidayShift = monday && holidayKindByDate.get(date) === "national" ? defaultShifts.get(HOLIDAY_SHIFT_CODE) : null;
                       return (
                         <td key={date}>

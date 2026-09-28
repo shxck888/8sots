@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { getMyPublishedSchedule, type MyScheduleEntry } from "@/lib/my-schedule";
 import { formatScheduledHours, getMonthBounds, getMonthCalendarDates, shiftCalendarMonth, taipeiDateKey } from "@/lib/schedule-display";
-import { buildWeekDates, getWeekStart, shiftMinuteLabel, toIsoDate } from "@/lib/schedules";
+import { buildWeekDates, getWeekStart, isLunchShiftCode, OCTOBER_WEEKDAY_SHIFT_CODE, shiftMinuteLabel, toIsoDate } from "@/lib/schedules";
 import { getWorkspaceContext } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +32,11 @@ function ShiftDetail({ entry, dayOff = false, storeClosed = false, compact = fal
   if (!entry) return <p className="my-selected-empty">{compact ? "未排班" : "這天目前沒有已發布班別。未排班不代表已核准休假。"}</p>;
   return (
     <div className="my-selected-shift">
-      <div className="my-selected-shift-heading"><span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span><strong>{formatScheduledHours(entry.totalMinutes)} 小時</strong></div>
+      <div className="my-selected-shift-heading"><span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span><strong>{entry.shiftCode === OCTOBER_WEEKDAY_SHIFT_CODE ? `預定工作 ${formatScheduledHours(Math.max(0, entry.totalMinutes - 60))} 小時` : `${formatScheduledHours(entry.totalMinutes)} 小時`}</strong></div>
       <div className="my-selected-segments">
         {entry.segments.map((segment) => <span key={segment.order}><Clock3 size={17} />{shiftMinuteLabel(segment.startMinute)}–{shiftMinuteLabel(segment.endMinute)}</span>)}
       </div>
-      {entry.shiftCode === "WEEKDAY_SPLIT" && entry.segments.length === 2 ? <p>午休 {shiftMinuteLabel(entry.segments[0].endMinute)}–{shiftMinuteLabel(entry.segments[1].startMinute)}，需打開始及結束午休卡。</p> : null}
+      {isLunchShiftCode(entry.shiftCode) && entry.segments.length === 2 ? <p>午休 {shiftMinuteLabel(entry.segments[0].endMinute)}–{shiftMinuteLabel(entry.segments[1].startMinute)}，需打開始及結束午休卡。{entry.shiftCode === OCTOBER_WEEKDAY_SHIFT_CODE ? "午休結束後自動吃飯 16:30–17:00，17:00 開始工作；上午另有 30 分鐘吃飯休息。" : ""}</p> : null}
     </div>
   );
 }

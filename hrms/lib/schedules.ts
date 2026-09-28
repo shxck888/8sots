@@ -5,6 +5,13 @@ const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 const assignmentFieldPattern = /^assignment:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/i;
 
 export const WEEKDAY_SHIFT_CODE = "WEEKDAY_SPLIT";
+export const OCTOBER_WEEKDAY_SHIFT_CODE = "WEEKDAY_SPLIT_OCT2026";
+export function weekdayShiftCodeForDate(date: string): string {
+  return date >= "2026-10-01" ? OCTOBER_WEEKDAY_SHIFT_CODE : WEEKDAY_SHIFT_CODE;
+}
+export function isLunchShiftCode(code?: string): boolean {
+  return code === WEEKDAY_SHIFT_CODE || code === OCTOBER_WEEKDAY_SHIFT_CODE;
+}
 export const HOLIDAY_SHIFT_CODE = "HOLIDAY_CONTINUOUS";
 export type ScheduleDayKind = "closed" | "weekday" | "holiday";
 
@@ -85,7 +92,7 @@ export function isMonday(date: string): boolean {
 export function defaultShiftCodeForDate(date: string, holidayKind?: HolidayKind): string | null {
   const kind = getScheduleDayKind(date, holidayKind);
   if (kind === "closed") return null;
-  return kind === "holiday" ? HOLIDAY_SHIFT_CODE : WEEKDAY_SHIFT_CODE;
+  return kind === "holiday" ? HOLIDAY_SHIFT_CODE : weekdayShiftCodeForDate(date);
 }
 
 export function shiftMinuteLabel(minute: number): string {

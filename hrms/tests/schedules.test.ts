@@ -40,13 +40,15 @@ describe("schedule week helpers", () => {
     expect(defaultShiftCodeForDate("2026-09-28")).toBeNull();
     expect(defaultShiftCodeForDate("2026-09-28", "national")).toBeNull();
     expect(defaultShiftCodeForDate("2026-09-29")).toBe("WEEKDAY_SPLIT");
+    expect(defaultShiftCodeForDate("2026-09-30")).toBe("WEEKDAY_SPLIT");
+    expect(defaultShiftCodeForDate("2026-10-01")).toBe("WEEKDAY_SPLIT_OCT2026");
     expect(defaultShiftCodeForDate("2026-10-03")).toBe("HOLIDAY_CONTINUOUS");
     expect(defaultShiftCodeForDate("2026-10-04")).toBe("HOLIDAY_CONTINUOUS");
   });
 
   it("lets the holiday calendar override the weekday default", () => {
     expect(defaultShiftCodeForDate("2026-10-06", "national")).toBe("HOLIDAY_CONTINUOUS");
-    expect(defaultShiftCodeForDate("2026-10-03", "makeup_workday")).toBe("WEEKDAY_SPLIT");
+    expect(defaultShiftCodeForDate("2026-10-03", "makeup_workday")).toBe("WEEKDAY_SPLIT_OCT2026");
     expect(defaultShiftCodeForDate("2026-10-06", "company")).toBeNull();
   });
 });

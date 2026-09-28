@@ -17,7 +17,9 @@ export function recordAction(record: FlowRecord, index: number, hasLunch: boolea
   if (hasLunch && index === 2 && record.event_type === "clock_in") return "lunch_end";
   return record.event_type;
 }
-export function getPunchFlow(records: FlowRecord[], now: number, hasLunch: boolean) {
+export function getPunchFlow(records: FlowRecord[], now: number, hasLunch: boolean, timing: { lunchStartMinute?: number; lunchEndMinute?: number } = {}) {
+  const lunchStart = timing.lunchStartMinute ?? 14 * 60;
+  const lunchEnd = timing.lunchEndMinute ?? 16 * 60;
   const chronological = [...records].sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
   let boundaryIndex = 0;
   const events = chronological.map(record => {
@@ -38,11 +40,11 @@ export function getPunchFlow(records: FlowRecord[], now: number, hasLunch: boole
   else if (remainingSeconds > 0) suggested = "meal_end";
   else if (last?.action === "lunch_start") suggested = "lunch_end";
   else if (minute >= 20 * 60 + 30) suggested = "clock_out";
+  else if (hasLunch && minute >= lunchEnd && !done.has("lunch_end")) suggested = "lunch_end";
   else if (minute >= 16 * 60 + 30 && !done.has("meal_afternoon")) suggested = "meal_afternoon";
-  else if (hasLunch && minute >= 16 * 60 && !done.has("lunch_end")) suggested = "lunch_end";
-  else if (hasLunch && minute >= 13 * 60 + 30 && !done.has("lunch_start") && !done.has("lunch_end")) suggested = "lunch_start";
-  else if (minute < 14 * 60 && done.has("clock_in") && !done.has("meal_morning")) suggested = "meal_morning";
-  else if (!done.has("clock_in") && minute < 14 * 60) suggested = "clock_in";
+  else if (hasLunch && minute >= lunchStart && !done.has("lunch_start") && !done.has("lunch_end")) suggested = "lunch_start";
+  else if (minute < lunchStart && done.has("clock_in") && !done.has("meal_morning")) suggested = "meal_morning";
+  else if (!done.has("clock_in") && minute < lunchStart) suggested = "clock_in";
   else if (hasLunch && done.has("clock_in") && !done.has("lunch_start") && !done.has("lunch_end")) suggested = "lunch_start";
   else if (!done.has("meal_afternoon")) suggested = "meal_afternoon";
   else suggested = "clock_out";

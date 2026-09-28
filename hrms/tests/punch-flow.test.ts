@@ -39,6 +39,13 @@ describe("explicit punch flow", () => {
     expect(getPunchFlow(records, at("16:05"), false).remainingSeconds).toBe(1500);
     expect(getPunchFlow([...records, record("meal_end", "16:10")], at("16:11"), true).remainingSeconds).toBe(0);
   });
+  it("uses October lunch times and suggests the combined lunch-end action at 16:30", () => {
+    const records=[record("clock_in","10:00")];
+    const timing={lunchStartMinute:870,lunchEndMinute:990};
+    expect(getPunchFlow(records,at("14:10"),true,timing).suggested).toBe("meal_morning");
+    expect(getPunchFlow(records,at("14:30"),true,timing).suggested).toBe("lunch_start");
+    expect(getPunchFlow(records,at("16:30"),true,timing).suggested).toBe("lunch_end");
+  });
   it("does not suggest lunch punches on a continuous shift", () => {
     const flow = getPunchFlow([record("clock_in", "10:00")], at("14:00"), false);
     expect(["lunch_start", "lunch_end"]).not.toContain(flow.suggested);

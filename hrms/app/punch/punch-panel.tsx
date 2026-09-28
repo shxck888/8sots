@@ -7,6 +7,7 @@ import { parseQrPunchValue, type PunchActionState } from "@/lib/punch-contract";
 import { getPunchFlow, punchActionLabels, type PunchAction, type FlowRecord } from "@/lib/punch-flow";
 import { CorrectionForm } from "@/app/attendance/correction-form";
 import { PushReminderSettings } from "./push-reminder-settings";
+import { shiftMinuteLabel } from "@/lib/schedules";
 import { useRouter } from "next/navigation";
 import { recordGpsPunch, recordQrPunch } from "./actions";
 
@@ -16,8 +17,8 @@ function geolocationMessage(error: GeolocationPositionError): string {
   return "目前無法取得定位，請移至訊號較好的位置再試。";
 }
 
-export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLunchBreak, children }: {
-  enabled: boolean; records: FlowRecord[]; initialTimestamp: string; workDate: string; hasLunchBreak: boolean; children?: ReactNode;
+export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLunchBreak, children, lunchStartMinute = 840, lunchEndMinute = 960 }: {
+  enabled: boolean; records: FlowRecord[]; initialTimestamp: string; workDate: string; hasLunchBreak: boolean; children?: ReactNode; lunchStartMinute?: number; lunchEndMinute?: number;
 }) {
   const router = useRouter();
   const [consent, setConsent] = useState(false);
@@ -33,7 +34,7 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
   const videoRef = useRef<HTMLVideoElement>(null);
   const scanLockedRef = useRef(false);
   const [isPending, startTransition] = useTransition();
-  const flow = getPunchFlow(localRecords, now, hasLunchBreak);
+  const flow = getPunchFlow(localRecords, now, hasLunchBreak, { lunchStartMinute, lunchEndMinute });
   const dayChanged = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Taipei" }).format(now) !== workDate;
 
   useEffect(() => {
@@ -160,7 +161,7 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
   const nextHints: Record<PunchAction, string> = {
     clock_in: "開始今天的工作，請選擇打卡方式",
     meal_morning: "休息 30 分鐘，結束後自動接續工作",
-    lunch_start: "開始午休，返回時請打午休結束卡",
+    lunch_start: `預定 ${shiftMinuteLabel(lunchStartMinute)}–${shiftMinuteLabel(lunchEndMinute)} 午休，返回時打午休結束卡`,
     lunch_end: "午休結束後，自動開始下午吃飯 30 分鐘倒數",
     meal_afternoon: "預定 16:30–17:00・休息 30 分鐘",
     meal_end: "提前結束會依實際休息時間計算",

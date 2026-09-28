@@ -15,6 +15,7 @@ const fixtureIds = {
   overnightUser: "10000000-0000-4000-8000-000000000020",
   overnightEmployee: "10000000-0000-4000-8000-000000000021",
   weekdayShift: "10000000-0000-4000-8000-000000000010",
+  octoberShift: "10000000-0000-4000-8000-000000000013",
   holidayShift: "10000000-0000-4000-8000-000000000011",
   overnightShift: "10000000-0000-4000-8000-000000000012",
 };
@@ -77,11 +78,14 @@ beforeAll(async () => {
       values('${fixtureIds.tenant}','${fixtureIds.employee}','full_time','2026-01-01','active','2026-01-01');
     insert into public.shifts(id,tenant_id,code,name,status) values
       ('${fixtureIds.weekdayShift}','${fixtureIds.tenant}','WEEKDAY_SPLIT','平日班','active'),
+      ('${fixtureIds.octoberShift}','${fixtureIds.tenant}','WEEKDAY_SPLIT_OCT2026','平日班','active'),
       ('${fixtureIds.holidayShift}','${fixtureIds.tenant}','HOLIDAY_CONTINUOUS','假日班','active'),
       ('${fixtureIds.overnightShift}','${fixtureIds.tenant}','OVERNIGHT_TEST','跨日測試班','active');
     insert into public.shift_segments(tenant_id,shift_id,segment_order,start_minute,end_minute) values
       ('${fixtureIds.tenant}','${fixtureIds.weekdayShift}',1,600,840),
       ('${fixtureIds.tenant}','${fixtureIds.weekdayShift}',2,960,1260),
+      ('${fixtureIds.tenant}','${fixtureIds.octoberShift}',1,600,870),
+      ('${fixtureIds.tenant}','${fixtureIds.octoberShift}',2,990,1260),
       ('${fixtureIds.tenant}','${fixtureIds.holidayShift}',1,600,1260),
       ('${fixtureIds.tenant}','${fixtureIds.overnightShift}',1,1439,2879);
     insert into public.attendance_rule_sets(tenant_id,version,late_grace_minutes,early_leave_grace_minutes,effective_from)
@@ -98,7 +102,7 @@ describe("database migrations and critical workflows", () => {
     const result = await db.query<{id: string}>(`insert into public.schedule_versions(tenant_id,period_start,period_end,version,status,created_by)
       values($1,$2,$2,401,'draft',$3) returning id`, [fixtureIds.tenant,date,fixtureIds.admin]);
     await db.query(`insert into public.schedule_assignments(tenant_id,schedule_version_id,employee_id,work_date,shift_id,created_by)
-      values($1,$2,$3,$4,$5,$6)`, [fixtureIds.tenant,result.rows[0].id,fixtureIds.employee,date,fixtureIds.weekdayShift,fixtureIds.admin]);
+      values($1,$2,$3,$4,$5,$6)`, [fixtureIds.tenant,result.rows[0].id,fixtureIds.employee,date,date >= "2026-10-01" ? fixtureIds.octoberShift : fixtureIds.weekdayShift,fixtureIds.admin]);
     await db.query('select public.publish_schedule($1,$2)', [fixtureIds.tenant,result.rows[0].id]);
   }
   async function mealEvent(date: string, time: string, action: string) {
@@ -108,6 +112,33 @@ describe("database migrations and critical workflows", () => {
       $4,($3::date+$5::time) at time zone 'Asia/Taipei',($3::date+$5::time) at time zone 'Asia/Taipei','Asia/Taipei','web_gps',
       25.1291,121.7841,15,statement_timestamp(),gen_random_uuid(),$6) returning id`, [fixtureIds.tenant,fixtureIds.employee,date,action,time,fixtureIds.employeeUser]);
   }
+  it("selects old/new weekday templates across October 1 and rejects the wrong date version", async () => {
+    await db.exec('begin');
+    try {
+      await setUser(fixtureIds.admin);
+      const draft=await db.query<{id:string}>(`select public.create_schedule_draft($1,'2026-09-28','2026-10-04') id`,[fixtureIds.tenant]);
+      const rows=await db.query<{work_date:string;code:string}>(`select sa.work_date::text,s.code from public.schedule_assignments sa join public.shifts s on s.id=sa.shift_id where sa.schedule_version_id=$1 order by sa.work_date`,[draft.rows[0].id]);
+      expect(rows.rows).toEqual([{work_date:'2026-09-29',code:'WEEKDAY_SPLIT'},{work_date:'2026-09-30',code:'WEEKDAY_SPLIT'},{work_date:'2026-10-01',code:'WEEKDAY_SPLIT_OCT2026'},{work_date:'2026-10-02',code:'WEEKDAY_SPLIT_OCT2026'},{work_date:'2026-10-03',code:'HOLIDAY_CONTINUOUS'},{work_date:'2026-10-04',code:'HOLIDAY_CONTINUOUS'}]);
+      await expect(db.query('select public.save_schedule_assignments($1,$2,$3::jsonb)',[fixtureIds.tenant,draft.rows[0].id,JSON.stringify([{employee_id:fixtureIds.employee,work_date:'2026-10-01',shift_id:fixtureIds.weekdayShift}])])).rejects.toThrow('shift does not match date default');
+    } finally {await db.exec('rollback');}
+  });
+  it("counts the new weekday as eight hours with a real morning meal and automatic 16:30–17:00 meal", async () => {
+    await db.exec('begin');
+    try {
+      const date='2026-10-01';await mealSchedule(date);
+      for(const [time,action] of [['10:00','clock_in'],['11:00','meal_morning'],['14:30','lunch_start'],['16:30','lunch_end'],['21:00','clock_out']])await mealEvent(date,time,action);
+      const auto=await db.query<{starts_afternoon_meal:boolean}>(`select starts_afternoon_meal from public.punch_records where work_date=$1 and employee_id=$2 and punch_action='lunch_end'`,[date,fixtureIds.employee]);
+      expect(auto.rows[0].starts_afternoon_meal).toBe(true);
+      // Freeze the meal calculation clock after this future fixture day.
+      const definition=await db.query<{ddl:string}>("select pg_get_functiondef('public.meal_break_intervals(uuid,uuid,date)'::regprocedure) ddl");
+      await db.exec(definition.rows[0].ddl.replaceAll('statement_timestamp()',"timestamptz '2026-10-02T00:00:00+08:00'"));
+      const run=await db.query<{id:string}>('select public.calculate_attendance_v1($1,$2,$2) id',[fixtureIds.tenant,date]);
+      const day=await db.query<{actual_minutes:number;payroll_regular_minutes:number;exception_count:number}>('select actual_minutes,payroll_regular_minutes,exception_count from public.attendance_days where calculation_run_id=$1',[run.rows[0].id]);
+      expect(day.rows[0]).toEqual({actual_minutes:480,payroll_regular_minutes:480,exception_count:0});
+      const schedule=await db.query<{start_minute:number;end_minute:number}>('select start_minute,end_minute from public.shift_segments where shift_id=$1 order by segment_order',[fixtureIds.octoberShift]);
+      expect(schedule.rows).toEqual([{start_minute:600,end_minute:870},{start_minute:990,end_minute:1260}]);
+    } finally {await db.exec('rollback');}
+  });
   it("deducts only recorded meals and reports actual work beyond eight hours", async () => {
     await db.exec('begin');
     try {
@@ -379,10 +410,10 @@ describe("database migrations and critical workflows", () => {
       join public.shifts s on s.id=sa.shift_id
       where sa.schedule_version_id=$1 order by sa.work_date`, [draft.rows[0].id]);
     expect(defaults.rows).toEqual([
-      { work_date: "2026-11-03", code: "WEEKDAY_SPLIT" },
+      { work_date: "2026-11-03", code: "WEEKDAY_SPLIT_OCT2026" },
       { work_date: "2026-11-04", code: "HOLIDAY_CONTINUOUS" },
-      { work_date: "2026-11-06", code: "WEEKDAY_SPLIT" },
-      { work_date: "2026-11-07", code: "WEEKDAY_SPLIT" },
+      { work_date: "2026-11-06", code: "WEEKDAY_SPLIT_OCT2026" },
+      { work_date: "2026-11-07", code: "WEEKDAY_SPLIT_OCT2026" },
       { work_date: "2026-11-08", code: "HOLIDAY_CONTINUOUS" },
     ]);
     const mondayClosure = await db.query<{ is_store_closed: boolean; shift_id: string | null }>(
@@ -421,7 +452,7 @@ describe("database migrations and critical workflows", () => {
 
     await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant, draft.rows[0].id,
-      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-06", shift_id: fixtureIds.weekdayShift, is_day_off: true }]),
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-06", shift_id: fixtureIds.octoberShift, is_day_off: true }]),
     ])).rejects.toThrow(/day off cannot have a shift/);
 
     await expect(db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
@@ -480,9 +511,9 @@ describe("database migrations and critical workflows", () => {
 
     await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant, draft.rows[0].id,
-      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: fixtureIds.weekdayShift }]),
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: monday, shift_id: fixtureIds.octoberShift }]),
     ]);
-    expect((await readMonday()).rows).toEqual([{ shift_id: fixtureIds.weekdayShift, is_store_closed: false }]);
+    expect((await readMonday()).rows).toEqual([{ shift_id: fixtureIds.octoberShift, is_store_closed: false }]);
 
     await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant, draft.rows[0].id,
@@ -585,14 +616,14 @@ describe("database migrations and critical workflows", () => {
     expect(specialDefault.rows).toEqual([{ is_store_closed: true }]);
     await db.query("select public.save_schedule_assignments($1,$2,$3::jsonb)", [
       fixtureIds.tenant, specialDraft.rows[0].id,
-      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-16", shift_id: fixtureIds.weekdayShift }]),
+      JSON.stringify([{ employee_id: fixtureIds.employee, work_date: "2026-11-16", shift_id: fixtureIds.octoberShift }]),
     ]);
     await db.query("select public.publish_schedule($1,$2)", [fixtureIds.tenant, specialDraft.rows[0].id]);
     await setUser(fixtureIds.employeeUser);
     const openedMonday = await db.query<{ work_date: string; shift_code: string }>(
       "select distinct work_date::text,shift_code from public.get_my_published_schedule('2026-11-16','2026-11-16')",
     );
-    expect(openedMonday.rows).toEqual([{ work_date: "2026-11-16", shift_code: "WEEKDAY_SPLIT" }]);
+    expect(openedMonday.rows).toEqual([{ work_date: "2026-11-16", shift_code: "WEEKDAY_SPLIT_OCT2026" }]);
   });
 
   it("keeps an in-progress overnight checkout on the original work date", async () => {

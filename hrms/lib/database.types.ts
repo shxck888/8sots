@@ -3930,6 +3930,7 @@ export type Database = {
         }[]
       }
       invoke_meal_push_scheduler: { Args: never; Returns: undefined }
+      is_lunch_shift_code: { Args: { p_code: string }; Returns: boolean }
       issue_punch_qr_token: {
         Args: { p_credential: string; p_device_id: string }
         Returns: {
@@ -4387,6 +4388,10 @@ export type Database = {
       void_punch_records: {
         Args: { p_punch_ids: string[]; p_reason: string; p_tenant_id: string }
         Returns: number
+      }
+      weekday_shift_code_for_date: {
+        Args: { p_work_date: string }
+        Returns: string
       }
       withdraw_work_request: {
         Args: { p_request_id: string; p_tenant_id: string }

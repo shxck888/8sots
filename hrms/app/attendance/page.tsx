@@ -8,6 +8,7 @@ import { getMyAttendanceOverview } from "@/lib/attendance-overview";
 import { getMyPublishedSchedule } from "@/lib/my-schedule";
 import { locationVerificationLabels, punchDisplayLabel, punchEventLabels, punchSourceLabels } from "@/lib/punch-contract";
 import { formatTaipeiDateTime } from "@/lib/schedule-display";
+import { isLunchShiftCode } from "@/lib/schedules";
 import { getWorkspaceContext } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export default async function AttendancePage() {
     ? await getMyPublishedSchedule({ dateFrom: workDates[workDates.length - 1], dateTo: workDates[0], employeeId: workspace.employeeId })
     : { entries: [] };
   const lunchByWorkDate = new Map(schedule.entries.map((entry) => [
-    entry.workDate, entry.shiftCode === "WEEKDAY_SPLIT" && entry.segments.length === 2,
+    entry.workDate, isLunchShiftCode(entry.shiftCode) && entry.segments.length === 2,
   ]));
 
   return (

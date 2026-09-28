@@ -10,6 +10,7 @@ import { getMyPublishedSchedule } from "@/lib/my-schedule";
 import { getUnreadNotificationCount } from "@/lib/notifications";
 import { getEmployeePunchContext } from "@/lib/punches";
 import { formatScheduledHours, getMonthBounds, taipeiDateKey } from "@/lib/schedule-display";
+import { isLunchShiftCode } from "@/lib/schedules";
 import { TodayScheduleCard } from "@/app/today-schedule-card";
 import { getWorkspaceContext } from "@/lib/workspace";
 
@@ -68,7 +69,8 @@ export default async function Home() {
         <PunchPanel key={`${today}:${punches.records.map(record => record.id).join(",")}`} enabled={Boolean(punches.employeeId)}
           records={punches.records.filter((record) => record.work_date === today)}
           initialTimestamp={now.toISOString()} workDate={today}
-          hasLunchBreak={todaySchedule?.shiftCode === "WEEKDAY_SPLIT" && todaySchedule.segments.length === 2}>
+          hasLunchBreak={isLunchShiftCode(todaySchedule?.shiftCode) && todaySchedule?.segments.length === 2}
+          lunchStartMinute={isLunchShiftCode(todaySchedule?.shiftCode) ? todaySchedule?.segments[0]?.endMinute : undefined} lunchEndMinute={todaySchedule?.segments[1]?.startMinute}>
           <TodayScheduleCard entry={todaySchedule} workDate={today} linked={Boolean(schedule.employeeId)} dayOff={todayOff} />
         </PunchPanel>
 
