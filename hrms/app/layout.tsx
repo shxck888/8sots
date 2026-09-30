@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "海之星｜員工工作台",
   description: "海之星員工專用工作台。",
   applicationName: "海之星員工工作台",
+  robots: { index: false, follow: false },
   icons: {
     icon: "/haizhixing-logo-icon.png",
     apple: "/haizhixing-logo-icon.png",
