@@ -97,6 +97,28 @@ beforeAll(async () => {
 afterAll(async () => { await db?.close(); });
 
 describe("database migrations and critical workflows", () => {
+  it("enforces tenant isolation and anonymous denial under real database roles", async () => {
+    await setUser(fixtureIds.outsider);
+    await db.exec("set role authenticated");
+    try {
+      const rows = await db.query("select id from public.employees where tenant_id = $1", [fixtureIds.tenant]);
+      expect(rows.rows).toEqual([]);
+      await expect(db.query("insert into public.companies(tenant_id,name) values($1,'Unauthorized')", [fixtureIds.tenant]))
+        .rejects.toThrow(/permission denied|row-level security/);
+    } finally {
+      await db.exec("reset role");
+    }
+    await db.exec("set role anon");
+    try {
+      await expect(db.query("select * from public.employees")).rejects.toThrow(/permission denied/);
+      await expect(db.query("select * from public.get_current_workspace_context()"))
+        .rejects.toThrow(/permission denied/);
+    } finally {
+      await db.exec("reset role");
+      await setUser(fixtureIds.admin);
+    }
+  });
+
   async function mealSchedule(date: string) {
     await setUser(fixtureIds.admin);
     const result = await db.query<{id: string}>(`insert into public.schedule_versions(tenant_id,period_start,period_end,version,status,created_by)

@@ -39,6 +39,23 @@ describe("authentication helpers", () => {
     expect(sanitizeNextPath("//malicious.example")).toBe("/");
   });
 
+  it.each([
+    "/\\evil.example", "/\t/evil.example", "/\n/evil.example", "/\r/evil.example",
+    "/path\\evil.example", "/\u0000/evil.example", "/.//evil.example",
+    "///evil.example", "https://evil.example", "javascript:alert(1)",
+    " //evil.example", "", null, undefined, 123,
+  ])("rejects unsafe redirect input %j", (input) => {
+    expect(sanitizeNextPath(input)).toBe("/");
+  });
+
+  it.each(["/", "/attendance?month=8", "/requests#new", "/員工", "/search?q=https%3A%2F%2Fexample.com"]) (
+    "preserves local destinations %s", (input) => {
+      const result = sanitizeNextPath(input);
+      expect(result).toBe(input);
+      expect(new URL(result, "https://hrms.example").origin).toBe("https://hrms.example");
+    },
+  );
+
   it("uses profile metadata before falling back to the email", () => {
     expect(getUserDisplayName({ email: "employee@example.com", user_metadata: { full_name: "林宥辰" } })).toBe("林宥辰");
     expect(getUserDisplayName({ email: "employee@example.com" })).toBe("employee");

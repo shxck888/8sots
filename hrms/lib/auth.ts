@@ -33,7 +33,17 @@ export function usernameToAuthEmail(username: string): string {
 }
 
 export function sanitizeNextPath(value: unknown): string {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") ||
+    /[\\\p{Cc}]/u.test(value)) {
+    return "/";
+  }
+
+  // Check the browser's URL interpretation, not only the textual prefix.
+  try {
+    const origin = "https://redirect.invalid";
+    const target = new URL(value, origin);
+    if (target.origin !== origin || target.pathname.startsWith("//")) return "/";
+  } catch {
     return "/";
   }
 
