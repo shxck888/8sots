@@ -729,6 +729,12 @@ code { font-size: 14px !important; line-height: 1.55; }
 .punch-qr-alternative { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; border: 0; background: transparent; color: #315f50; font-size: 14px; font-weight: 600; cursor: pointer; }
 .punch-qr-alternative:disabled { opacity: .5; cursor: not-allowed; }
 .punch-method-card .punch-method-message { margin: 9px 0 0; text-align: left; }
+@media (max-width: 720px) {
+  .my-schedule-summary { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 7px; }
+  .my-schedule-summary > div, .my-schedule-summary > div > div { min-width: 0; }
+  .my-schedule-summary small, .my-schedule-summary strong { white-space: nowrap; }
+  .my-schedule-summary p { padding-left: 51px; }
+}
 
 /* Employee home: one clear action, with supporting information below. */
 .employee-home { max-width: 640px; margin: 0 auto; }

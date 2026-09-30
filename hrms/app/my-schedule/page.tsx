@@ -93,7 +93,7 @@ export default async function MySchedulePage({
                 <Link aria-label={isWeek ? "下一週" : "下個月"} href={isWeek ? `/my-schedule?view=week&week=${addDays(weekStart, 7)}` : `/my-schedule?month=${shiftCalendarMonth(monthKey, 1)}`}><ChevronRight size={20} /></Link>
               </nav>
             </div>
-            <div className="my-schedule-summary"><div><span className="stat-icon mint"><Clock3 size={20} /></span><div><small>{isWeek ? "本週預定工作" : "本月預定工作"}</small><strong>{formatScheduledHours(totalMinutes)} 小時</strong></div></div><p>共 {result.entries.length} 個已發布排班日・已扣預定休息</p></div>
+            <div className="my-schedule-summary"><div><span className="stat-icon mint"><Clock3 size={20} /></span><div><small>{isWeek ? "本週預定工作" : "本月預定工作"}</small><strong>{formatScheduledHours(totalMinutes)} 小時</strong></div></div><p>共 {result.entries.length} 個排班日・已扣除休息</p></div>
             {isWeek ? (
               <div className="my-week-list">
                 {dates.map((dateKey) => <article className={dateKey === today ? "my-week-day today" : "my-week-day"} key={dateKey}>
