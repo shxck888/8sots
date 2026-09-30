@@ -716,6 +716,21 @@ code { font-size: 14px !important; line-height: 1.55; }
 .punch-panel > .clock-button { justify-content: center; min-width: 220px; }
 .qr-scanner-card > .qr-button, .qr-scanner-card details > .qr-button { background: #235b4c; color: #fff; border-radius: 10px; }
 .qr-scanner-card .location-consent { color: #334c43; }
+.punch-method-card { padding: 22px; }
+.punch-method-card .qr-scanner-heading { margin-bottom: 20px; }
+.punch-method-card .punch-method-hint { margin: -8px 0 16px; text-align: left; }
+.punch-gps-option { display: grid; gap: 17px; padding: 20px; border: 1px solid #dce8df; border-radius: 16px; background: #f5f9f5; }
+.punch-gps-heading { display: flex; align-items: center; gap: 12px; color: #235b4c; }
+.punch-gps-heading > div { display: grid; gap: 3px; }
+.punch-gps-heading strong { font-size: 18px; }
+.punch-gps-heading span { color: #5f746a; font-size: 14px; }
+.punch-method-card .location-consent { width: 100%; min-height: 44px; font-size: 14px; }
+.punch-method-card .location-consent input { width: 20px; height: 20px; flex: none; accent-color: #235b4c; }
+.punch-gps-submit { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 11px; background: #235b4c; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+.punch-gps-submit:disabled { background: #a9bbb1; cursor: not-allowed; }
+.punch-qr-alternative { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; border: 0; background: transparent; color: #315f50; font-size: 14px; font-weight: 600; cursor: pointer; }
+.punch-qr-alternative:disabled { opacity: .5; cursor: not-allowed; }
+.punch-method-card .punch-method-message { margin: 9px 0 0; text-align: left; }
 
 /* Employee home: one clear action, with supporting information below. */
 .employee-home { max-width: 640px; margin: 0 auto; }
