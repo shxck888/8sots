@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { getMyPublishedSchedule, type MyScheduleEntry } from "@/lib/my-schedule";
 import { formatScheduledHours, getMonthBounds, getMonthCalendarDates, shiftCalendarMonth, taipeiDateKey } from "@/lib/schedule-display";
-import { buildWeekDates, getWeekStart, isLunchShiftCode, OCTOBER_WEEKDAY_SHIFT_CODE, shiftMinuteLabel, toIsoDate } from "@/lib/schedules";
+import { buildWeekDates, getWeekStart, HOLIDAY_SHIFT_CODE, isLunchShiftCode, OCTOBER_WEEKDAY_SHIFT_CODE, shiftMinuteLabel, toIsoDate } from "@/lib/schedules";
 import { getWorkspaceContext } from "@/lib/workspace";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +32,12 @@ function ShiftDetail({ entry, dayOff = false, storeClosed = false, compact = fal
   if (!entry) return <p className="my-selected-empty">{compact ? "未排班" : "這天目前沒有已發布班別。未排班不代表已核准休假。"}</p>;
   return (
     <div className="my-selected-shift">
-      <div className="my-selected-shift-heading"><span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span><strong>{entry.shiftCode === OCTOBER_WEEKDAY_SHIFT_CODE ? `預定工作 ${formatScheduledHours(Math.max(0, entry.totalMinutes - 60))} 小時` : `${formatScheduledHours(entry.totalMinutes)} 小時`}</strong></div>
+      <div className="my-selected-shift-heading"><span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span><strong>{entry.shiftCode === OCTOBER_WEEKDAY_SHIFT_CODE || entry.shiftCode === HOLIDAY_SHIFT_CODE ? `預定工作 ${formatScheduledHours(Math.max(0, entry.totalMinutes - 60))} 小時` : `${formatScheduledHours(entry.totalMinutes)} 小時`}</strong></div>
       <div className="my-selected-segments">
         {entry.segments.map((segment) => <span key={segment.order}><Clock3 size={17} />{shiftMinuteLabel(segment.startMinute)}–{shiftMinuteLabel(segment.endMinute)}</span>)}
       </div>
-      {isLunchShiftCode(entry.shiftCode) && entry.segments.length === 2 ? <p>午休 {shiftMinuteLabel(entry.segments[0].endMinute)}–{shiftMinuteLabel(entry.segments[1].startMinute)}，需打開始及結束午休卡。{entry.shiftCode === OCTOBER_WEEKDAY_SHIFT_CODE ? "午休結束後自動吃飯 16:30–17:00，17:00 開始工作；上午另有 30 分鐘吃飯休息。" : ""}</p> : null}
+      {isLunchShiftCode(entry.shiftCode) && entry.segments.length === 2 ? <div className="my-selected-shift-notes"><p>午休 {shiftMinuteLabel(entry.segments[0].endMinute)}–{shiftMinuteLabel(entry.segments[1].startMinute)}，需打開始及結束午休卡。</p>{entry.shiftCode === OCTOBER_WEEKDAY_SHIFT_CODE ? <><p>午休結束後自動吃飯 16:30–17:00，17:00 開始工作；</p><p>上午另有 30 分鐘吃飯休息。</p></> : null}</div> : null}
+      {entry.shiftCode === HOLIDAY_SHIFT_CODE ? <div className="my-selected-shift-notes"><p>上午、下午各有一段 30 分鐘吃飯休息；</p><p>休息開始時需打卡，實際工時依打卡與休息紀錄計算。</p></div> : null}
     </div>
   );
 }

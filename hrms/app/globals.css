@@ -264,7 +264,7 @@ button { color: inherit; }
 .my-shift-badge.closed { color: #5e626d; background: #e8e9ed; }
 .my-no-shift { color: #84968a; font-size: 12px; }.my-month-hours { max-width: 100%; overflow: hidden; color: #64796f; font-size: 11px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .my-day-detail { margin-top: 16px; padding: 23px 26px; scroll-margin-top: 16px; }.my-day-detail-heading { margin-bottom: 17px; }.my-day-detail-heading h2 { margin: 5px 0 0; font: 600 24px/1.2 Georgia, 'Noto Serif TC', serif; }
-.my-selected-shift { display: grid; gap: 13px; }.my-selected-shift-heading { display: flex; align-items: center; gap: 14px; }.my-selected-shift-heading strong { color: #315b4c; font-size: 17px; }.my-selected-segments { display: flex; flex-wrap: wrap; gap: 8px; }.my-selected-segments span { min-height: 40px; padding: 9px 12px; display: flex; align-items: center; gap: 7px; border: 1px solid #deeadf; border-radius: 10px; color: #365d4d; background: #f5f9f3; font-size: 14px; font-weight: 600; }.my-selected-shift > p, .my-selected-empty { margin: 0; color: #6c786e; font-size: 13px; line-height: 1.55; }
+.my-selected-shift { display: grid; gap: 13px; }.my-selected-shift-heading { display: flex; align-items: center; gap: 14px; }.my-selected-shift-heading strong { color: #315b4c; font-size: 17px; }.my-selected-segments { display: flex; flex-wrap: wrap; gap: 8px; }.my-selected-segments span { min-height: 40px; padding: 9px 12px; display: flex; align-items: center; gap: 7px; border: 1px solid #deeadf; border-radius: 10px; color: #365d4d; background: #f5f9f3; font-size: 14px; font-weight: 600; }.my-selected-shift-notes { display: grid; gap: 4px; }.my-selected-shift-notes p, .my-selected-empty { margin: 0; color: #6c786e; font-size: 13px; line-height: 1.55; }
 .my-week-list { border-top: 1px solid #e6eae3; }.my-week-day { display: grid; grid-template-columns: 85px 1fr; border-bottom: 1px solid #e6eae3; }.my-week-day:last-child { border-bottom: 0; }.my-week-day.today { background: #f5fbf5; }.my-week-date { padding: 16px 12px; display: grid; justify-items: center; align-content: center; gap: 3px; border-right: 1px solid #e6eae3; }.my-week-date small, .my-week-date span { color: #698073; font-size: 12px; }.my-week-date strong { font: 600 26px/1 Georgia, serif; }.my-week-content { min-width: 0; padding: 17px 20px; display: flex; align-items: center; }.my-week-content .my-selected-empty { color: #819288; }
 .my-schedule-empty { max-width: 1180px; min-height: 390px; margin: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; border: 1px solid rgba(23,63,54,.1); border-radius: 19px; color: #668078; background: var(--paper); text-align: center; }.my-schedule-empty strong { color: var(--ink); }.my-schedule-empty p { margin: 0; color: var(--muted); font-size: 13px; }
 
@@ -421,7 +421,7 @@ button { color: inherit; }
 
   .my-schedule-summary small, .my-schedule-summary p { font-size: 14px; line-height: 1.5; }
   .my-schedule-summary strong { font-size: 21px; }
-  .my-selected-shift > p, .my-selected-empty { font-size: 15px; }
+  .my-selected-shift-notes p, .my-selected-empty { font-size: 15px; }
 
   .admin-sidebar { padding: 16px 18px; }
   .admin-nav a { min-height: 46px; padding: 11px 13px; font-size: 15px; }
