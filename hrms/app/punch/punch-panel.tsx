@@ -21,7 +21,6 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
   enabled: boolean; records: FlowRecord[]; initialTimestamp: string; workDate: string; hasLunchBreak: boolean; children?: ReactNode; lunchStartMinute?: number; lunchEndMinute?: number;
 }) {
   const router = useRouter();
-  const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState(enabled ? "" : "此帳號尚未連結在職員工資料。");
   const [localRecords, setLocalRecords] = useState(records);
   const [now, setNow] = useState(Date.parse(initialTimestamp));
@@ -125,7 +124,7 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
   }, [scannerOpen, showPunchSuccess, selectedAction]);
 
   function submitPunch() {
-    if (!consent || locating || isPending) return;
+    if (locating || isPending) return;
     setLocating(true);
     setMessage("正在取得裝置定位…");
     if (!navigator.geolocation) {
@@ -193,7 +192,7 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
       {dayChanged ? <p className="punch-flow-warning">已跨日，請重新整理取得今天的班表與打卡紀錄。</p> : null}
       {flow.missing.length ? <p className="punch-flow-warning">待確認：{flow.missing.map(action => punchActionLabels[action]).join("、")}。可繼續打卡，再申請補正；未記錄的吃飯不會自動扣工時。</p> : null}
       {flow.remainingSeconds === 0 && flow.suggested ? <button className="clock-button" disabled={!enabled || isPending || dayChanged} onClick={() => {
-        if (flow.suggested) { setSelectedAction(flow.suggested); setMessage(""); setConsent(false); setMethodOpen(true); }
+        if (flow.suggested) { setSelectedAction(flow.suggested); setMessage(""); setMethodOpen(true); }
       }} type="button">
         {isPending ? <LoaderCircle className="spin" size={22} /> : <Clock3 size={22} />}
         {isPending ? "正在打卡…" : punchActionLabels[flow.suggested]}
@@ -204,9 +203,9 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
       </div>
       {otherOpen ? <div id="home-punch-options" className="punch-action-options">{(Object.keys(punchActionLabels) as PunchAction[])
         .filter(action => (hasLunchBreak || !["lunch_start", "lunch_end"].includes(action)) && (action !== "meal_end" || flow.remainingSeconds > 0))
-        .map(action => <button disabled={isPending || (action !== "meal_end" && flow.done.has(action))} key={action} onClick={() => { setSelectedAction(action); setMessage(""); setConsent(false); setMethodOpen(true); }} type="button">{punchActionLabels[action]}{flow.done.has(action) && action !== "meal_end" ? " ✓" : ""}</button>)}</div> : null}
+        .map(action => <button disabled={isPending || (action !== "meal_end" && flow.done.has(action))} key={action} onClick={() => { setSelectedAction(action); setMessage(""); setMethodOpen(true); }} type="button">{punchActionLabels[action]}{flow.done.has(action) && action !== "meal_end" ? " ✓" : ""}</button>)}</div> : null}
       <PushReminderSettings />
-      {flow.remainingSeconds > 0 ? <button className="home-early-end" disabled={!enabled || isPending || dayChanged} onClick={() => { setSelectedAction("meal_end"); setMessage(""); setConsent(false); setMethodOpen(true); }} type="button">提前結束休息</button> : null}
+      {flow.remainingSeconds > 0 ? <button className="home-early-end" disabled={!enabled || isPending || dayChanged} onClick={() => { setSelectedAction("meal_end"); setMessage(""); setMethodOpen(true); }} type="button">提前結束休息</button> : null}
       {message ? <p aria-live="polite" className="punch-message">{message}</p> : null}
     </section>
     {children}
@@ -221,9 +220,8 @@ export function PunchPanel({ enabled, records, initialTimestamp, workDate, hasLu
         <div className="qr-scanner-card punch-method-card" role="dialog" aria-modal="true" aria-labelledby="punch-method-title">
           <div className="qr-scanner-heading"><strong id="punch-method-title">{punchActionLabels[selectedAction]}</strong><button aria-label="關閉打卡選擇" disabled={isPending || locating} onClick={() => setMethodOpen(false)} type="button"><X size={22} /></button></div>
           {selectedAction === "meal_end" ? <p className="punch-method-hint">提前結束會依實際休息時間計算。</p> : null}
-          <div className="punch-gps-option"><div className="punch-gps-heading"><MapPin size={22} /><div><strong>使用 GPS 打卡</strong><span>確認目前位置後完成打卡</span></div></div>
-            <label className="location-consent"><input checked={consent} disabled={isPending || locating} onChange={event => setConsent(event.target.checked)} type="checkbox" /><span>同意本次打卡使用裝置定位</span></label>
-            <button className="punch-gps-submit" disabled={!consent || isPending || locating} onClick={submitPunch} type="button">{isPending || locating ? <LoaderCircle className="spin" size={20} /> : <MapPin size={20} />}{locating ? "正在取得定位…" : isPending ? "正在打卡…" : `確認${punchActionLabels[selectedAction]}`}</button>
+          <div className="punch-gps-option"><div className="punch-gps-heading"><MapPin size={22} /><div><strong>使用 GPS 打卡</strong><span>本次打卡會使用並記錄裝置位置</span></div></div>
+            <button className="punch-gps-submit" disabled={isPending || locating} onClick={submitPunch} type="button">{isPending || locating ? <LoaderCircle className="spin" size={20} /> : <MapPin size={20} />}{locating ? "正在取得定位…" : isPending ? "正在打卡…" : `同意使用定位並${punchActionLabels[selectedAction]}`}</button>
           </div>
           <button className="punch-qr-alternative" disabled={isPending || locating} onClick={() => { setMethodOpen(false); setScannerOpen(true); setMessage("請掃描門市機器上的動態 QR Code。"); }} type="button"><QrCode size={18} />改用門市 QR Code 打卡</button>
           {message ? <p className="punch-method-message" aria-live="polite">{message}</p> : null}
