@@ -1,3 +1,10 @@
+import { HOLIDAY_SHIFT_CODE, isLunchShiftCode } from "./schedules";
+
+export function scheduledWorkMinutes(shiftCode: string, totalMinutes: number): number {
+  const plannedMealMinutes = shiftCode === HOLIDAY_SHIFT_CODE || isLunchShiftCode(shiftCode) ? 60 : 0;
+  return Math.max(0, totalMinutes - plannedMealMinutes);
+}
+
 export function taipeiDateKey(date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     day: "2-digit",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatScheduledHours, formatTaipeiDateTime, getMonthBounds, getMonthCalendarDates, shiftCalendarMonth, taipeiDateKey } from "../lib/schedule-display";
+import { formatScheduledHours, formatTaipeiDateTime, getMonthBounds, getMonthCalendarDates, scheduledWorkMinutes, shiftCalendarMonth, taipeiDateKey } from "../lib/schedule-display";
 
 describe("employee schedule date helpers", () => {
   it("uses the Taiwan calendar date across the UTC day boundary", () => {
@@ -28,6 +28,18 @@ describe("employee schedule date helpers", () => {
   it("formats whole and partial scheduled hours", () => {
     expect(formatScheduledHours(540)).toBe("9");
     expect(formatScheduledHours(510)).toBe("8.5");
+  });
+
+  it("subtracts planned meal breaks from published shift hours", () => {
+    const shifts = [
+      ["WEEKDAY_SPLIT_OCT2026", 540],
+      ["WEEKDAY_SPLIT_OCT2026", 540],
+      ["HOLIDAY_CONTINUOUS", 660],
+      ["HOLIDAY_CONTINUOUS", 660],
+    ] as const;
+    expect(shifts.reduce((total, [code, minutes]) => total + scheduledWorkMinutes(code, minutes), 0)).toBe(36 * 60);
+    expect(scheduledWorkMinutes("WEEKDAY_SPLIT", 540)).toBe(480);
+    expect(scheduledWorkMinutes("OTHER_SHIFT", 240)).toBe(240);
   });
 
   it("formats a punch timestamp without mixing incompatible Intl options", () => {

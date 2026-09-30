@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { WorkspaceShell } from "@/app/workspace-shell";
 import { getMyPublishedSchedule, type MyScheduleEntry } from "@/lib/my-schedule";
-import { formatScheduledHours, getMonthBounds, getMonthCalendarDates, shiftCalendarMonth, taipeiDateKey } from "@/lib/schedule-display";
+import { formatScheduledHours, getMonthBounds, getMonthCalendarDates, scheduledWorkMinutes, shiftCalendarMonth, taipeiDateKey } from "@/lib/schedule-display";
 import { buildWeekDates, getWeekStart, HOLIDAY_SHIFT_CODE, isLunchShiftCode, OCTOBER_WEEKDAY_SHIFT_CODE, shiftMinuteLabel, toIsoDate } from "@/lib/schedules";
 import { getWorkspaceContext } from "@/lib/workspace";
 
@@ -32,7 +32,7 @@ function ShiftDetail({ entry, dayOff = false, storeClosed = false, compact = fal
   if (!entry) return <p className="my-selected-empty">{compact ? "未排班" : "這天目前沒有已發布班別。未排班不代表已核准休假。"}</p>;
   return (
     <div className="my-selected-shift">
-      <div className="my-selected-shift-heading"><span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span><strong>{entry.shiftCode === OCTOBER_WEEKDAY_SHIFT_CODE || entry.shiftCode === HOLIDAY_SHIFT_CODE ? `預定工作 ${formatScheduledHours(Math.max(0, entry.totalMinutes - 60))} 小時` : `${formatScheduledHours(entry.totalMinutes)} 小時`}</strong></div>
+      <div className="my-selected-shift-heading"><span className={`my-shift-badge ${shiftTone(entry)}`}>{entry.shiftName}</span><strong>預定工作 {formatScheduledHours(scheduledWorkMinutes(entry.shiftCode, entry.totalMinutes))} 小時</strong></div>
       <div className="my-selected-segments">
         {entry.segments.map((segment) => <span key={segment.order}><Clock3 size={17} />{shiftMinuteLabel(segment.startMinute)}–{shiftMinuteLabel(segment.endMinute)}</span>)}
       </div>
@@ -64,7 +64,7 @@ export default async function MySchedulePage({
   const entryByDate = new Map(result.entries.map((entry) => [entry.workDate, entry]));
   const daysOff = new Set(result.daysOff);
   const storeClosed = new Set(result.storeClosed);
-  const totalMinutes = result.entries.reduce((total, entry) => total + entry.totalMinutes, 0);
+  const totalMinutes = result.entries.reduce((total, entry) => total + scheduledWorkMinutes(entry.shiftCode, entry.totalMinutes), 0);
   const selectedDay = !isWeek && typeof params.day === "string" && params.day.startsWith(`${monthKey}-`) && params.day >= bounds.dateFrom && params.day <= bounds.dateTo
     ? params.day
     : monthKey === today.slice(0, 7) ? today : result.entries[0]?.workDate ?? result.daysOff[0] ?? result.storeClosed[0] ?? bounds.dateFrom;
@@ -93,7 +93,7 @@ export default async function MySchedulePage({
                 <Link aria-label={isWeek ? "下一週" : "下個月"} href={isWeek ? `/my-schedule?view=week&week=${addDays(weekStart, 7)}` : `/my-schedule?month=${shiftCalendarMonth(monthKey, 1)}`}><ChevronRight size={20} /></Link>
               </nav>
             </div>
-            <div className="my-schedule-summary"><div><span className="stat-icon mint"><Clock3 size={20} /></span><div><small>{isWeek ? "本週已發布" : "本月已發布"}</small><strong>{formatScheduledHours(totalMinutes)} 小時</strong></div></div><p>共 {result.entries.length} 個排班日</p></div>
+            <div className="my-schedule-summary"><div><span className="stat-icon mint"><Clock3 size={20} /></span><div><small>{isWeek ? "本週預定工作" : "本月預定工作"}</small><strong>{formatScheduledHours(totalMinutes)} 小時</strong></div></div><p>共 {result.entries.length} 個已發布排班日・已扣預定休息</p></div>
             {isWeek ? (
               <div className="my-week-list">
                 {dates.map((dateKey) => <article className={dateKey === today ? "my-week-day today" : "my-week-day"} key={dateKey}>
