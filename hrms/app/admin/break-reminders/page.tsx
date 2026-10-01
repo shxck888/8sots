@@ -15,6 +15,7 @@ export default async function BreakRemindersPage() {
       <p>上午吃飯、下午吃飯，以及午休結束後自動開始的吃飯休息，滿 30 分鐘都會提醒。</p>
       <p>通知會顯示「○○員工休息時間已到」。吃飯休息自動結束，員工無需再打結束卡；午休仍需打結束卡。</p>
       <PushReminderSettings audience="supervisor" />
+      <p className="admin-help-text">可先按「發送測試通知到這台裝置」確認 PWA 推播。測試成功只代表這台裝置可接收；員工到時提醒仍需資料庫排程正常執行。</p>
       <p className="admin-help-text">同一裝置的吃飯提醒與主管提醒共用這個推播開關。</p>
       <p className="admin-help-text">推播通常在到時後約 1 分鐘內送出，實際顯示時間依網路與裝置通知設定。iPhone 請先將系統加入主畫面，再允許通知。</p>
     </section>

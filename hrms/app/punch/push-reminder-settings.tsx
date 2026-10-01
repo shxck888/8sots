@@ -56,12 +56,29 @@ export function PushReminderSettings({ audience = "employee" }: { audience?: "em
     } catch { setMessage("提醒設定未完成，請確認網路與通知權限後重試。"); }
     finally { setBusy(false); }
   }
+  async function sendTest() {
+    setBusy(true); setMessage("");
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) { setStatus("disabled"); setMessage("這台裝置沒有推播訂閱，請重新開啟提醒。"); return; }
+      const response = await fetch("/api/push/test", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: subscription.endpoint }) });
+      if (response.status === 410 || response.status === 404) {
+        await subscription.unsubscribe(); setStatus("disabled");
+        setMessage("這台裝置的推播訂閱已失效，請重新開啟提醒。"); return;
+      }
+      setMessage(response.ok ? "測試推播已送出，請查看這台裝置的系統通知。" : "測試推播發送失敗，請稍後重試或請管理員檢查推播服務設定。");
+    } catch { setMessage("測試推播發送失敗，請確認網路後重試。"); }
+    finally { setBusy(false); }
+  }
   return <div className="push-reminder-settings"><Bell size={15} aria-hidden="true" />
     {status === "unsupported" ? <span>iPhone 請先加入主畫面，再開啟通知提醒。</span>
       : status === "unconfigured" ? <span>{supervisor ? "推播提醒尚未啟用，請聯絡管理員。" : "推播提醒尚未啟用；首頁仍顯示倒數。"}</span>
       : status === "denied" ? <span>通知權限已關閉，請至裝置設定允許通知。</span>
       : status === "checking" ? <span>正在確認提醒設定…</span>
       : <button disabled={busy || !publicKey} onClick={() => void toggle()} type="button">{busy ? "設定中…" : status === "enabled" ? `${supervisor ? "員工休息到時" : "吃飯"}推播已開啟 · 關閉` : `開啟${supervisor ? "員工休息到時" : "吃飯"}推播提醒`}</button>}
+    {supervisor && status === "enabled" ? <button disabled={busy} onClick={() => void sendTest()} type="button">發送測試通知到這台裝置</button> : null}
     {message ? <p role="status">{message}</p> : null}
   </div>;
 }
