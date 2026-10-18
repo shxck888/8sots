@@ -802,3 +802,23 @@ code { font-size: 14px !important; line-height: 1.55; }
 }
 
 .home-events-card .home-auto-meal-note { display: block; margin-top: 4px; font-size: 12px; color: #6c8074; }
+
+/* Monthly employee punch evidence */
+.employee-attendance-filter { padding: 20px; margin-bottom: 20px; }
+.employee-attendance-filter form { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; }
+.employee-attendance-filter label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
+.employee-attendance-filter select, .employee-attendance-filter input { min-height: 44px; padding: 10px 12px; border: 1px solid #d8e0e8; border-radius: 8px; background: white; color: #172b43; font: inherit; }
+.employee-attendance-days { padding: 0 20px 20px; }
+.employee-attendance-day { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 16px 0; border-top: 1px solid #e6ebf0; }
+.employee-attendance-day > header { display: grid; align-content: start; gap: 8px; }
+.employee-attendance-day small, .employee-attendance-empty { color: #596a7c; }
+.employee-attendance-punch { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 8px 0; }
+.employee-attendance-punch > div { display: grid; gap: 4px; }
+.employee-attendance-punch > small { font-size: 13px; }
+.employee-attendance-empty { margin: 0; padding: 8px 0; font-size: 14px; }
+@media (max-width: 640px) {
+  .employee-attendance-filter label { width: 100%; }
+  .employee-attendance-day { grid-template-columns: 1fr; gap: 8px; }
+  .employee-attendance-day > header { display: flex; justify-content: space-between; }
+  .employee-attendance-punch > small { width: 100%; }
+}

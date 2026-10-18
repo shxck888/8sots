@@ -12,6 +12,7 @@ const items: Array<{ href: string; label: string; icon: typeof LayoutDashboard; 
   { href: "/admin/schedules", label: "排班管理", icon: CalendarDays, permission: "schedules" },
   { href: "/admin/holidays", label: "假日曆", icon: CalendarHeart, permission: "schedules" },
   { href: "/admin/attendance", label: "打卡紀錄", icon: Clock3, exact: true, permission: "attendance" },
+  { href: "/admin/attendance/employees", label: "個別員工打卡", icon: CalendarDays, permission: "attendance" },
   { href: "/admin/break-reminders", label: "休息到時提醒", icon: Bell, permission: "breakNotifications" },
   { href: "/admin/attendance/qr-devices", label: "動態 QR 機器", icon: QrCode, permission: "attendance" },
   { href: "/admin/attendance-rules", label: "出勤規則", icon: SlidersHorizontal, permission: "attendance" },
