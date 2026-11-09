@@ -1,0 +1,167 @@
+/* 2027 New Year campaign: shared by the homepage and two menu pages. */
+:root{--cny-wine:#410b13;--cny-red:#721624;--cny-gold:#f3d393;--cny-cream:#fff7e8;--seasonal-header:120px}
+.seasonal-active{scroll-padding-top:var(--seasonal-header)}
+.seasonal-active :is(section,[id]){scroll-margin-top:var(--seasonal-header)}
+.seasonal-active header.nav,.seasonal-active header.nav.scrolled{padding:0;background:rgba(3,17,31,.97)}
+.seasonal-active header.nav>.wrap{min-height:76px;gap:22px}
+.seasonal-strip{display:block;text-align:center;background:var(--cny-wine);border-bottom:1px solid #a07843;color:var(--cny-gold);padding:7px 16px;font-size:.82rem;font-weight:500;line-height:1.7;letter-spacing:.04em}
+.seasonal-strip:hover{background:#61121d}
+.seasonal-strip strong{color:#fff4dd;margin-right:12px}
+.seasonal-strip span{white-space:nowrap;margin-left:14px}
+.seasonal-active .navlinks{gap:18px}
+.seasonal-active .navlinks a{font-size:.85rem;white-space:nowrap}
+.seasonal-active .navlinks .seasonal-nav{color:var(--cny-gold);font-weight:700}
+.new-year-hero{padding:148px 0 48px;background:radial-gradient(ellipse at 85% 20%,#7e1f2d60,transparent 52%),linear-gradient(120deg,#230a12,#4a101a 62%,#220d19);overflow:hidden}
+.new-year-hero::before{content:"";position:absolute;inset:145px -160px auto auto;width:600px;height:600px;border:1px solid #f3d39322;border-radius:50%;pointer-events:none}
+.new-year-layout{display:grid;grid-template-columns:1.35fr .85fr;gap:64px;align-items:center;position:relative}
+.new-year-copy h1{font-size:clamp(2rem,4.2vw,3.2rem);line-height:1.35;letter-spacing:.04em;font-weight:900;color:var(--cny-cream);margin:10px 0 12px}
+.new-year-copy h1 span{color:var(--cny-gold)}
+.campaign-kicker{color:var(--cny-gold);font-size:.8rem;font-weight:700;letter-spacing:.16em}
+.new-year-intro{color:#e2c8c3;font-size:.96rem;max-width:540px}
+.seasonal-offers{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px}
+.seasonal-offer{display:flex;flex-direction:column;border:1px solid #cda96666;border-radius:14px;padding:16px;background:#230a1259;transition:background .2s,transform .2s}
+.seasonal-offer:hover{background:#ffffff0e;transform:translateY(-3px)}
+.seasonal-offer .offer-label{font-size:.72rem;letter-spacing:.08em;color:#e9b99f}
+.seasonal-offer h2{font-size:1.23rem;margin:3px 0 8px;color:var(--cny-cream)}
+.seasonal-offer .offer-price{color:var(--cny-gold);font-size:1.65rem;line-height:1.3;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.seasonal-offer .offer-price small{font-size:.75rem;font-weight:400}
+.seasonal-offer p{color:#e2c8c3;font-size:.79rem;margin-top:8px;line-height:1.75}
+.seasonal-offer .offer-link{font-size:.82rem;color:var(--cny-gold);margin-top:12px;font-weight:700}
+.new-year-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:20px}
+.new-year-actions>a{flex:1 1 210px;white-space:nowrap}
+.campaign-btn,.campaign-btn-outline{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 23px;border-radius:7px;font-size:.94rem;font-weight:700;text-align:center;line-height:1.6;transition:filter .2s}
+.campaign-btn{color:#391017;background:var(--cny-gold);border:1px solid var(--cny-gold)}
+.campaign-btn-outline{border:1px solid #d4b386;color:var(--cny-gold)}
+.campaign-btn:hover,.campaign-btn-outline:hover{filter:brightness(1.12)}
+.new-year-poster{max-width:370px;justify-self:end;position:relative}
+.new-year-poster a{display:block;border-radius:10px;overflow:hidden;border:1px solid #d8b16a99;box-shadow:0 22px 60px #0006;transition:transform .2s}
+.new-year-poster a:hover{transform:translateY(-4px)}
+.new-year-poster img{width:100%;height:auto}
+.new-year-poster figcaption{color:#dcbfaf;font-size:.75rem;text-align:center;margin-top:12px}
+.seasonal-inline{display:block;max-width:820px;margin:0 auto 32px;padding:18px 24px;border:1px solid #b28b4e99;border-radius:10px;background:#54121b;color:#fff0d7;text-align:center;font-size:.98rem}
+.seasonal-inline strong{color:var(--cny-gold)}
+.seasonal-active .breadcrumb{padding-top:155px}
+.campaign-page{background:linear-gradient(130deg,#1f0c14,#3b1019 38%,#101520);color:var(--cny-cream)}
+.campaign-shell{max-width:1120px;margin:0 auto;padding:0 28px}
+.campaign-breadcrumb{padding-top:150px;font-size:.83rem;color:#d2bdb9}
+.campaign-breadcrumb a{color:var(--cny-gold);text-decoration:underline;text-underline-offset:4px}
+.campaign-hero{display:grid;grid-template-columns:1.2fr .8fr;align-items:center;gap:64px;padding:42px 0 64px}
+.campaign-title{font-size:clamp(2rem,4vw,3.2rem);line-height:1.45;margin:10px 0 18px;font-weight:900;letter-spacing:.03em}
+.campaign-lead{color:#e2cfca;line-height:1.95}
+.campaign-price{color:var(--cny-gold);font-size:2.3rem;line-height:1.4;font-weight:700;margin:20px 0}
+.campaign-price small{font-size:1rem}
+.campaign-facts{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;margin:22px 0}
+.campaign-facts>div{border-top:1px solid #b28b4e66;padding-top:12px}
+.campaign-facts dt{font-size:.78rem;color:#d7afa5;margin-bottom:5px}
+.campaign-facts dd{font-size:.96rem;font-weight:500}
+.campaign-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+.campaign-poster{display:block;max-width:390px;justify-self:end}
+.campaign-poster img{width:100%;height:auto;border:1px solid #bc985d88;border-radius:8px;box-shadow:0 22px 50px #0005}
+.campaign-poster figcaption{color:#cbb5b0;font-size:.78rem;text-align:center;margin-top:10px}
+.campaign-section{padding:48px 0;border-top:1px solid #cda96644}
+.campaign-section h2{color:var(--cny-gold);font-size:1.7rem;margin-bottom:20px;line-height:1.5}
+.campaign-section h3{font-size:1.22rem;margin-bottom:12px}
+.campaign-summary{padding:24px 28px;background:#ffffff07;border:1px solid #cda96666;border-radius:12px;margin-bottom:28px;line-height:1.95}
+.campaign-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.campaign-menu-card{padding:28px;border:1px solid #cda96666;border-radius:12px;background:#ffffff06}
+.campaign-menu-card .campaign-price{font-size:1.9rem;margin:6px 0 16px}
+.campaign-dishes{padding-left:25px;columns:2;column-gap:32px}
+.campaign-menu-card .campaign-dishes{columns:1}
+.campaign-dishes li{padding:9px 0 9px 4px;break-inside:avoid;border-bottom:1px solid #ffffff0c;font-size:.96rem}
+.campaign-dishes li::marker{color:#b98d6a;font-size:.8rem}
+.campaign-note{font-size:.86rem;color:#d4beb7;margin-top:20px;line-height:1.9}
+.campaign-section>p{margin-bottom:14px;color:#e2cfca}
+.campaign-section>ol:not(.campaign-dishes){padding-left:24px}
+.campaign-section>ol:not(.campaign-dishes)>li{padding:8px 0}
+.campaign-faq details{border-bottom:1px solid #cda96644;padding:17px 0}
+.campaign-faq summary{cursor:pointer;font-weight:700;color:#fff0dc;line-height:1.8;padding-right:8px}
+.campaign-faq details>p,.campaign-faq details>div{padding:12px 0 2px;color:#dcc9c3;line-height:1.9}
+.campaign-faq a,.campaign-note a,.campaign-section p>a{color:var(--cny-gold);text-decoration:underline;text-underline-offset:4px}
+.campaign-contact{padding:32px;border:1px solid #cda96666;background:#260e16;border-radius:12px}
+.campaign-contact p{margin-top:12px;color:#e2cfca}
+.campaign-crosslink{display:block;background:#ffffff08;border:1px solid #cda96655;border-radius:10px;padding:24px;margin-top:25px}
+.campaign-crosslink strong{display:block;color:var(--cny-gold);font-family:"Noto Serif TC",serif;font-size:1.2rem;margin-bottom:8px}
+.campaign-crosslink span{color:#dcc9c3}
+.campaign-footer{margin-top:50px}
+.campaign-footer a{color:var(--cny-gold)}
+.seasonal-active :is(a,button,summary):focus-visible{outline:3px solid #f3d393;outline-offset:5px}
+@media(max-width:1180px){
+  .seasonal-active .navlinks{position:fixed;inset:0 0 0 auto;width:280px;background:rgba(3,17,31,.98);flex-direction:column;justify-content:center;gap:23px;transform:translateX(100%);transition:transform .3s;overflow-y:auto;padding:130px 20px 40px}
+  .seasonal-active .navlinks.open{transform:none}
+  .seasonal-active .burger{display:flex;z-index:101}
+  .new-year-layout{gap:36px}
+  .campaign-hero{gap:36px}
+}
+@media(max-width:760px){
+  :root{--seasonal-header:135px}
+  .seasonal-strip{font-size:.73rem;padding:7px 10px}
+  .seasonal-strip strong{display:block;margin:0}
+  .seasonal-strip span{margin-left:8px}
+  .seasonal-active header.nav>.wrap{min-height:67px}
+  .seasonal-active .brand-bw img{height:36px}
+  .new-year-hero{padding:158px 0 42px}
+  .new-year-layout{grid-template-columns:1fr;gap:36px}
+  .new-year-copy h1{font-size:2.25rem;margin:10px 0}
+  .new-year-intro{font-size:.88rem}
+  .seasonal-offers{gap:10px;margin-top:20px}
+  .seasonal-offer{padding:15px 12px}
+  .seasonal-offer h2{font-size:1.06rem}
+  .seasonal-offer .offer-price{font-size:1.43rem}
+  .seasonal-offer p{font-size:.74rem}
+  .new-year-poster{max-width:420px;justify-self:center}
+  .campaign-shell{padding:0 22px}
+  .campaign-breadcrumb{padding-top:150px}
+  .campaign-hero{grid-template-columns:1fr;gap:32px;padding:28px 0 44px}
+  .campaign-title{font-size:2rem}
+  .campaign-poster{max-width:440px;justify-self:center}
+  .campaign-menu-grid{grid-template-columns:1fr;gap:20px}
+  .campaign-section{padding:36px 0}
+  .campaign-section h2{font-size:1.45rem}
+  .campaign-dishes{columns:1}
+  .campaign-summary,.campaign-menu-card,.campaign-contact{padding:22px}
+  .campaign-price{font-size:1.95rem}
+  .campaign-actions>a{flex:1 1 160px}
+}
+@media(max-width:380px){
+  .new-year-copy h1{font-size:1.9rem}
+  .new-year-layout .wrap{padding:0 18px}
+  .seasonal-offer .offer-price{font-size:1.2rem}
+  .seasonal-offer h2{font-size:.96rem}
+  .campaign-facts{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .seasonal-active *{animation:none!important;transition:none!important}
+  .seasonal-active .reveal{opacity:1;transform:none}
+}
+
+.campaign-skip{position:fixed;left:20px;top:10px;transform:translateY(-200%);background:var(--cny-gold);color:#391017;padding:10px 20px;z-index:150;border-radius:5px}
+.campaign-skip:focus{transform:none}
+.campaign-booking-steps{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:0!important;counter-reset:booking}
+.campaign-booking-steps li{counter-increment:booking;background:#ffffff06;border:1px solid #cda96644;border-radius:12px;padding:24px!important}
+.campaign-booking-steps li::before{content:counter(booking,decimal-leading-zero);color:var(--cny-gold);font-size:1.6rem;display:block;margin-bottom:12px}
+.campaign-booking-steps h3{font-size:1.05rem}
+.campaign-booking-steps p{font-size:.92rem;color:#dcc9c3}
+.campaign-section.campaign-shell{padding:48px 28px}
+@media(max-width:760px){.campaign-section.campaign-shell{padding:36px 22px}.campaign-booking-steps{grid-template-columns:1fr}}
+
+.campaign-hero.campaign-shell{padding:42px 28px 64px}
+.campaign-menu-card:only-child{grid-column:1 / -1}
+.campaign-menu-card:only-child .campaign-dishes{columns:2}
+.campaign-poster>span{display:block;font-size:.78rem;text-align:center;color:#d4beb7;margin-top:10px}
+@media(max-width:760px){.campaign-hero.campaign-shell{padding:28px 22px 44px}.campaign-menu-card:only-child .campaign-dishes{columns:1}}
+
+.seasonal-strip>span{margin:0;white-space:normal}
+.seasonal-strip a{display:inline-block;white-space:nowrap}
+.seasonal-strip a:hover{text-decoration:underline;text-underline-offset:4px}
+.seasonal-strip i{font-style:normal;margin:0 7px;color:#b98d6a}
+.campaign-mobile-actions{display:none}
+.seasonal-active .navlinks .nav-cta{padding:8px 16px}
+@media(max-width:760px){
+  .campaign-mobile-actions{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:95;background:#230d17;border-top:1px solid #b28b4e;padding:10px 16px calc(10px + env(safe-area-inset-bottom));gap:10px;box-shadow:0 -5px 20px #0003}
+  .campaign-mobile-actions a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 12px;border:1px solid #cda96688;border-radius:6px;font-size:.9rem;font-weight:700;flex:1}
+  .campaign-mobile-actions a:first-child{background:var(--cny-gold);color:#391017;flex:1.4}
+  .campaign-page{padding-bottom:80px}
+}
+
+.campaign-page :is(#menu,#booking,#contact,#faq){background:transparent}

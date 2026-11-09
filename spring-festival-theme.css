@@ -1,0 +1,32 @@
+/* Seasonal color layer. styles.css remains the original navy theme. */
+body.seasonal-active{
+  --deep:#170f12;--navy:#26151b;--navy2:#351b24;
+  --teal:#8c5860;--foam:#e5c997;--gold:#e4c286;--gold-light:#f3dbad;
+  --ink:#f7eee3;--muted:#c3aaa4;
+  --cny-gold:#f3d393;--cny-cream:#fff7e8;
+  background:var(--deep);color:var(--ink);
+}
+.seasonal-active header.nav,.seasonal-active header.nav.scrolled{background:rgba(23,15,18,.98);border-bottom:1px solid #cda9662e}
+.seasonal-active .seasonal-strip{background:#390c15;border-bottom-color:#ba935b66}
+.seasonal-active .seasonal-strip:hover{background:#45121c}
+.seasonal-active .navlinks{background-color:#170f12}
+.seasonal-active footer{background:#120c0f;border-top-color:#cda96644}
+.seasonal-active .new-year-hero{background:radial-gradient(ellipse at 85% 20%,#7e1f2d60,transparent 52%),linear-gradient(120deg,#230f16,#4a101a 62%,#241218)}
+.seasonal-active:not(.campaign-page) #about{background:linear-gradient(180deg,#241218,#1b1216)}
+.seasonal-active:not(.campaign-page) #menu{background:#211419}
+.seasonal-active:not(.campaign-page) #banquet{background:linear-gradient(180deg,#211419,#301923)}
+.seasonal-active:not(.campaign-page) #booking{background:linear-gradient(180deg,#301923,#1b1216)}
+.seasonal-active:not(.campaign-page) #gallery{background:linear-gradient(180deg,#1b1216,#25161c)}
+.seasonal-active:not(.campaign-page) #reviews{background:#25161c}
+.seasonal-active:not(.campaign-page) #glossary{background:linear-gradient(180deg,#25161c,#301b23)}
+.seasonal-active:not(.campaign-page) #faq{background:linear-gradient(180deg,#301b23,#21151a)}
+.seasonal-active:not(.campaign-page) #contact{background:linear-gradient(180deg,#21151a,#170f12)}
+.seasonal-active .btn-menu,.seasonal-active .step-no{background:linear-gradient(135deg,#ebce94,#bc9359);color:#2c141c;box-shadow:0 8px 22px #0003}
+.seasonal-active .btn-menu:hover{box-shadow:0 12px 28px #cda96633}
+.seasonal-active :is(.step,.gloss-item,.faq-item,.legal table th,.legal table td){border-color:#cda96644}
+.seasonal-active :is(.about-text p,.banquet-lead,.banquet-cta,.booking-lead,.gloss-item dd,.faq-a,.hours td,.guide-intro p,.legal p,.legal li,.legal table td,.legal .faq-list .faq-a){color:#e5d3c9}
+.seasonal-active .legal .article-cta{background:#ffffff05;border-color:#cda96655}
+.seasonal-active .gitem::after{background:#170f1288}
+.seasonal-active .lb{background:#100b0ef5}
+.seasonal-active.campaign-page{background:linear-gradient(130deg,#1f0c14,#3b1019 38%,#170f12)}
+@media(max-width:1180px){.seasonal-active .navlinks{background:rgba(23,15,18,.99)}}

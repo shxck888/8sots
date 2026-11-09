@@ -1,0 +1,13 @@
+/* Restore the original navy palette; campaign information remains available. */
+.seasonal-active{
+  --cny-wine:#072438;--cny-red:#0b3553;--cny-gold:#f0d79a;--cny-cream:#eaf3f7;
+  background:#03111f;color:#eaf3f7;
+}
+.seasonal-active .seasonal-strip{background:#072438;border-bottom-color:#d9b16466}
+.seasonal-active .seasonal-strip:hover{background:#0b3553}
+.seasonal-active .new-year-hero,.seasonal-active.campaign-page{background:radial-gradient(ellipse at 85% 20%,#0f5e7a50,transparent 52%),linear-gradient(120deg,#03111f,#072438 62%,#0b3553)}
+.seasonal-active .seasonal-offer,.seasonal-active .campaign-contact{background:#03111f66}
+.seasonal-active .seasonal-inline{background:#0b3553;color:#eaf3f7}
+.seasonal-active :is(.new-year-intro,.seasonal-offer p,.campaign-lead,.campaign-note,.campaign-section>p,.campaign-summary,.campaign-booking-steps p,.campaign-faq details>div,.campaign-contact p){color:#d4e4ec}
+.seasonal-active :is(.offer-label,.campaign-facts dt,.campaign-poster>span,.new-year-poster figcaption){color:#9fb8c6}
+.seasonal-active .campaign-mobile-actions{background:#03111f}

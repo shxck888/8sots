@@ -1,11 +1,11 @@
 /* TEAM */
-Business: 海之星海鮮 百元熱炒
+Business: 海之星 海鮮熱炒
 Site: https://8sots.com.tw/
 Location: 基隆市中正區, 台灣 (Keelung, Taiwan)
 Contact: 02-2469-5772
 
 /* SITE */
-Last update: 2026-07-03
+Last update: 2026-11-10
 Language: Traditional Chinese (zh-Hant)
 Content: 首頁（關於我們、菜單、桌菜預訂、線上訂位、相片牆、顧客好評、常見問題、聯絡資訊）與「基隆玩吃攻略」10 篇在地海鮮美食指南文章（/guide/）
 Standards: HTML5, CSS3, JSON-LD (schema.org), WCAG-aware semantic markup

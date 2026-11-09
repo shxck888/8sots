@@ -24,8 +24,23 @@ document.addEventListener('DOMContentLoaded', function () {
   // burger menu
   var burger = document.getElementById('burger'), links = document.getElementById('navlinks');
   if (burger && links) {
-    var closeMenu = function () { links.classList.remove('open'); };
-    burger.onclick = function (e) { e.stopPropagation(); links.classList.toggle('open'); };
+    var closeMenu = function () {
+      links.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+      burger.setAttribute('aria-label', '開啟選單');
+    };
+    burger.onclick = function (e) {
+      e.stopPropagation();
+      var isOpen = links.classList.toggle('open');
+      burger.setAttribute('aria-expanded', String(isOpen));
+      burger.setAttribute('aria-label', isOpen ? '關閉選單' : '開啟選單');
+    };
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && links.classList.contains('open')) {
+        closeMenu();
+        burger.focus();
+      }
+    });
     // 點導覽連結後收合
     links.querySelectorAll('a').forEach(function (a) {
       a.onclick = closeMenu;
@@ -57,20 +72,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // GA4 click tracking: phone, LINE
   if (typeof gtag === 'function') {
+    var clickDetails = function (el) {
+      var details = {
+        link_url: el.getAttribute('href'),
+        link_text: (el.textContent || '').trim()
+      };
+      if (el.dataset.campaign) {
+        details.campaign_id = el.dataset.campaign;
+        details.menu_type = el.dataset.intent || 'general';
+        details.cta_placement = el.dataset.placement || 'unspecified';
+      }
+      return details;
+    };
     document.querySelectorAll('a[href^="tel:"]').forEach(function (el) {
       el.addEventListener('click', function () {
-        gtag('event', 'phone_call_click', {
-          link_url: el.getAttribute('href'),
-          link_text: (el.textContent || '').trim()
-        });
+        gtag('event', 'phone_call_click', clickDetails(el));
       });
     });
     document.querySelectorAll('a[href*="line.me"]').forEach(function (el) {
       el.addEventListener('click', function () {
-        gtag('event', 'line_click', {
-          link_url: el.getAttribute('href'),
-          link_text: (el.textContent || '').trim()
-        });
+        gtag('event', 'line_click', clickDetails(el));
+      });
+    });
+    document.querySelectorAll('a[data-track="campaign_menu_click"]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        gtag('event', 'campaign_menu_click', clickDetails(el));
       });
     });
   }
