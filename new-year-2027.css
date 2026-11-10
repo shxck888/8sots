@@ -1,4 +1,6 @@
 /* 2027 New Year campaign: shared by the homepage and two menu pages. */
+/* Paint Safari’s canvas while its bottom toolbar expands or collapses. */
+html{background-color:var(--browser-canvas,#170f12);color-scheme:dark}
 :root{--cny-wine:#410b13;--cny-red:#721624;--cny-gold:#f3d393;--cny-cream:#fff7e8;--seasonal-header:120px}
 .seasonal-active{scroll-padding-top:var(--seasonal-header)}
 .seasonal-active :is(section,[id]){scroll-margin-top:var(--seasonal-header)}
@@ -158,10 +160,19 @@
 .campaign-mobile-actions{display:none}
 .seasonal-active .navlinks .nav-cta{padding:8px 16px}
 @media(max-width:760px){
-  .campaign-mobile-actions{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:95;background:#230d17;border-top:1px solid #b28b4e;padding:10px 16px calc(10px + env(safe-area-inset-bottom));gap:10px;box-shadow:0 -5px 20px #0003}
+  .campaign-mobile-actions{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:95;background:#230d17;border-top:1px solid #b28b4e;padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));gap:10px;box-shadow:0 -5px 20px #0003;transform:translateZ(0)}
   .campaign-mobile-actions a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 12px;border:1px solid #cda96688;border-radius:6px;font-size:.9rem;font-weight:700;flex:1}
   .campaign-mobile-actions a:first-child{background:var(--cny-gold);color:#391017;flex:1.4}
-  .campaign-page{padding-bottom:80px}
+  .campaign-page{padding-bottom:calc(80px + env(safe-area-inset-bottom, 0px))}
 }
 
 .campaign-page :is(#menu,#booking,#contact,#faq){background:transparent}
+
+/* Keep campaign content clear of iPhone safe areas in either orientation. */
+.campaign-page header.nav,.campaign-page header.nav.scrolled{padding-top:env(safe-area-inset-top, 0px)}
+.campaign-page .campaign-breadcrumb{padding-top:calc(150px + env(safe-area-inset-top, 0px))}
+.campaign-page :is(.campaign-shell,header.nav>.wrap){padding-left:max(28px, env(safe-area-inset-left, 0px));padding-right:max(28px, env(safe-area-inset-right, 0px))}
+@media(max-width:760px){
+  .campaign-page{--seasonal-header:calc(135px + env(safe-area-inset-top, 0px))}
+  .campaign-page :is(.campaign-shell,header.nav>.wrap){padding-left:max(22px, env(safe-area-inset-left, 0px));padding-right:max(22px, env(safe-area-inset-right, 0px))}
+}

@@ -1,4 +1,5 @@
 /* Restore the original navy palette; campaign information remains available. */
+:root{--browser-canvas:#03111f}
 .seasonal-active{
   --cny-wine:#072438;--cny-red:#0b3553;--cny-gold:#f0d79a;--cny-cream:#eaf3f7;
   background:#03111f;color:#eaf3f7;
