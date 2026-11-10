@@ -183,3 +183,8 @@ html{background-color:var(--browser-canvas,#170f12);color-scheme:dark}
   .seasonal-strip>span{gap:12px}
   .seasonal-strip>span i{display:none}
 }
+
+/* Mobile visitors use the fixed booking bar; keep hero actions on desktop. */
+@media(max-width:760px){
+  .campaign-hero .campaign-actions{display:none}
+}
