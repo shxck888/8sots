@@ -95,13 +95,15 @@ html{background-color:var(--browser-canvas,#170f12);color-scheme:dark}
   .campaign-hero{gap:36px}
 }
 @media(max-width:760px){
-  :root{--seasonal-header:135px}
-  .seasonal-strip{font-size:.73rem;padding:7px 10px}
-  .seasonal-strip strong{display:block;margin:0}
-  .seasonal-strip span{margin-left:8px}
+  :root{--seasonal-header:156px}
+  .seasonal-strip{font-size:clamp(.9375rem,4vw,1rem);font-weight:600;line-height:1.6;letter-spacing:0;padding:9px 8px}
+  .seasonal-strip strong{display:block;margin:0 0 3px;font-size:1.0625rem;line-height:1.5}
+  .seasonal-strip>span{display:flex;align-items:center;justify-content:center;gap:4px;margin:0}
+  .seasonal-strip>span i{margin:0}
+  .seasonal-strip a{padding:2px 0}
   .seasonal-active header.nav>.wrap{min-height:67px}
   .seasonal-active .brand-bw img{height:36px}
-  .new-year-hero{padding:158px 0 42px}
+  .new-year-hero{padding:178px 0 42px}
   .new-year-layout{grid-template-columns:1fr;gap:36px}
   .new-year-copy h1{font-size:2.25rem;margin:10px 0}
   .new-year-intro{font-size:.88rem}
@@ -170,9 +172,14 @@ html{background-color:var(--browser-canvas,#170f12);color-scheme:dark}
 
 /* Keep campaign content clear of iPhone safe areas in either orientation. */
 .campaign-page header.nav,.campaign-page header.nav.scrolled{padding-top:env(safe-area-inset-top, 0px)}
-.campaign-page .campaign-breadcrumb{padding-top:calc(150px + env(safe-area-inset-top, 0px))}
+.campaign-page .campaign-breadcrumb{padding-top:calc(170px + env(safe-area-inset-top, 0px))}
 .campaign-page :is(.campaign-shell,header.nav>.wrap){padding-left:max(28px, env(safe-area-inset-left, 0px));padding-right:max(28px, env(safe-area-inset-right, 0px))}
 @media(max-width:760px){
-  .campaign-page{--seasonal-header:calc(135px + env(safe-area-inset-top, 0px))}
+  .campaign-page{--seasonal-header:calc(156px + env(safe-area-inset-top, 0px))}
   .campaign-page :is(.campaign-shell,header.nav>.wrap){padding-left:max(22px, env(safe-area-inset-left, 0px));padding-right:max(22px, env(safe-area-inset-right, 0px))}
+}
+
+@media(max-width:360px){
+  .seasonal-strip>span{gap:12px}
+  .seasonal-strip>span i{display:none}
 }
